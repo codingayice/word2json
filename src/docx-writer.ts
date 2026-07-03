@@ -245,7 +245,10 @@ function contentControlXml(contentControl: NonNullable<ParagraphNode["contentCon
     contentControl.placeholder ? placeholderContentControlXml(contentControl.placeholder) : "",
     contentControl.checkbox ? checkboxContentControlXml(contentControl.checkbox) : "",
     contentControl.dropdown ? dropdownContentControlXml(contentControl.dropdown) : "",
+    contentControl.comboBox ? comboBoxContentControlXml(contentControl.comboBox) : "",
     contentControl.date ? dateContentControlXml(contentControl.date) : "",
+    contentControl.repeatingSection ? repeatingSectionContentControlXml(contentControl.repeatingSection) : "",
+    contentControl.repeatingSectionItem ? repeatingSectionItemContentControlXml(contentControl.repeatingSectionItem) : "",
   ].join("");
 
   return `<w:sdt><w:sdtPr>${properties}</w:sdtPr><w:sdtContent>${content}</w:sdtContent></w:sdt>`;
@@ -271,11 +274,32 @@ function dropdownContentControlXml(dropdown: NonNullable<NonNullable<ParagraphNo
   return `<w:dropDownList>${items}</w:dropDownList>`;
 }
 
+function comboBoxContentControlXml(comboBox: NonNullable<NonNullable<ParagraphNode["contentControl"]>["comboBox"]>): string {
+  const items = comboBox.items
+    .map((item) => `<w:listItem w:displayText="${escapeAttribute(item.displayText)}" w:value="${escapeAttribute(item.value)}"/>`)
+    .join("");
+
+  return `<w:comboBox>${items}</w:comboBox>`;
+}
+
 function dateContentControlXml(date: NonNullable<NonNullable<ParagraphNode["contentControl"]>["date"]>): string {
   return `<w:date>` +
     (date.fullDate ? `<w:fullDate w:val="${escapeAttribute(date.fullDate)}"/>` : "") +
     (date.format ? `<w:dateFormat w:val="${escapeAttribute(date.format)}"/>` : "") +
     `</w:date>`;
+}
+
+function repeatingSectionContentControlXml(repeatingSection: NonNullable<NonNullable<ParagraphNode["contentControl"]>["repeatingSection"]>): string {
+  return `<w:repeatingSection>` +
+    (repeatingSection.sectionTitle ? `<w:sectionTitle w:val="${escapeAttribute(repeatingSection.sectionTitle)}"/>` : "") +
+    (repeatingSection.doNotAllowInsertDeleteSection ? `<w:doNotAllowInsertDeleteSection/>` : "") +
+    `</w:repeatingSection>`;
+}
+
+function repeatingSectionItemContentControlXml(repeatingSectionItem: NonNullable<NonNullable<ParagraphNode["contentControl"]>["repeatingSectionItem"]>): string {
+  return `<w:repeatingSectionItem>` +
+    (repeatingSectionItem.id ? `<w:id w:val="${escapeAttribute(repeatingSectionItem.id)}"/>` : "") +
+    `</w:repeatingSectionItem>`;
 }
 
 function paragraphCommentRangeStartXml(comment: NonNullable<ParagraphNode["commentRangeStart"]>, context: WriterContext): string {

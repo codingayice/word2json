@@ -371,6 +371,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:dropDownList><w:listItem w:displayText="Silver" w:value="silver"/><w:listItem w:displayText="Gold" w:value="gold"/></w:dropDownList>');
   });
 
+  it("writes combo box content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Custom",
+            contentControl: {
+              alias: "Choice",
+              tag: "choice",
+              comboBox: {
+                items: [
+                  { displayText: "Standard", value: "standard" },
+                  { displayText: "Custom", value: "custom" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:comboBox><w:listItem w:displayText="Standard" w:value="standard"/><w:listItem w:displayText="Custom" w:value="custom"/></w:comboBox>');
+  });
+
   it("writes date content controls", async () => {
     const document = createDocumentJson([
       {
@@ -417,6 +446,28 @@ describe("DOCX writer", () => {
     const xml = await zip.file("word/document.xml")!.async("string");
 
     expect(xml).toContain('<w:placeholder><w:docPart w:val="DefaultPlaceholder_22610170"/></w:placeholder>');
+  });
+
+  it("writes repeating section content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        contentControl: {
+          alias: "Line Items",
+          tag: "lineItems",
+          repeatingSection: { sectionTitle: "Item", doNotAllowInsertDeleteSection: true },
+          repeatingSectionItem: { id: "{11111111-2222-3333-4444-555555555555}" },
+        },
+        runs: [{ text: "Widget" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:repeatingSection><w:sectionTitle w:val="Item"/><w:doNotAllowInsertDeleteSection/></w:repeatingSection>');
+    expect(xml).toContain('<w:repeatingSectionItem><w:id w:val="{11111111-2222-3333-4444-555555555555}"/></w:repeatingSectionItem>');
   });
 
   it("writes page settings into section properties", async () => {
@@ -2121,6 +2172,34 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips combo box content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Custom",
+            contentControl: {
+              alias: "Choice",
+              tag: "choice",
+              comboBox: {
+                items: [
+                  { displayText: "Standard", value: "standard" },
+                  { displayText: "Custom", value: "custom" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips date content controls", async () => {
     const source = createDocumentJson([
       {
@@ -2158,6 +2237,26 @@ describe("DOCX reader", () => {
             },
           },
         ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips repeating section content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        contentControl: {
+          alias: "Line Items",
+          tag: "lineItems",
+          repeatingSection: { sectionTitle: "Item", doNotAllowInsertDeleteSection: true },
+          repeatingSectionItem: { id: "{11111111-2222-3333-4444-555555555555}" },
+        },
+        runs: [{ text: "Widget" }],
       },
     ]);
 

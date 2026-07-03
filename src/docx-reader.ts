@@ -1178,7 +1178,10 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
   const placeholder = parsePlaceholderContentControl(properties.placeholder);
   const checkbox = parseCheckboxContentControl(properties.checkBox);
   const dropdown = parseDropdownContentControl(properties.dropDownList);
+  const comboBox = parseComboBoxContentControl(properties.comboBox);
   const date = parseDateContentControl(properties.date);
+  const repeatingSection = parseRepeatingSectionContentControl(properties.repeatingSection);
+  const repeatingSectionItem = parseRepeatingSectionItemContentControl(properties.repeatingSectionItem);
   const parsed = {
     ...(typeof alias.val === "string" ? { alias: alias.val } : {}),
     ...(typeof tag.val === "string" ? { tag: tag.val } : {}),
@@ -1186,7 +1189,10 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
     ...(placeholder ? { placeholder } : {}),
     ...(checkbox ? { checkbox } : {}),
     ...(dropdown ? { dropdown } : {}),
+    ...(comboBox ? { comboBox } : {}),
     ...(date ? { date } : {}),
+    ...(repeatingSection ? { repeatingSection } : {}),
+    ...(repeatingSectionItem ? { repeatingSectionItem } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -1230,6 +1236,19 @@ function parseDropdownContentControl(value: unknown): NonNullable<NonNullable<Pa
   return items.length > 0 ? { items } : undefined;
 }
 
+function parseComboBoxContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["comboBox"]> | undefined {
+  const comboBox = asObject(value);
+  const items = asArray(comboBox.listItem)
+    .map((item) => asObject(item))
+    .filter((item) => item.displayText !== undefined || item.value !== undefined)
+    .map((item) => ({
+      displayText: String(item.displayText ?? ""),
+      value: String(item.value ?? ""),
+    }));
+
+  return items.length > 0 ? { items } : undefined;
+}
+
 function parseDateContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["date"]> | undefined {
   const date = asObject(value);
 
@@ -1242,6 +1261,37 @@ function parseDateContentControl(value: unknown): NonNullable<NonNullable<Paragr
   const parsed = {
     ...(typeof fullDate.val === "string" ? { fullDate: fullDate.val } : {}),
     ...(typeof format.val === "string" ? { format: format.val } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseRepeatingSectionContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["repeatingSection"]> | undefined {
+  const repeatingSection = asObject(value);
+
+  if (Object.keys(repeatingSection).length === 0) {
+    return undefined;
+  }
+
+  const sectionTitle = asObject(repeatingSection.sectionTitle);
+  const parsed = {
+    ...(typeof sectionTitle.val === "string" ? { sectionTitle: sectionTitle.val } : {}),
+    ...(repeatingSection.doNotAllowInsertDeleteSection !== undefined ? { doNotAllowInsertDeleteSection: true } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseRepeatingSectionItemContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["repeatingSectionItem"]> | undefined {
+  const repeatingSectionItem = asObject(value);
+
+  if (Object.keys(repeatingSectionItem).length === 0) {
+    return undefined;
+  }
+
+  const id = asObject(repeatingSectionItem.id);
+  const parsed = {
+    ...(typeof id.val === "string" ? { id: id.val } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;

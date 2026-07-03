@@ -257,7 +257,10 @@ export type ContentControl = {
   placeholder?: ContentControlPlaceholder;
   checkbox?: CheckboxContentControl;
   dropdown?: DropdownContentControl;
+  comboBox?: DropdownContentControl;
   date?: DateContentControl;
+  repeatingSection?: RepeatingSectionContentControl;
+  repeatingSectionItem?: RepeatingSectionItemContentControl;
 };
 
 export type ContentControlPlaceholder = {
@@ -282,6 +285,15 @@ export type DropdownItem = {
 export type DateContentControl = {
   fullDate?: string;
   format?: string;
+};
+
+export type RepeatingSectionContentControl = {
+  sectionTitle?: string;
+  doNotAllowInsertDeleteSection?: boolean;
+};
+
+export type RepeatingSectionItemContentControl = {
+  id?: string;
 };
 
 export type Hyperlink = {
