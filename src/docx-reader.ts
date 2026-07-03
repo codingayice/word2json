@@ -1639,6 +1639,16 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           subscript: parseMathNodes(asObject(subscriptNode.sub)),
         };
       }),
+    ...asArray(container.preSubSup)
+      .map((preSubSup) => {
+        const preSubSupNode = asObject(preSubSup);
+        return {
+          type: "preSubSup" as const,
+          base: parseMathNodes(asObject(preSubSupNode.e)),
+          subscript: parseMathNodes(asObject(preSubSupNode.sub)),
+          superscript: parseMathNodes(asObject(preSubSupNode.sup)),
+        };
+      }),
     ...asArray(container.rad)
       .map((radical) => {
         const radicalNode = asObject(radical);
