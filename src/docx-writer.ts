@@ -133,8 +133,24 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       compatibilitySettingsXml(settings.compatibility) +
       proofingSettingsXml(settings.proofing) +
+      viewSettingsXml(settings.view) +
       `</w:settings>`,
   );
+}
+
+function viewSettingsXml(view: NonNullable<DocumentJson["settings"]>["view"]): string {
+  if (!view) {
+    return "";
+  }
+
+  const viewXml = view.mode ? `<w:view w:val="${escapeAttribute(view.mode)}"/>` : "";
+  const zoomAttributes = [
+    view.zoom?.preset ? `w:val="${escapeAttribute(view.zoom.preset)}"` : "",
+    view.zoom?.percent !== undefined ? `w:percent="${view.zoom.percent}"` : "",
+  ].filter(Boolean).join(" ");
+  const zoomXml = zoomAttributes ? `<w:zoom ${zoomAttributes}/>` : "";
+
+  return viewXml + zoomXml;
 }
 
 function proofingSettingsXml(proofing: NonNullable<DocumentJson["settings"]>["proofing"]): string {

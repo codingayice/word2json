@@ -71,7 +71,16 @@ export type DocumentSettings = {
   trackRevisions?: boolean;
   compatibility?: DocumentCompatibilitySettings;
   proofing?: DocumentProofingSettings;
+  view?: DocumentViewSettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentViewSettings = {
+  mode?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
+  zoom?: {
+    preset?: "none" | "fullPage" | "bestFit" | "textFit";
+    percent?: number;
+  };
 };
 
 export type DocumentProofingSettings = {

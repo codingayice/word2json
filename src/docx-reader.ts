@@ -225,6 +225,7 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const defaultTabStop = asObject(settings.defaultTabStop);
   const compatibility = parseCompatibilitySettings(settings);
   const proofing = parseProofingSettings(settings);
+  const view = parseViewSettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
     ...(settings.evenAndOddHeaders !== undefined ? { evenAndOddHeaders: true } : {}),
@@ -232,10 +233,36 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(settings.trackRevisions !== undefined ? { trackRevisions: true } : {}),
     ...(compatibility ? { compatibility } : {}),
     ...(proofing ? { proofing } : {}),
+    ...(view ? { view } : {}),
     ...(web ? { web } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseViewSettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["view"] | undefined {
+  const view = asObject(settings.view);
+  const zoom = asObject(settings.zoom);
+  const mode = viewModeValue(view.val);
+  const preset = zoomPresetValue(zoom.val);
+  const zoomValue = {
+    ...(preset ? { preset } : {}),
+    ...(zoom.percent !== undefined ? { percent: parseNumber(zoom.percent) } : {}),
+  };
+  const result = {
+    ...(mode ? { mode } : {}),
+    ...(Object.keys(zoomValue).length > 0 ? { zoom: zoomValue } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function viewModeValue(value: unknown): NonNullable<NonNullable<DocumentJson["settings"]>["view"]>["mode"] | undefined {
+  return value === "none" || value === "print" || value === "outline" || value === "masterPages" || value === "normal" || value === "web" ? value : undefined;
+}
+
+function zoomPresetValue(value: unknown): NonNullable<NonNullable<NonNullable<DocumentJson["settings"]>["view"]>["zoom"]>["preset"] | undefined {
+  return value === "none" || value === "fullPage" || value === "bestFit" || value === "textFit" ? value : undefined;
 }
 
 function parseProofingSettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["proofing"] | undefined {
