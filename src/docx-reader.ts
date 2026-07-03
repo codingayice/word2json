@@ -1018,6 +1018,8 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const style = asObject(properties.tblStyle);
   const width = asObject(properties.tblW);
   const borders = asObject(properties.tblBorders);
+  const alignment = asObject(properties.jc);
+  const cellSpacing = asObject(properties.tblCellSpacing);
   const grid = parseTableGrid(table.tblGrid);
 
   return {
@@ -1026,6 +1028,8 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(grid ? { grid } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
+    ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
+    ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
     rows: asArray(table.tr).map((rowValue) => {
       const row = asObject(rowValue);
       const height = parseTableRowHeight(row.trPr);
@@ -1070,6 +1074,8 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   const verticalMerge = asObject(properties.vMerge);
   const verticalAlignment = asObject(properties.vAlign);
   const shading = parseTableCellShading(properties.shd);
+  const borders = parseParagraphBorders(properties.tcBorders);
+  const textDirection = asObject(properties.textDirection);
   const margins = parseTableCellMargins(properties.tcMar);
 
   return {
@@ -1078,6 +1084,8 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
     ...(typeof verticalMerge.val === "string" ? { verticalMerge: verticalMerge.val as NonNullable<TableCellNode["verticalMerge"]> } : {}),
     ...(typeof verticalAlignment.val === "string" ? { verticalAlignment: verticalAlignment.val as NonNullable<TableCellNode["verticalAlignment"]> } : {}),
     ...(shading ? { shading } : {}),
+    ...(borders ? { borders } : {}),
+    ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<TableCellNode["textDirection"]> } : {}),
     ...(margins ? { margins } : {}),
     blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes, numberingContext)),
   };

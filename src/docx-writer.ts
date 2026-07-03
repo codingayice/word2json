@@ -413,6 +413,8 @@ function tableXml(table: TableNode, context: WriterContext): string {
     table.styleId ? `<w:tblStyle w:val="${escapeAttribute(table.styleId)}"/>` : "",
     table.width ? `<w:tblW w:w="${table.width}" w:type="dxa"/>` : "",
     table.borders ? tableBordersXml(table.borders) : "",
+    table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",
+    table.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${table.cellSpacing}" w:type="dxa"/>` : "",
   ].join("");
   const rows = table.rows
     .map((row) => {
@@ -437,11 +439,24 @@ function tableCellXml(cell: TableCellNode, context: WriterContext): string {
     cell.verticalMerge ? `<w:vMerge w:val="${cell.verticalMerge}"/>` : "",
     cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
     cell.shading ? `<w:shd w:fill="${escapeAttribute(cell.shading.fill)}"/>` : "",
+    cell.borders ? tableCellBordersXml(cell.borders) : "",
+    cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
     cell.margins ? tableCellMarginsXml(cell.margins) : "",
   ].join("");
   const blocks = cell.blocks.map((block) => paragraphXml(block, context)).join("");
 
   return `<w:tc>${properties ? `<w:tcPr>${properties}</w:tcPr>` : ""}${blocks}</w:tc>`;
+}
+
+function tableCellBordersXml(borders: NonNullable<TableCellNode["borders"]>): string {
+  const sides = [
+    borders.top ? borderSideXml("top", borders.top) : "",
+    borders.left ? borderSideXml("left", borders.left) : "",
+    borders.bottom ? borderSideXml("bottom", borders.bottom) : "",
+    borders.right ? borderSideXml("right", borders.right) : "",
+  ].join("");
+
+  return sides ? `<w:tcBorders>${sides}</w:tcBorders>` : "";
 }
 
 function tableCellMarginsXml(margins: NonNullable<TableCellNode["margins"]>): string {

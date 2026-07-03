@@ -263,6 +263,8 @@ export type TableNode = {
   grid?: number[];
   width?: number;
   borders?: "single";
+  alignment?: ParagraphAlignment;
+  cellSpacing?: number;
   rows: TableRowNode[];
 };
 
@@ -282,6 +284,8 @@ export type TableCellNode = {
   verticalMerge?: "restart" | "continue";
   verticalAlignment?: "top" | "center" | "bottom";
   shading?: TableCellShading;
+  borders?: ParagraphBorders;
+  textDirection?: "lrTb" | "tbRl" | "btLr";
   margins?: TableCellMargins;
   blocks: ParagraphNode[];
 };

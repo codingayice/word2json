@@ -240,6 +240,26 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:t>Cell</w:t>");
   });
 
+  it("writes table alignment and cell spacing", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        alignment: "center",
+        cellSpacing: 120,
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Centered" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:jc w:val="center"/>');
+    expect(xml).toContain('<w:tblCellSpacing w:w="120" w:type="dxa"/>');
+  });
+
   it("writes table grid and row height", async () => {
     const document = createDocumentJson([
       {
@@ -326,6 +346,59 @@ describe("DOCX writer", () => {
 
     expect(xml).toContain('<w:shd w:fill="D9EAF7"/>');
     expect(xml).toContain('<w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="180" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="180" w:type="dxa"/></w:tcMar>');
+  });
+
+  it("writes cell borders", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                borders: {
+                  top: { style: "single", size: 8, color: "4472C4", space: 0 },
+                  bottom: { style: "single", size: 8, color: "4472C4", space: 0 },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Bordered cell" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:tcBorders>");
+    expect(xml).toContain('<w:top w:val="single" w:sz="8" w:space="0" w:color="4472C4"/>');
+    expect(xml).toContain('<w:bottom w:val="single" w:sz="8" w:space="0" w:color="4472C4"/>');
+  });
+
+  it("writes cell text direction", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                textDirection: "btLr",
+                blocks: [{ type: "paragraph", runs: [{ text: "Vertical" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:textDirection w:val="btLr"/>');
   });
 
   it("writes lists with numbering definitions and paragraph numbering", async () => {
@@ -1309,6 +1382,24 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips table alignment and cell spacing", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        alignment: "center",
+        cellSpacing: 120,
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Centered" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips table grid and row height", async () => {
     const source = createDocumentJson([
       {
@@ -1377,6 +1468,55 @@ describe("DOCX reader", () => {
                 shading: { fill: "D9EAF7" },
                 margins: { top: 120, right: 180, bottom: 120, left: 180 },
                 blocks: [{ type: "paragraph", runs: [{ text: "Header" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell borders", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                borders: {
+                  top: { style: "single", size: 8, color: "4472C4", space: 0 },
+                  bottom: { style: "single", size: 8, color: "4472C4", space: 0 },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Bordered cell" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell text direction", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                textDirection: "btLr",
+                blocks: [{ type: "paragraph", runs: [{ text: "Vertical" }] }],
               },
             ],
           },
