@@ -1084,12 +1084,20 @@ function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
       colorScheme +
       `</a:clrScheme>` +
       `<a:fontScheme name="${escapeAttribute(theme.name)}">` +
-      `<a:majorFont><a:latin typeface="${escapeAttribute(theme.fonts.major)}"/></a:majorFont>` +
-      `<a:minorFont><a:latin typeface="${escapeAttribute(theme.fonts.minor)}"/></a:minorFont>` +
+      themeFontXml("majorFont", theme.fonts.major, theme.fonts.majorEastAsia, theme.fonts.majorComplexScript) +
+      themeFontXml("minorFont", theme.fonts.minor, theme.fonts.minorEastAsia, theme.fonts.minorComplexScript) +
       `</a:fontScheme>` +
       `</a:themeElements>` +
       `</a:theme>`,
   );
+}
+
+function themeFontXml(tag: "majorFont" | "minorFont", latin: string, eastAsia: string | undefined, complexScript: string | undefined): string {
+  return `<a:${tag}>` +
+    `<a:latin typeface="${escapeAttribute(latin)}"/>` +
+    (eastAsia ? `<a:ea typeface="${escapeAttribute(eastAsia)}"/>` : "") +
+    (complexScript ? `<a:cs typeface="${escapeAttribute(complexScript)}"/>` : "") +
+    `</a:${tag}>`;
 }
 
 function themeColorXml(tag: string, color: string | undefined): string {

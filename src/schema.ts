@@ -114,6 +114,10 @@ export type DocumentTheme = {
 export type ThemeFonts = {
   major: string;
   minor: string;
+  majorEastAsia?: string;
+  majorComplexScript?: string;
+  minorEastAsia?: string;
+  minorComplexScript?: string;
 };
 
 export type ThemeColors = {

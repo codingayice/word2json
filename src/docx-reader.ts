@@ -354,11 +354,29 @@ async function parseTheme(zip: JSZip): Promise<DocumentTheme | undefined> {
 
   return {
     name: typeof theme.name === "string" ? theme.name : "Theme",
-    fonts: {
-      major: majorLatin.typeface,
-      minor: minorLatin.typeface,
-    },
+    fonts: themeFonts(fontScheme, majorLatin.typeface, minorLatin.typeface),
     colors: themeColors(colorScheme, accent1),
+  };
+}
+
+function themeFontValue(fontScheme: XmlNode, group: "majorFont" | "minorFont", slot: "ea" | "cs"): string | undefined {
+  const font = asObject(asObject(fontScheme[group])[slot]);
+  return typeof font.typeface === "string" ? font.typeface : undefined;
+}
+
+function themeFonts(fontScheme: XmlNode, major: string, minor: string): DocumentTheme["fonts"] {
+  const majorEastAsia = themeFontValue(fontScheme, "majorFont", "ea");
+  const majorComplexScript = themeFontValue(fontScheme, "majorFont", "cs");
+  const minorEastAsia = themeFontValue(fontScheme, "minorFont", "ea");
+  const minorComplexScript = themeFontValue(fontScheme, "minorFont", "cs");
+
+  return {
+    major,
+    minor,
+    ...(majorEastAsia ? { majorEastAsia } : {}),
+    ...(majorComplexScript ? { majorComplexScript } : {}),
+    ...(minorEastAsia ? { minorEastAsia } : {}),
+    ...(minorComplexScript ? { minorComplexScript } : {}),
   };
 }
 

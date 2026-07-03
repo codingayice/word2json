@@ -2111,6 +2111,36 @@ describe("DOCX writer", () => {
     expect(theme).toContain('<a:hlink><a:srgbClr val="0563C1"/></a:hlink>');
     expect(theme).toContain('<a:folHlink><a:srgbClr val="954F72"/></a:folHlink>');
   });
+
+  it("writes theme script fonts", async () => {
+    const document = {
+      version: "1.0" as const,
+      theme: {
+        name: "Multilingual Theme",
+        fonts: {
+          major: "Aptos Display",
+          minor: "Aptos",
+          majorEastAsia: "SimSun",
+          majorComplexScript: "Arial",
+          minorEastAsia: "Microsoft YaHei",
+          minorComplexScript: "Arial",
+        },
+        colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const theme = await zip.file("word/theme/theme1.xml")!.async("string");
+
+    expect(theme).toContain('<a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface="SimSun"/><a:cs typeface="Arial"/></a:majorFont>');
+    expect(theme).toContain('<a:minorFont><a:latin typeface="Aptos"/><a:ea typeface="Microsoft YaHei"/><a:cs typeface="Arial"/></a:minorFont>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -3867,6 +3897,34 @@ describe("DOCX reader", () => {
           hyperlink: "0563C1",
           followedHyperlink: "954F72",
         },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips theme script fonts", async () => {
+    const source = {
+      version: "1.0" as const,
+      theme: {
+        name: "Multilingual Theme",
+        fonts: {
+          major: "Aptos Display",
+          minor: "Aptos",
+          majorEastAsia: "SimSun",
+          majorComplexScript: "Arial",
+          minorEastAsia: "Microsoft YaHei",
+          minorComplexScript: "Arial",
+        },
+        colors: { accent1: "4472C4" },
       },
       sections: [
         {
