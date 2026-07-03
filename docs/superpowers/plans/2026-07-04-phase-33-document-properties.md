@@ -129,7 +129,7 @@ git add docs/superpowers/plans/2026-07-04-phase-33-document-properties.md src/sc
 git commit -m "feat: add phase 33 document properties"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-33-document-properties
