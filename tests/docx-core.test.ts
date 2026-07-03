@@ -133,6 +133,23 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:w w:val="90"/>');
   });
 
+  it("writes run border", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Boxed", border: { style: "single", size: 6, color: "C00000", space: 1 } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:bdr w:val="single" w:sz="6" w:space="1" w:color="C00000"/>');
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -619,6 +636,43 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:spacing w:before="240" w:after="120" w:line="360" w:lineRule="auto"/>');
   });
 
+  it("writes paragraph shading", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        shading: { fill: "FFF2CC" },
+        runs: [{ text: "Highlighted paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:shd w:fill="FFF2CC"/>');
+  });
+
+  it("writes paragraph borders", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        borders: {
+          top: { style: "single", size: 8, color: "4472C4", space: 2 },
+          bottom: { style: "single", size: 8, color: "4472C4", space: 2 },
+        },
+        runs: [{ text: "Bordered paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:pBdr>");
+    expect(xml).toContain('<w:top w:val="single" w:sz="8" w:space="2" w:color="4472C4"/>');
+    expect(xml).toContain('<w:bottom w:val="single" w:sz="8" w:space="2" w:color="4472C4"/>');
+  });
+
   it("writes paragraph indentation", async () => {
     const document = createDocumentJson([
       {
@@ -796,6 +850,36 @@ describe("DOCX writer", () => {
     const styles = await zip.file("word/styles.xml")!.async("string");
 
     expect(styles).toContain('<w:pPr><w:spacing w:before="120" w:after="120"/><w:ind w:left="360" w:hanging="180"/></w:pPr>');
+  });
+
+  it("writes paragraph style borders and shading", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          {
+            id: "Callout",
+            name: "Callout",
+            paragraph: {
+              shading: { fill: "E2F0D9" },
+              borders: { left: { style: "single", size: 12, color: "70AD47", space: 4 } },
+            },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, styleId: "Callout", runs: [{ text: "Styled callout" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:shd w:fill="E2F0D9"/>');
+    expect(styles).toContain('<w:left w:val="single" w:sz="12" w:space="4" w:color="70AD47"/>');
   });
 
   it("writes character and table styles", async () => {
@@ -1064,6 +1148,22 @@ describe("DOCX reader", () => {
         type: "paragraph",
         runs: [
           { text: "Tracked", characterSpacing: 20, scale: 90 },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run border", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Boxed", border: { style: "single", size: 6, color: "C00000", space: 1 } },
         ],
       },
     ]);
@@ -1482,6 +1582,39 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips paragraph shading", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        shading: { fill: "FFF2CC" },
+        runs: [{ text: "Highlighted paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph borders", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        borders: {
+          top: { style: "single", size: 8, color: "4472C4", space: 2 },
+          bottom: { style: "single", size: 8, color: "4472C4", space: 2 },
+        },
+        runs: [{ text: "Bordered paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips paragraph indentation", async () => {
     const source = createDocumentJson([
       {
@@ -1623,6 +1756,34 @@ describe("DOCX reader", () => {
           blocks: [
             { type: "paragraph" as const, styleId: "BodyText", runs: [{ text: "Styled body" }] },
           ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph style borders and shading", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          {
+            id: "Callout",
+            name: "Callout",
+            paragraph: {
+              shading: { fill: "E2F0D9" },
+              borders: { left: { style: "single", size: 12, color: "70AD47", space: 4 } },
+            },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, styleId: "Callout", runs: [{ text: "Styled callout" }] }],
         },
       ],
     };

@@ -257,10 +257,14 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
   const alignment = asObject(properties.jc);
   const spacing = parseParagraphSpacing(properties.spacing);
   const indent = parseParagraphIndent(properties.ind);
+  const shading = parseShading(properties.shd);
+  const borders = parseParagraphBorders(properties.pBdr);
   const parsed = {
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
     ...(spacing ? { spacing } : {}),
     ...(indent ? { indent } : {}),
+    ...(shading ? { shading } : {}),
+    ...(borders ? { borders } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -275,6 +279,7 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const verticalAlign = asObject(properties.vertAlign);
   const characterSpacing = asObject(properties.spacing);
   const scale = asObject(properties.w);
+  const border = parseBorder(properties.bdr);
   const parsed = {
     ...(properties.b !== undefined ? { bold: true } : {}),
     ...(properties.i !== undefined ? { italic: true } : {}),
@@ -291,6 +296,7 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<StyleRunProperties["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
+    ...(border ? { border } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -665,6 +671,8 @@ function parseParagraph(
   const alignmentNode = asObject(properties.jc);
   const spacing = parseParagraphSpacing(properties.spacing);
   const indent = parseParagraphIndent(properties.ind);
+  const shading = parseShading(properties.shd);
+  const borders = parseParagraphBorders(properties.pBdr);
   const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
   const style = typeof styleNode.val === "string"
@@ -684,9 +692,50 @@ function parseParagraph(
     ...(alignment ? { alignment } : {}),
     ...(spacing ? { spacing } : {}),
     ...(indent ? { indent } : {}),
+    ...(shading ? { shading } : {}),
+    ...(borders ? { borders } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
     runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes),
+  };
+}
+
+function parseShading(value: unknown): NonNullable<ParagraphNode["shading"]> | undefined {
+  const shading = asObject(value);
+
+  return typeof shading.fill === "string" ? { fill: shading.fill } : undefined;
+}
+
+function parseParagraphBorders(value: unknown): NonNullable<ParagraphNode["borders"]> | undefined {
+  const borders = asObject(value);
+  const parsed = {
+    ...parseParagraphBorderSide(borders.top, "top"),
+    ...parseParagraphBorderSide(borders.left, "left"),
+    ...parseParagraphBorderSide(borders.bottom, "bottom"),
+    ...parseParagraphBorderSide(borders.right, "right"),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseParagraphBorderSide(value: unknown, side: keyof NonNullable<ParagraphNode["borders"]>): Partial<NonNullable<ParagraphNode["borders"]>> {
+  const border = parseBorder(value);
+
+  return border ? { [side]: border } : {};
+}
+
+function parseBorder(value: unknown): NonNullable<TextRun["border"]> | undefined {
+  const border = asObject(value);
+
+  if (border.val !== "single") {
+    return undefined;
+  }
+
+  return {
+    style: "single",
+    ...(border.sz !== undefined ? { size: parseNumber(border.sz) } : {}),
+    ...(typeof border.color === "string" ? { color: border.color } : {}),
+    ...(border.space !== undefined ? { space: parseNumber(border.space) } : {}),
   };
 }
 
@@ -908,6 +957,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   const verticalAlign = asObject(properties.vertAlign);
   const characterSpacing = asObject(properties.spacing);
   const scale = asObject(properties.w);
+  const border = parseBorder(properties.bdr);
 
   return {
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
@@ -922,6 +972,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
+    ...(border ? { border } : {}),
   };
 }
 

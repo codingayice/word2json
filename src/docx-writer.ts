@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type {
+  BorderDefinition,
   DocumentBlock,
   DocumentJson,
   ImageNode,
@@ -217,6 +218,8 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
     : "";
   const spacing = paragraph.spacing ? paragraphSpacingXml(paragraph.spacing) : "";
   const indent = paragraph.indent ? paragraphIndentXml(paragraph.indent) : "";
+  const shading = paragraph.shading ? shadingXml(paragraph.shading) : "";
+  const borders = paragraph.borders ? paragraphBordersXml(paragraph.borders) : "";
   const list = paragraph.list
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
@@ -227,9 +230,32 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
       paragraph.pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
     ].join("")
     : "";
-  const properties = `${style}${alignment}${spacing}${indent}${list}${pagination}`;
+  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}`;
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
+}
+
+function shadingXml(shading: { fill: string }): string {
+  return `<w:shd w:fill="${escapeAttribute(shading.fill)}"/>`;
+}
+
+function paragraphBordersXml(borders: NonNullable<ParagraphNode["borders"]>): string {
+  const sides = [
+    borders.top ? borderSideXml("top", borders.top) : "",
+    borders.left ? borderSideXml("left", borders.left) : "",
+    borders.bottom ? borderSideXml("bottom", borders.bottom) : "",
+    borders.right ? borderSideXml("right", borders.right) : "",
+  ].join("");
+
+  return sides ? `<w:pBdr>${sides}</w:pBdr>` : "";
+}
+
+function borderSideXml(side: "top" | "left" | "bottom" | "right" | "bdr", border: BorderDefinition): string {
+  return `<w:${side} w:val="${border.style}"` +
+    (border.size !== undefined ? ` w:sz="${border.size}"` : "") +
+    (border.space !== undefined ? ` w:space="${border.space}"` : "") +
+    (border.color ? ` w:color="${escapeAttribute(border.color)}"` : "") +
+    `/>`;
 }
 
 function paragraphSpacingXml(spacing: NonNullable<ParagraphNode["spacing"]>): string {
@@ -362,6 +388,7 @@ function runPropertiesXml(run: TextRun): string {
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
+    run.border ? borderSideXml("bdr", run.border) : "",
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
@@ -601,6 +628,8 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
     properties.alignment ? `<w:jc w:val="${properties.alignment}"/>` : "",
     properties.spacing ? paragraphSpacingXml(properties.spacing) : "",
     properties.indent ? paragraphIndentXml(properties.indent) : "",
+    properties.shading ? shadingXml(properties.shading) : "",
+    properties.borders ? paragraphBordersXml(properties.borders) : "",
   ].join("");
 
   return paragraphProperties ? `<w:pPr>${paragraphProperties}</w:pPr>` : "";
@@ -626,6 +655,7 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
+    run.border ? borderSideXml("bdr", run.border) : "",
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";

@@ -80,6 +80,7 @@ export type StyleRunProperties = {
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
+  border?: BorderDefinition;
 };
 
 export type HighlightColor = "yellow" | "green" | "cyan" | "magenta" | "blue" | "red" | "darkBlue" | "darkCyan" | "darkGreen" | "darkMagenta" | "darkRed" | "darkYellow" | "darkGray" | "lightGray" | "black";
@@ -90,6 +91,26 @@ export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
   spacing?: ParagraphSpacing;
   indent?: ParagraphIndent;
+  shading?: ShadingDefinition;
+  borders?: ParagraphBorders;
+};
+
+export type ShadingDefinition = {
+  fill: string;
+};
+
+export type BorderDefinition = {
+  style: "single";
+  size?: number;
+  color?: string;
+  space?: number;
+};
+
+export type ParagraphBorders = {
+  top?: BorderDefinition;
+  left?: BorderDefinition;
+  bottom?: BorderDefinition;
+  right?: BorderDefinition;
 };
 
 export type TableStyleDefinition = StyleDefinition & {
@@ -146,6 +167,8 @@ export type ParagraphNode = {
   alignment?: ParagraphAlignment;
   spacing?: ParagraphSpacing;
   indent?: ParagraphIndent;
+  shading?: ShadingDefinition;
+  borders?: ParagraphBorders;
   list?: ListSettings;
   pagination?: ParagraphPagination;
   runs: TextRun[];
