@@ -1175,6 +1175,8 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
   const alias = asObject(properties.alias);
   const tag = asObject(properties.tag);
   const lock = asObject(properties.lock);
+  const appearance = asObject(properties.appearance);
+  const color = asObject(properties.color);
   const dataBinding = parseDataBindingContentControl(properties.dataBinding);
   const placeholder = parsePlaceholderContentControl(properties.placeholder);
   const checkbox = parseCheckboxContentControl(properties.checkBox);
@@ -1187,6 +1189,9 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
     ...(typeof alias.val === "string" ? { alias: alias.val } : {}),
     ...(typeof tag.val === "string" ? { tag: tag.val } : {}),
     ...(typeof lock.val === "string" ? { lock: lock.val as NonNullable<ParagraphNode["contentControl"]>["lock"] } : {}),
+    ...(typeof appearance.val === "string" ? { appearance: appearance.val as NonNullable<ParagraphNode["contentControl"]>["appearance"] } : {}),
+    ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...(properties.showingPlcHdr !== undefined ? { showingPlaceholder: true } : {}),
     ...(dataBinding ? { dataBinding } : {}),
     ...(placeholder ? { placeholder } : {}),
     ...(checkbox ? { checkbox } : {}),

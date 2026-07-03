@@ -254,6 +254,9 @@ export type ContentControl = {
   alias?: string;
   tag?: string;
   lock?: "sdtLocked" | "contentLocked" | "sdtContentLocked" | "unlocked";
+  appearance?: "boundingBox" | "tags" | "hidden";
+  color?: string;
+  showingPlaceholder?: boolean;
   dataBinding?: ContentControlDataBinding;
   placeholder?: ContentControlPlaceholder;
   checkbox?: CheckboxContentControl;

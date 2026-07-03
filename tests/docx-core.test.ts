@@ -476,6 +476,34 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:dataBinding w:storeItemID="{11111111-2222-3333-4444-555555555555}" w:xpath="/customer/name[1]" w:prefixMappings="xmlns:crm=&apos;urn:crm&apos;"/>');
   });
 
+  it("writes content control appearance metadata", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Click or tap here",
+            contentControl: {
+              alias: "Prompt",
+              tag: "prompt",
+              appearance: "tags",
+              color: "2F5496",
+              showingPlaceholder: true,
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:appearance w:val="tags"/>');
+    expect(xml).toContain('<w:color w:val="2F5496"/>');
+    expect(xml).toContain("<w:showingPlcHdr/>");
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2289,6 +2317,31 @@ describe("DOCX reader", () => {
                 xpath: "/customer/name[1]",
                 prefixMappings: "xmlns:crm='urn:crm'",
               },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips content control appearance metadata", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Click or tap here",
+            contentControl: {
+              alias: "Prompt",
+              tag: "prompt",
+              appearance: "tags",
+              color: "2F5496",
+              showingPlaceholder: true,
             },
           },
         ],
