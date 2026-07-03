@@ -302,6 +302,40 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:func><m:fName><m:r><m:t>sin</m:t></m:r></m:fName><m:e><m:d><m:dPr><m:begChr m:val="("/><m:endChr m:val=")"/></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d></m:e></m:func>');
   });
 
+  it("writes limit office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "limitLower" as const,
+                  base: [{ type: "text" as const, text: "lim" }],
+                  limit: [{ type: "text" as const, text: "x→0" }],
+                },
+                {
+                  type: "limitUpper" as const,
+                  base: [{ type: "text" as const, text: "max" }],
+                  limit: [{ type: "text" as const, text: "n" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<m:limLow><m:e><m:r><m:t>lim</m:t></m:r></m:e><m:lim><m:r><m:t>x→0</m:t></m:r></m:lim></m:limLow>");
+    expect(xml).toContain("<m:limUpp><m:e><m:r><m:t>max</m:t></m:r></m:e><m:lim><m:r><m:t>n</m:t></m:r></m:lim></m:limUpp>");
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2905,6 +2939,44 @@ describe("DOCX reader", () => {
                       denominator: [{ type: "text" as const, text: "b" }],
                     },
                   ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips limit office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "limitLower" as const,
+                  base: [{ type: "text" as const, text: "lim" }],
+                  limit: [
+                    {
+                      type: "subscript" as const,
+                      base: [{ type: "text" as const, text: "x" }],
+                      subscript: [{ type: "text" as const, text: "0" }],
+                    },
+                  ],
+                },
+                {
+                  type: "limitUpper" as const,
+                  base: [{ type: "text" as const, text: "sup" }],
+                  limit: [{ type: "text" as const, text: "n" }],
                 },
               ],
             },

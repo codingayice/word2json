@@ -423,7 +423,9 @@ export type MathNode =
   | { type: "delimiter"; begin?: string; end?: string; content: MathNode[] }
   | { type: "accent"; mark: string; content: MathNode[] }
   | { type: "bar"; position: "top" | "bottom"; content: MathNode[] }
-  | { type: "function"; name: MathNode[]; argument: MathNode[] };
+  | { type: "function"; name: MathNode[]; argument: MathNode[] }
+  | { type: "limitLower"; base: MathNode[]; limit: MathNode[] }
+  | { type: "limitUpper"; base: MathNode[]; limit: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";

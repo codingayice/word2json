@@ -728,6 +728,14 @@ function mathNodeXml(node: MathNode): string {
     return `<m:func><m:fName>${node.name.map((child) => mathNodeXml(child)).join("")}</m:fName><m:e>${node.argument.map((child) => mathNodeXml(child)).join("")}</m:e></m:func>`;
   }
 
+  if (node.type === "limitLower") {
+    return `<m:limLow><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:lim>${node.limit.map((child) => mathNodeXml(child)).join("")}</m:lim></m:limLow>`;
+  }
+
+  if (node.type === "limitUpper") {
+    return `<m:limUpp><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:lim>${node.limit.map((child) => mathNodeXml(child)).join("")}</m:lim></m:limUpp>`;
+  }
+
   return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +

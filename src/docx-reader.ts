@@ -1713,6 +1713,24 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           argument: parseMathNodes(asObject(funcNode.e)),
         };
       }),
+    ...asArray(container.limLow)
+      .map((limitLower) => {
+        const limitNode = asObject(limitLower);
+        return {
+          type: "limitLower" as const,
+          base: parseMathNodes(asObject(limitNode.e)),
+          limit: parseMathNodes(asObject(limitNode.lim)),
+        };
+      }),
+    ...asArray(container.limUpp)
+      .map((limitUpper) => {
+        const limitNode = asObject(limitUpper);
+        return {
+          type: "limitUpper" as const,
+          base: parseMathNodes(asObject(limitNode.e)),
+          limit: parseMathNodes(asObject(limitNode.lim)),
+        };
+      }),
   ];
 }
 
