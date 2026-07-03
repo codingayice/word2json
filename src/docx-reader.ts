@@ -868,8 +868,7 @@ function parseParagraphRuns(
 ): TextRun[] {
   const commentRanges = commentRangesByText(paragraph);
   const bookmarkRanges = bookmarkRangesByText(paragraph);
-  const normalRuns = asArray(paragraph.r)
-    .map((run) => parseRun(run))
+  const normalRuns = parseComplexFieldRuns(asArray(paragraph.r))
     .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined)
     .map((run) => withMatchingNotes(run, footnotes, endnotes))
     .map((run) => withMatchingBookmark(run, bookmarkRanges))
@@ -878,6 +877,56 @@ function parseParagraphRuns(
     .flatMap((hyperlink) => parseHyperlink(hyperlink, relationships, comments));
 
   return [...normalRuns, ...hyperlinkRuns];
+}
+
+function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
+  const runs: TextRun[] = [];
+
+  for (let index = 0; index < runValues.length; index += 1) {
+    const run = asObject(runValues[index]);
+    const fieldChar = asObject(run.fldChar);
+
+    if (fieldChar.fldCharType !== "begin") {
+      runs.push(parseRun(run));
+      continue;
+    }
+
+    const instructionRun = asObject(runValues[index + 1]);
+    const separateRun = asObject(runValues[index + 2]);
+    const resultRun = asObject(runValues[index + 3]);
+    const endRun = asObject(runValues[index + 4]);
+
+    if (
+      instructionRun.instrText === undefined ||
+      asObject(separateRun.fldChar).fldCharType !== "separate" ||
+      asObject(endRun.fldChar).fldCharType !== "end"
+    ) {
+      runs.push(parseRun(run));
+      continue;
+    }
+
+    const field = parseField(instructionRun.instrText);
+    const result = parseText(resultRun.t);
+    runs.push({
+      text: "",
+      field: result ? fieldWithResult(field, result) : field,
+    });
+    index += 4;
+  }
+
+  return runs;
+}
+
+function fieldWithResult(field: TextRun["field"], result: string): TextRun["field"] {
+  if (field === "page" || field === "numPages") {
+    return { type: field, result };
+  }
+
+  if (typeof field === "object") {
+    return { ...field, result };
+  }
+
+  return field;
 }
 
 function withMatchingNotes(run: TextRun, footnotes: NoteMap, endnotes: NoteMap): TextRun {
@@ -944,11 +993,13 @@ function withMatchingBookmark(run: TextRun, ranges: Map<string, string>): TextRu
 function parseHyperlink(value: unknown, relationships: RelationshipMap, comments: CommentMap): TextRun[] {
   const hyperlink = asObject(value);
   const url = typeof hyperlink.id === "string" ? relationships[hyperlink.id] : undefined;
+  const anchor = typeof hyperlink.anchor === "string" ? hyperlink.anchor : undefined;
   const ranges = commentRangesByText(hyperlink);
 
   return asArray(hyperlink.r).map((run) => ({
     ...withMatchingComment(parseRun(run), ranges, comments),
     ...(url ? { link: { url } } : {}),
+    ...(anchor ? { link: { anchor } } : {}),
   })).filter((run) => run.text !== "");
 }
 
@@ -1028,11 +1079,28 @@ function parseField(value: unknown): TextRun["field"] {
     return { type: "pageRef", target: instruction.slice("PAGEREF ".length) };
   }
 
+  if (instruction.startsWith("TOC")) {
+    return parseTocField(instruction);
+  }
+
   if (instruction.startsWith("REF ")) {
     return { type: "ref", target: instruction.slice("REF ".length) };
   }
 
   return instruction === "NUMPAGES" ? "numPages" : "page";
+}
+
+function parseTocField(instruction: string): TextRun["field"] {
+  const switches = instruction
+    .slice("TOC".length)
+    .trim()
+    .replaceAll("\\", "")
+    .trim();
+
+  return {
+    type: "toc",
+    ...(switches ? { switches } : {}),
+  };
 }
 
 function parseRunFont(properties: XmlNode): Partial<TextRun> {

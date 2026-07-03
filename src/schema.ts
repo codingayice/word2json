@@ -224,13 +224,15 @@ export type TextRun = StyleRunProperties & {
   comment?: Comment;
   bookmark?: Bookmark;
   break?: BreakKind;
-  field?: FieldKind | ReferenceField;
+  field?: FieldKind | FieldWithResult | ReferenceField | TocField;
   footnote?: NoteContent;
   endnote?: NoteContent;
 };
 
 export type Hyperlink = {
   url: string;
+} | {
+  anchor: string;
 };
 
 export type Comment = {
@@ -248,9 +250,21 @@ export type BreakKind = "line" | "page";
 
 export type FieldKind = "page" | "numPages";
 
+export type FieldWithResult = {
+  type: FieldKind;
+  result?: string;
+};
+
 export type ReferenceField = {
   type: "ref" | "pageRef";
   target: string;
+  result?: string;
+};
+
+export type TocField = {
+  type: "toc";
+  switches?: string;
+  result?: string;
 };
 
 export type NoteContent = {

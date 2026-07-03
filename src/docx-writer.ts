@@ -323,6 +323,10 @@ function runXml(run: TextRun, context: WriterContext): string {
     return runContent;
   }
 
+  if ("anchor" in run.link) {
+    return `<w:hyperlink w:anchor="${escapeAttribute(run.link.anchor)}">${runContent}</w:hyperlink>`;
+  }
+
   const relationshipId = `rIdHyperlink${context.hyperlinks.length + 1}`;
   context.hyperlinks.push({ id: relationshipId, url: run.link.url });
   return `<w:hyperlink r:id="${relationshipId}">${runContent}</w:hyperlink>`;
@@ -330,15 +334,30 @@ function runXml(run: TextRun, context: WriterContext): string {
 
 function fieldRunXml(field: TextRun["field"]): string {
   const instruction = fieldInstruction(field);
+  const result = typeof field === "object" && "result" in field && field.result !== undefined
+    ? field.result
+    : "";
 
   return `<w:r><w:fldChar w:fldCharType="begin"/></w:r>` +
     `<w:r><w:instrText xml:space="preserve">${instruction}</w:instrText></w:r>` +
     `<w:r><w:fldChar w:fldCharType="separate"/></w:r>` +
-    `<w:r><w:t></w:t></w:r>` +
+    `<w:r><w:t>${escapeXml(result)}</w:t></w:r>` +
     `<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
 }
 
 function fieldInstruction(field: TextRun["field"]): string {
+  if (typeof field === "object" && field.type === "toc") {
+    return `TOC${field.switches ? ` ${tocSwitchesInstruction(field.switches)}` : ""}`;
+  }
+
+  if (typeof field === "object" && field.type === "page") {
+    return "PAGE";
+  }
+
+  if (typeof field === "object" && field.type === "numPages") {
+    return "NUMPAGES";
+  }
+
   if (field === "page") {
     return "PAGE";
   }
@@ -356,6 +375,13 @@ function fieldInstruction(field: TextRun["field"]): string {
   }
 
   return "PAGE";
+}
+
+function tocSwitchesInstruction(switches: string): string {
+  return switches
+    .split(/ (?=[a-z]\b)/i)
+    .map((value) => `\\${value}`)
+    .join(" ");
 }
 
 function wrapBookmarkIfNeeded(run: TextRun, runContent: string, context: WriterContext): string {

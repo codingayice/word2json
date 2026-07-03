@@ -491,6 +491,26 @@ describe("DOCX writer", () => {
     expect(rels).toContain('TargetMode="External"');
   });
 
+  it("writes internal hyperlinks", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Jump", link: { anchor: "Clause1" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+
+    expect(xml).toContain('<w:hyperlink w:anchor="Clause1">');
+    expect(xml).not.toContain('Target="Clause1"');
+    expect(rels).not.toContain("rIdHyperlink1");
+  });
+
   it("writes comments with ranges references and comments part", async () => {
     const document = createDocumentJson([
       {
@@ -914,6 +934,42 @@ describe("DOCX writer", () => {
 
     expect(xml).toContain('<w:instrText xml:space="preserve">REF Clause1</w:instrText>');
     expect(xml).toContain('<w:instrText xml:space="preserve">PAGEREF Clause1</w:instrText>');
+  });
+
+  it("writes field result text", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "", field: { type: "page", result: "3" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:instrText xml:space="preserve">PAGE</w:instrText>');
+    expect(xml).toContain("<w:t>3</w:t>");
+  });
+
+  it("writes table of contents field", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "", field: { type: "toc", switches: 'o "1-3" h z u', result: "Table of Contents" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:instrText xml:space="preserve">TOC \\o "1-3" \\h \\z \\u</w:instrText>');
+    expect(xml).toContain("<w:t>Table of Contents</w:t>");
   });
 
   it("writes paragraph style definitions and paragraph style ids", async () => {
@@ -1666,6 +1722,22 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips internal hyperlinks", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Jump", link: { anchor: "Clause1" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips comments", async () => {
     const source = createDocumentJson([
       {
@@ -2006,6 +2078,38 @@ describe("DOCX reader", () => {
           { text: "", field: { type: "ref", target: "Clause1" } },
           { text: " on page " },
           { text: "", field: { type: "pageRef", target: "Clause1" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips field result text", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "", field: { type: "page", result: "3" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table of contents field", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "", field: { type: "toc", switches: 'o "1-3" h z u', result: "Table of Contents" } },
         ],
       },
     ]);
