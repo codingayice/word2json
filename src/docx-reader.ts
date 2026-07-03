@@ -1752,6 +1752,19 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           content: parseMathNodes(asObject(boxNode.e)),
         };
       }),
+    ...asArray(container.borderBox)
+      .map((borderBox) => {
+        const borderBoxNode = asObject(borderBox);
+        const borderBoxProperties = asObject(borderBoxNode.borderBoxPr);
+        return {
+          type: "borderBox" as const,
+          ...mathBooleanProperty(borderBoxProperties.hideTop, "hideTop"),
+          ...mathBooleanProperty(borderBoxProperties.hideBot, "hideBottom"),
+          ...mathBooleanProperty(borderBoxProperties.hideLeft, "hideLeft"),
+          ...mathBooleanProperty(borderBoxProperties.hideRight, "hideRight"),
+          content: parseMathNodes(asObject(borderBoxNode.e)),
+        };
+      }),
   ];
 }
 
