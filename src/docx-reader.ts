@@ -1731,6 +1731,14 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           limit: parseMathNodes(asObject(limitNode.lim)),
         };
       }),
+    ...asArray(container.eqArr)
+      .map((equationArray) => {
+        const equationArrayNode = asObject(equationArray);
+        return {
+          type: "equationArray" as const,
+          rows: asArray(equationArrayNode.e).map((row) => parseMathNodes(asObject(row))),
+        };
+      }),
   ];
 }
 

@@ -336,6 +336,42 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<m:limUpp><m:e><m:r><m:t>max</m:t></m:r></m:e><m:lim><m:r><m:t>n</m:t></m:r></m:lim></m:limUpp>");
   });
 
+  it("writes equation array office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "equationArray" as const,
+                  rows: [
+                    [{ type: "text" as const, text: "x=1" }],
+                    [
+                      {
+                        type: "fraction" as const,
+                        numerator: [{ type: "text" as const, text: "a" }],
+                        denominator: [{ type: "text" as const, text: "b" }],
+                      },
+                    ],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<m:eqArr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:f><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:e></m:eqArr>");
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2977,6 +3013,41 @@ describe("DOCX reader", () => {
                   type: "limitUpper" as const,
                   base: [{ type: "text" as const, text: "sup" }],
                   limit: [{ type: "text" as const, text: "n" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips equation array office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "equationArray" as const,
+                  rows: [
+                    [{ type: "text" as const, text: "x=1" }],
+                    [
+                      {
+                        type: "superscript" as const,
+                        base: [{ type: "text" as const, text: "y" }],
+                        superscript: [{ type: "text" as const, text: "2" }],
+                      },
+                    ],
+                  ],
                 },
               ],
             },
