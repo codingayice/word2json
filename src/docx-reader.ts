@@ -875,19 +875,47 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const style = asObject(properties.tblStyle);
   const width = asObject(properties.tblW);
   const borders = asObject(properties.tblBorders);
+  const grid = parseTableGrid(table.tblGrid);
 
   return {
     type: "table",
     ...(typeof style.val === "string" ? { styleId: style.val } : {}),
+    ...(grid ? { grid } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     rows: asArray(table.tr).map((rowValue) => {
       const row = asObject(rowValue);
+      const height = parseTableRowHeight(row.trPr);
 
       return {
+        ...(height ? { height } : {}),
         cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes, numberingContext)),
       };
     }),
+  };
+}
+
+function parseTableGrid(value: unknown): number[] | undefined {
+  const grid = asObject(value);
+  const columns = asArray(grid.gridCol)
+    .map((column) => asObject(column))
+    .filter((column) => column.w !== undefined)
+    .map((column) => parseNumber(column.w));
+
+  return columns.length > 0 ? columns : undefined;
+}
+
+function parseTableRowHeight(value: unknown): TableNode["rows"][number]["height"] | undefined {
+  const properties = asObject(value);
+  const height = asObject(properties.trHeight);
+
+  if (height.val === undefined) {
+    return undefined;
+  }
+
+  return {
+    value: parseNumber(height.val),
+    ...(typeof height.hRule === "string" ? { rule: height.hRule as NonNullable<TableNode["rows"][number]["height"]>["rule"] } : {}),
   };
 }
 
@@ -896,12 +924,44 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   const properties = asObject(cell.tcPr);
   const width = asObject(properties.tcW);
   const gridSpan = asObject(properties.gridSpan);
+  const verticalMerge = asObject(properties.vMerge);
+  const verticalAlignment = asObject(properties.vAlign);
+  const shading = parseTableCellShading(properties.shd);
+  const margins = parseTableCellMargins(properties.tcMar);
 
   return {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(gridSpan.val !== undefined ? { colSpan: parseNumber(gridSpan.val) } : {}),
+    ...(typeof verticalMerge.val === "string" ? { verticalMerge: verticalMerge.val as NonNullable<TableCellNode["verticalMerge"]> } : {}),
+    ...(typeof verticalAlignment.val === "string" ? { verticalAlignment: verticalAlignment.val as NonNullable<TableCellNode["verticalAlignment"]> } : {}),
+    ...(shading ? { shading } : {}),
+    ...(margins ? { margins } : {}),
     blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes, numberingContext)),
   };
+}
+
+function parseTableCellShading(value: unknown): TableCellNode["shading"] | undefined {
+  const shading = asObject(value);
+
+  return typeof shading.fill === "string" ? { fill: shading.fill } : undefined;
+}
+
+function parseTableCellMargins(value: unknown): TableCellNode["margins"] | undefined {
+  const margins = asObject(value);
+  const parsed = {
+    ...parseTableCellMarginSide(margins.top, "top"),
+    ...parseTableCellMarginSide(margins.right, "right"),
+    ...parseTableCellMarginSide(margins.bottom, "bottom"),
+    ...parseTableCellMarginSide(margins.left, "left"),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseTableCellMarginSide(value: unknown, side: keyof NonNullable<TableCellNode["margins"]>): Partial<NonNullable<TableCellNode["margins"]>> {
+  const margin = asObject(value);
+
+  return margin.w !== undefined ? { [side]: parseNumber(margin.w) } : {};
 }
 
 function parseText(value: unknown): string {

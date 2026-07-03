@@ -145,6 +145,94 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:t>Cell</w:t>");
   });
 
+  it("writes table grid and row height", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        grid: [2400, 3600],
+        rows: [
+          {
+            height: { value: 480, rule: "exact" as const },
+            cells: [
+              { blocks: [{ type: "paragraph", runs: [{ text: "A" }] }] },
+              { blocks: [{ type: "paragraph", runs: [{ text: "B" }] }] },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblGrid><w:gridCol w:w="2400"/><w:gridCol w:w="3600"/></w:tblGrid>');
+    expect(xml).toContain('<w:trPr><w:trHeight w:val="480" w:hRule="exact"/></w:trPr>');
+  });
+
+  it("writes cell vertical merge and alignment", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                verticalMerge: "restart" as const,
+                verticalAlignment: "center" as const,
+                blocks: [{ type: "paragraph", runs: [{ text: "Merged" }] }],
+              },
+              { blocks: [{ type: "paragraph", runs: [{ text: "Top" }] }] },
+            ],
+          },
+          {
+            cells: [
+              {
+                verticalMerge: "continue" as const,
+                blocks: [{ type: "paragraph", runs: [] }],
+              },
+              { blocks: [{ type: "paragraph", runs: [{ text: "Bottom" }] }] },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:vMerge w:val="restart"/>');
+    expect(xml).toContain('<w:vAlign w:val="center"/>');
+    expect(xml).toContain('<w:vMerge w:val="continue"/>');
+  });
+
+  it("writes cell shading and margins", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                shading: { fill: "D9EAF7" },
+                margins: { top: 120, right: 180, bottom: 120, left: 180 },
+                blocks: [{ type: "paragraph", runs: [{ text: "Header" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:shd w:fill="D9EAF7"/>');
+    expect(xml).toContain('<w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="180" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="180" w:type="dxa"/></w:tcMar>');
+  });
+
   it("writes lists with numbering definitions and paragraph numbering", async () => {
     const document = createDocumentJson([
       {
@@ -833,6 +921,87 @@ describe("DOCX reader", () => {
               {
                 width: 3000,
                 blocks: [{ type: "paragraph", runs: [{ text: "Cell" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table grid and row height", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        grid: [2400, 3600],
+        rows: [
+          {
+            height: { value: 480, rule: "exact" as const },
+            cells: [
+              { blocks: [{ type: "paragraph", runs: [{ text: "A" }] }] },
+              { blocks: [{ type: "paragraph", runs: [{ text: "B" }] }] },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell vertical merge and alignment", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                verticalMerge: "restart" as const,
+                verticalAlignment: "center" as const,
+                blocks: [{ type: "paragraph", runs: [{ text: "Merged" }] }],
+              },
+              { blocks: [{ type: "paragraph", runs: [{ text: "Top" }] }] },
+            ],
+          },
+          {
+            cells: [
+              {
+                verticalMerge: "continue" as const,
+                blocks: [{ type: "paragraph", runs: [] }],
+              },
+              { blocks: [{ type: "paragraph", runs: [{ text: "Bottom" }] }] },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell shading and margins", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                shading: { fill: "D9EAF7" },
+                margins: { top: 120, right: 180, bottom: 120, left: 180 },
+                blocks: [{ type: "paragraph", runs: [{ text: "Header" }] }],
               },
             ],
           },

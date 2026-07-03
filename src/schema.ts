@@ -200,19 +200,41 @@ export type NoteContent = {
 export type TableNode = {
   type: "table";
   styleId?: string;
+  grid?: number[];
   width?: number;
   borders?: "single";
   rows: TableRowNode[];
 };
 
 export type TableRowNode = {
+  height?: TableRowHeight;
   cells: TableCellNode[];
+};
+
+export type TableRowHeight = {
+  value: number;
+  rule?: "auto" | "atLeast" | "exact";
 };
 
 export type TableCellNode = {
   width?: number;
   colSpan?: number;
+  verticalMerge?: "restart" | "continue";
+  verticalAlignment?: "top" | "center" | "bottom";
+  shading?: TableCellShading;
+  margins?: TableCellMargins;
   blocks: ParagraphNode[];
+};
+
+export type TableCellShading = {
+  fill: string;
+};
+
+export type TableCellMargins = {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
 };
 
 export type ImageNode = {

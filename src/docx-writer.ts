@@ -346,20 +346,44 @@ function tableXml(table: TableNode, context: WriterContext): string {
     table.borders ? tableBordersXml(table.borders) : "",
   ].join("");
   const rows = table.rows
-    .map((row) => `<w:tr>${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`)
-    .join("");
+    .map((row) => {
+      const rowProperties = row.height
+        ? `<w:trPr><w:trHeight w:val="${row.height.value}"${row.height.rule ? ` w:hRule="${row.height.rule}"` : ""}/></w:trPr>`
+        : "";
 
-  return `<w:tbl>${properties ? `<w:tblPr>${properties}</w:tblPr>` : ""}${rows}</w:tbl>`;
+      return `<w:tr>${rowProperties}${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`;
+    })
+    .join("");
+  const grid = table.grid
+    ? `<w:tblGrid>${table.grid.map((width) => `<w:gridCol w:w="${width}"/>`).join("")}</w:tblGrid>`
+    : "";
+
+  return `<w:tbl>${properties ? `<w:tblPr>${properties}</w:tblPr>` : ""}${grid}${rows}</w:tbl>`;
 }
 
 function tableCellXml(cell: TableCellNode, context: WriterContext): string {
   const properties = [
     cell.width ? `<w:tcW w:w="${cell.width}" w:type="dxa"/>` : "",
     cell.colSpan ? `<w:gridSpan w:val="${cell.colSpan}"/>` : "",
+    cell.verticalMerge ? `<w:vMerge w:val="${cell.verticalMerge}"/>` : "",
+    cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
+    cell.shading ? `<w:shd w:fill="${escapeAttribute(cell.shading.fill)}"/>` : "",
+    cell.margins ? tableCellMarginsXml(cell.margins) : "",
   ].join("");
   const blocks = cell.blocks.map((block) => paragraphXml(block, context)).join("");
 
   return `<w:tc>${properties ? `<w:tcPr>${properties}</w:tcPr>` : ""}${blocks}</w:tc>`;
+}
+
+function tableCellMarginsXml(margins: NonNullable<TableCellNode["margins"]>): string {
+  const sides = [
+    margins.top !== undefined ? `<w:top w:w="${margins.top}" w:type="dxa"/>` : "",
+    margins.right !== undefined ? `<w:right w:w="${margins.right}" w:type="dxa"/>` : "",
+    margins.bottom !== undefined ? `<w:bottom w:w="${margins.bottom}" w:type="dxa"/>` : "",
+    margins.left !== undefined ? `<w:left w:w="${margins.left}" w:type="dxa"/>` : "",
+  ].join("");
+
+  return sides ? `<w:tcMar>${sides}</w:tcMar>` : "";
 }
 
 function tableBordersXml(border: "single"): string {
