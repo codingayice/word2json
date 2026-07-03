@@ -565,6 +565,10 @@ function parseBlockXml(
     return parseRevisedParagraph(parsed.moveTo, "moveTo", relationships, comments, footnotes, endnotes, numberingContext);
   }
 
+  if (parsed.sdt !== undefined) {
+    return parseSdtBlock(parsed.sdt, relationships, comments, footnotes, endnotes, numberingContext, xml);
+  }
+
   if (parsed.p !== undefined) {
     if (xml.includes("<w:drawing>")) {
       return parseImageBlock(parsed.p, media);
@@ -581,6 +585,26 @@ function parseBlockXml(
   }
 
   return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes, numberingContext);
+}
+
+function parseSdtBlock(
+  value: unknown,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+  footnotes: NoteMap,
+  endnotes: NoteMap,
+  numberingContext: NumberingContext,
+  xml: string,
+): ParagraphNode | TableNode | ImageNode {
+  const sdt = asObject(value);
+  const content = asObject(sdt.sdtContent);
+  const contentControl = parseContentControl(sdt.sdtPr);
+  const paragraph = parseParagraph(content.p, relationships, comments, footnotes, endnotes, numberingContext, xml.match(/<w:p\b[\s\S]*<\/w:p>/)?.[0]);
+
+  return {
+    ...paragraph,
+    ...(contentControl ? { contentControl } : {}),
+  };
 }
 
 function parseRevisedParagraph(
@@ -698,17 +722,22 @@ function extractBlockXmlFromContent(body: string): string[] {
   while (index < body.length) {
     const paragraphIndex = body.indexOf("<w:p", index);
     const tableIndex = body.indexOf("<w:tbl", index);
+    const sdtIndex = body.indexOf("<w:sdt", index);
     const insertIndex = body.indexOf("<w:ins", index);
     const deleteIndex = body.indexOf("<w:del", index);
     const moveFromIndex = body.indexOf("<w:moveFrom", index);
     const moveToIndex = body.indexOf("<w:moveTo", index);
-    const blockIndex = nextBlockIndex(paragraphIndex, tableIndex, insertIndex, deleteIndex, moveFromIndex, moveToIndex);
+    const blockIndex = nextBlockIndex(paragraphIndex, tableIndex, sdtIndex, insertIndex, deleteIndex, moveFromIndex, moveToIndex);
 
     if (blockIndex === -1) {
       break;
     }
 
-    if (blockIndex === insertIndex) {
+    if (blockIndex === sdtIndex) {
+      const end = body.indexOf("</w:sdt>", blockIndex);
+      blocks.push(body.slice(blockIndex, end + "</w:sdt>".length));
+      index = end + "</w:sdt>".length;
+    } else if (blockIndex === insertIndex) {
       const end = body.indexOf("</w:ins>", blockIndex);
       blocks.push(body.slice(blockIndex, end + "</w:ins>".length));
       index = end + "</w:ins>".length;
@@ -1015,6 +1044,7 @@ function parseParagraphRuns(
     ...asArray(paragraph.del).map((del) => ({ del })),
     ...asArray(paragraph.moveFrom).map((moveFrom) => ({ moveFrom })),
     ...asArray(paragraph.moveTo).map((moveTo) => ({ moveTo })),
+    ...asArray(paragraph.sdt).map((sdt) => ({ sdt })),
   ];
   const normalRuns = parseComplexFieldRuns([...asArray(paragraph.r), ...revisionRuns])
     .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined)
@@ -1049,6 +1079,11 @@ function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
 
     if (run.moveTo !== undefined) {
       runs.push(parseMoveRevision(run.moveTo, "moveTo"));
+      continue;
+    }
+
+    if (run.sdt !== undefined) {
+      runs.push(parseSdtRun(run.sdt));
       continue;
     }
 
@@ -1122,6 +1157,31 @@ function parseMoveRevision(value: unknown, type: "moveFrom" | "moveTo"): TextRun
       ...(typeof revision.date === "string" ? { date: revision.date } : {}),
     },
   };
+}
+
+function parseSdtRun(value: unknown): TextRun {
+  const sdt = asObject(value);
+  const content = asObject(sdt.sdtContent);
+  const contentControl = parseContentControl(sdt.sdtPr);
+
+  return {
+    ...parseRun(content.r),
+    ...(contentControl ? { contentControl } : {}),
+  };
+}
+
+function parseContentControl(value: unknown): ParagraphNode["contentControl"] | undefined {
+  const properties = asObject(value);
+  const alias = asObject(properties.alias);
+  const tag = asObject(properties.tag);
+  const lock = asObject(properties.lock);
+  const parsed = {
+    ...(typeof alias.val === "string" ? { alias: alias.val } : {}),
+    ...(typeof tag.val === "string" ? { tag: tag.val } : {}),
+    ...(typeof lock.val === "string" ? { lock: lock.val as NonNullable<ParagraphNode["contentControl"]>["lock"] } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function fieldWithResult(field: TextRun["field"], result: string): TextRun["field"] {

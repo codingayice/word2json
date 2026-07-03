@@ -225,13 +225,26 @@ function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string 
   const endComment = paragraph.commentRangeEnd
     ? paragraphCommentRangeEndXml(paragraph.commentRangeEnd)
     : "";
+  const controlledParagraph = paragraph.contentControl
+    ? contentControlXml(paragraph.contentControl, plainParagraph)
+    : plainParagraph;
 
   if (!paragraph.revision) {
-    return `${startComment}${plainParagraph}${endComment}`;
+    return `${startComment}${controlledParagraph}${endComment}`;
   }
 
   const wrapper = revisionElement(paragraph.revision.type);
-  return `${startComment}<w:${wrapper}${revisionAttributes(paragraph.revision)}>${plainParagraph}</w:${wrapper}>${endComment}`;
+  return `${startComment}<w:${wrapper}${revisionAttributes(paragraph.revision)}>${controlledParagraph}</w:${wrapper}>${endComment}`;
+}
+
+function contentControlXml(contentControl: NonNullable<ParagraphNode["contentControl"]>, content: string): string {
+  const properties = [
+    contentControl.alias ? `<w:alias w:val="${escapeAttribute(contentControl.alias)}"/>` : "",
+    contentControl.tag ? `<w:tag w:val="${escapeAttribute(contentControl.tag)}"/>` : "",
+    contentControl.lock ? `<w:lock w:val="${contentControl.lock}"/>` : "",
+  ].join("");
+
+  return `<w:sdt><w:sdtPr>${properties}</w:sdtPr><w:sdtContent>${content}</w:sdtContent></w:sdt>`;
 }
 
 function paragraphCommentRangeStartXml(comment: NonNullable<ParagraphNode["commentRangeStart"]>, context: WriterContext): string {
@@ -390,7 +403,8 @@ function runXml(run: TextRun, context: WriterContext, options: { skipComment?: b
   const properties = runPropertiesXml(run);
   const textSpace = /^\s|\s$/.test(run.text) ? ' xml:space="preserve"' : "";
   const plainRun = `<w:r>${properties}<w:t${textSpace}>${escapeXml(run.text)}</w:t></w:r>`;
-  const revisedRun = wrapRevisionIfNeeded(run, plainRun);
+  const controlledRun = run.contentControl ? contentControlXml(run.contentControl, plainRun) : plainRun;
+  const revisedRun = wrapRevisionIfNeeded(run, controlledRun);
   const bookmarkedRun = wrapBookmarkIfNeeded(run, revisedRun, context);
   const runContent = options.skipComment ? bookmarkedRun : wrapCommentIfNeeded(run, bookmarkedRun, context);
 

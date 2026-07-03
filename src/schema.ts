@@ -180,6 +180,7 @@ export type ParagraphNode = {
   styleId?: string;
   revision?: RunRevision;
   propertyRevision?: ParagraphPropertyRevision;
+  contentControl?: ContentControl;
   alignment?: ParagraphAlignment;
   spacing?: ParagraphSpacing;
   indent?: ParagraphIndent;
@@ -225,6 +226,7 @@ export type ParagraphAlignment = "left" | "center" | "right" | "both";
 export type TextRun = StyleRunProperties & {
   text: string;
   styleId?: string;
+  contentControl?: ContentControl;
   revision?: RunRevision;
   link?: Hyperlink;
   comment?: Comment;
@@ -246,6 +248,12 @@ export type ParagraphPropertyRevision = {
   id: number;
   author: string;
   date?: string;
+};
+
+export type ContentControl = {
+  alias?: string;
+  tag?: string;
+  lock?: "sdtLocked" | "contentLocked" | "sdtContentLocked" | "unlocked";
 };
 
 export type Hyperlink = {

@@ -283,6 +283,41 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:pPrChange w:id="12" w:author="Mira" w:date="2026-07-04T04:00:00.000Z"><w:pPr/></w:pPrChange>');
   });
 
+  it("writes block content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        contentControl: { alias: "Customer Name", tag: "customer.name", lock: "sdtContentLocked" },
+        runs: [{ text: "Acme Inc." }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:sdt><w:sdtPr><w:alias w:val="Customer Name"/><w:tag w:val="customer.name"/><w:lock w:val="sdtContentLocked"/></w:sdtPr><w:sdtContent><w:p>');
+    expect(xml).toContain("<w:t>Acme Inc.</w:t>");
+    expect(xml).toContain("</w:p></w:sdtContent></w:sdt>");
+  });
+
+  it("writes run content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "INV-001", contentControl: { alias: "Invoice Number", tag: "invoice.number" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:sdt><w:sdtPr><w:alias w:val="Invoice Number"/><w:tag w:val="invoice.number"/></w:sdtPr><w:sdtContent><w:r><w:t>INV-001</w:t></w:r></w:sdtContent></w:sdt>');
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -1894,6 +1929,37 @@ describe("DOCX reader", () => {
         spacing: { before: 240 },
         propertyRevision: { id: 12, author: "Mira", date: "2026-07-04T04:00:00.000Z" },
         runs: [{ text: "Changed spacing" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips block content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        contentControl: { alias: "Customer Name", tag: "customer.name", lock: "sdtContentLocked" },
+        runs: [{ text: "Acme Inc." }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "INV-001", contentControl: { alias: "Invoice Number", tag: "invoice.number" } },
+        ],
       },
     ]);
 
