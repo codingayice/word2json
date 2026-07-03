@@ -1175,10 +1175,64 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
   const alias = asObject(properties.alias);
   const tag = asObject(properties.tag);
   const lock = asObject(properties.lock);
+  const checkbox = parseCheckboxContentControl(properties.checkBox);
+  const dropdown = parseDropdownContentControl(properties.dropDownList);
+  const date = parseDateContentControl(properties.date);
   const parsed = {
     ...(typeof alias.val === "string" ? { alias: alias.val } : {}),
     ...(typeof tag.val === "string" ? { tag: tag.val } : {}),
     ...(typeof lock.val === "string" ? { lock: lock.val as NonNullable<ParagraphNode["contentControl"]>["lock"] } : {}),
+    ...(checkbox ? { checkbox } : {}),
+    ...(dropdown ? { dropdown } : {}),
+    ...(date ? { date } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseCheckboxContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["checkbox"]> | undefined {
+  const checkbox = asObject(value);
+
+  if (Object.keys(checkbox).length === 0) {
+    return undefined;
+  }
+
+  const checked = asObject(checkbox.checked);
+  const checkedState = asObject(checkbox.checkedState);
+  const uncheckedState = asObject(checkbox.uncheckedState);
+
+  return {
+    checked: checked.val === 1 || checked.val === "1" || checked.val === true || checked.val === "true",
+    ...(typeof checkedState.val === "string" ? { checkedSymbol: checkedState.val } : {}),
+    ...(typeof uncheckedState.val === "string" ? { uncheckedSymbol: uncheckedState.val } : {}),
+  };
+}
+
+function parseDropdownContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["dropdown"]> | undefined {
+  const dropdown = asObject(value);
+  const items = asArray(dropdown.listItem)
+    .map((item) => asObject(item))
+    .filter((item) => item.displayText !== undefined || item.value !== undefined)
+    .map((item) => ({
+      displayText: String(item.displayText ?? ""),
+      value: String(item.value ?? ""),
+    }));
+
+  return items.length > 0 ? { items } : undefined;
+}
+
+function parseDateContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["date"]> | undefined {
+  const date = asObject(value);
+
+  if (Object.keys(date).length === 0) {
+    return undefined;
+  }
+
+  const fullDate = asObject(date.fullDate);
+  const format = asObject(date.dateFormat);
+  const parsed = {
+    ...(typeof fullDate.val === "string" ? { fullDate: fullDate.val } : {}),
+    ...(typeof format.val === "string" ? { format: format.val } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;

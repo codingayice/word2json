@@ -242,9 +242,35 @@ function contentControlXml(contentControl: NonNullable<ParagraphNode["contentCon
     contentControl.alias ? `<w:alias w:val="${escapeAttribute(contentControl.alias)}"/>` : "",
     contentControl.tag ? `<w:tag w:val="${escapeAttribute(contentControl.tag)}"/>` : "",
     contentControl.lock ? `<w:lock w:val="${contentControl.lock}"/>` : "",
+    contentControl.checkbox ? checkboxContentControlXml(contentControl.checkbox) : "",
+    contentControl.dropdown ? dropdownContentControlXml(contentControl.dropdown) : "",
+    contentControl.date ? dateContentControlXml(contentControl.date) : "",
   ].join("");
 
   return `<w:sdt><w:sdtPr>${properties}</w:sdtPr><w:sdtContent>${content}</w:sdtContent></w:sdt>`;
+}
+
+function checkboxContentControlXml(checkbox: NonNullable<NonNullable<ParagraphNode["contentControl"]>["checkbox"]>): string {
+  return `<w:checkBox>` +
+    `<w:checked w:val="${checkbox.checked ? 1 : 0}"/>` +
+    (checkbox.checkedSymbol ? `<w:checkedState w:val="${escapeAttribute(checkbox.checkedSymbol)}"/>` : "") +
+    (checkbox.uncheckedSymbol ? `<w:uncheckedState w:val="${escapeAttribute(checkbox.uncheckedSymbol)}"/>` : "") +
+    `</w:checkBox>`;
+}
+
+function dropdownContentControlXml(dropdown: NonNullable<NonNullable<ParagraphNode["contentControl"]>["dropdown"]>): string {
+  const items = dropdown.items
+    .map((item) => `<w:listItem w:displayText="${escapeAttribute(item.displayText)}" w:value="${escapeAttribute(item.value)}"/>`)
+    .join("");
+
+  return `<w:dropDownList>${items}</w:dropDownList>`;
+}
+
+function dateContentControlXml(date: NonNullable<NonNullable<ParagraphNode["contentControl"]>["date"]>): string {
+  return `<w:date>` +
+    (date.fullDate ? `<w:fullDate w:val="${escapeAttribute(date.fullDate)}"/>` : "") +
+    (date.format ? `<w:dateFormat w:val="${escapeAttribute(date.format)}"/>` : "") +
+    `</w:date>`;
 }
 
 function paragraphCommentRangeStartXml(comment: NonNullable<ParagraphNode["commentRangeStart"]>, context: WriterContext): string {

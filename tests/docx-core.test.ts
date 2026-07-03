@@ -318,6 +318,83 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:sdt><w:sdtPr><w:alias w:val="Invoice Number"/><w:tag w:val="invoice.number"/></w:sdtPr><w:sdtContent><w:r><w:t>INV-001</w:t></w:r></w:sdtContent></w:sdt>');
   });
 
+  it("writes checkbox content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "☒",
+            contentControl: {
+              alias: "Accepted",
+              tag: "accepted",
+              checkbox: { checked: true, checkedSymbol: "2612", uncheckedSymbol: "2610" },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:checkBox><w:checked w:val="1"/><w:checkedState w:val="2612"/><w:uncheckedState w:val="2610"/></w:checkBox>');
+  });
+
+  it("writes dropdown content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Gold",
+            contentControl: {
+              alias: "Plan",
+              tag: "plan",
+              dropdown: {
+                items: [
+                  { displayText: "Silver", value: "silver" },
+                  { displayText: "Gold", value: "gold" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:dropDownList><w:listItem w:displayText="Silver" w:value="silver"/><w:listItem w:displayText="Gold" w:value="gold"/></w:dropDownList>');
+  });
+
+  it("writes date content controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "2026-07-04",
+            contentControl: {
+              alias: "Due Date",
+              tag: "dueDate",
+              date: { fullDate: "2026-07-04T00:00:00Z", format: "yyyy-MM-dd" },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:date><w:fullDate w:val="2026-07-04T00:00:00Z"/><w:dateFormat w:val="yyyy-MM-dd"/></w:date>');
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -1959,6 +2036,80 @@ describe("DOCX reader", () => {
         type: "paragraph",
         runs: [
           { text: "INV-001", contentControl: { alias: "Invoice Number", tag: "invoice.number" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips checkbox content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "☒",
+            contentControl: {
+              alias: "Accepted",
+              tag: "accepted",
+              checkbox: { checked: true, checkedSymbol: "2612", uncheckedSymbol: "2610" },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips dropdown content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Gold",
+            contentControl: {
+              alias: "Plan",
+              tag: "plan",
+              dropdown: {
+                items: [
+                  { displayText: "Silver", value: "silver" },
+                  { displayText: "Gold", value: "gold" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips date content controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "2026-07-04",
+            contentControl: {
+              alias: "Due Date",
+              tag: "dueDate",
+              date: { fullDate: "2026-07-04T00:00:00Z", format: "yyyy-MM-dd" },
+            },
+          },
         ],
       },
     ]);

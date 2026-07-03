@@ -254,6 +254,29 @@ export type ContentControl = {
   alias?: string;
   tag?: string;
   lock?: "sdtLocked" | "contentLocked" | "sdtContentLocked" | "unlocked";
+  checkbox?: CheckboxContentControl;
+  dropdown?: DropdownContentControl;
+  date?: DateContentControl;
+};
+
+export type CheckboxContentControl = {
+  checked: boolean;
+  checkedSymbol?: string;
+  uncheckedSymbol?: string;
+};
+
+export type DropdownContentControl = {
+  items: DropdownItem[];
+};
+
+export type DropdownItem = {
+  displayText: string;
+  value: string;
+};
+
+export type DateContentControl = {
+  fullDate?: string;
+  format?: string;
 };
 
 export type Hyperlink = {
