@@ -135,7 +135,7 @@ git add docs/superpowers/plans/2026-07-04-phase-42-proofing-settings.md src/sche
 git commit -m "feat: add phase 42 proofing settings"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-42-proofing-settings
