@@ -346,9 +346,9 @@ async function parseTheme(zip: JSZip): Promise<DocumentTheme | undefined> {
   const colorScheme = asObject(elements.clrScheme);
   const majorLatin = asObject(asObject(fontScheme.majorFont).latin);
   const minorLatin = asObject(asObject(fontScheme.minorFont).latin);
-  const accent = asObject(asObject(colorScheme.accent1).srgbClr);
+  const accent1 = themeColorValue(colorScheme, "accent1");
 
-  if (typeof majorLatin.typeface !== "string" || typeof minorLatin.typeface !== "string" || typeof accent.val !== "string") {
+  if (typeof majorLatin.typeface !== "string" || typeof minorLatin.typeface !== "string" || typeof accent1 !== "string") {
     return undefined;
   }
 
@@ -358,9 +358,41 @@ async function parseTheme(zip: JSZip): Promise<DocumentTheme | undefined> {
       major: majorLatin.typeface,
       minor: minorLatin.typeface,
     },
-    colors: {
-      accent1: accent.val,
-    },
+    colors: themeColors(colorScheme, accent1),
+  };
+}
+
+function themeColorValue(colorScheme: XmlNode, slot: string): string | undefined {
+  const color = asObject(asObject(colorScheme[slot]).srgbClr);
+  return typeof color.val === "string" ? color.val : undefined;
+}
+
+function themeColors(colorScheme: XmlNode, accent1: string): DocumentTheme["colors"] {
+  const dark1 = themeColorValue(colorScheme, "dk1");
+  const light1 = themeColorValue(colorScheme, "lt1");
+  const dark2 = themeColorValue(colorScheme, "dk2");
+  const light2 = themeColorValue(colorScheme, "lt2");
+  const accent2 = themeColorValue(colorScheme, "accent2");
+  const accent3 = themeColorValue(colorScheme, "accent3");
+  const accent4 = themeColorValue(colorScheme, "accent4");
+  const accent5 = themeColorValue(colorScheme, "accent5");
+  const accent6 = themeColorValue(colorScheme, "accent6");
+  const hyperlink = themeColorValue(colorScheme, "hlink");
+  const followedHyperlink = themeColorValue(colorScheme, "folHlink");
+
+  return {
+    ...(dark1 ? { dark1 } : {}),
+    ...(light1 ? { light1 } : {}),
+    ...(dark2 ? { dark2 } : {}),
+    ...(light2 ? { light2 } : {}),
+    accent1,
+    ...(accent2 ? { accent2 } : {}),
+    ...(accent3 ? { accent3 } : {}),
+    ...(accent4 ? { accent4 } : {}),
+    ...(accent5 ? { accent5 } : {}),
+    ...(accent6 ? { accent6 } : {}),
+    ...(hyperlink ? { hyperlink } : {}),
+    ...(followedHyperlink ? { followedHyperlink } : {}),
   };
 }
 

@@ -117,7 +117,18 @@ export type ThemeFonts = {
 };
 
 export type ThemeColors = {
+  dark1?: string;
+  light1?: string;
+  dark2?: string;
+  light2?: string;
   accent1: string;
+  accent2?: string;
+  accent3?: string;
+  accent4?: string;
+  accent5?: string;
+  accent6?: string;
+  hyperlink?: string;
+  followedHyperlink?: string;
 };
 
 export type DocumentStyles = {

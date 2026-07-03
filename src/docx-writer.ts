@@ -1062,11 +1062,26 @@ function documentRelsXml(context: WriterContext): string {
 }
 
 function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
+  const colorScheme = [
+    themeColorXml("dk1", theme.colors.dark1),
+    themeColorXml("lt1", theme.colors.light1),
+    themeColorXml("dk2", theme.colors.dark2),
+    themeColorXml("lt2", theme.colors.light2),
+    themeColorXml("accent1", theme.colors.accent1),
+    themeColorXml("accent2", theme.colors.accent2),
+    themeColorXml("accent3", theme.colors.accent3),
+    themeColorXml("accent4", theme.colors.accent4),
+    themeColorXml("accent5", theme.colors.accent5),
+    themeColorXml("accent6", theme.colors.accent6),
+    themeColorXml("hlink", theme.colors.hyperlink),
+    themeColorXml("folHlink", theme.colors.followedHyperlink),
+  ].join("");
+
   return xmlDeclaration(
     `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${escapeAttribute(theme.name)}">` +
       `<a:themeElements>` +
       `<a:clrScheme name="${escapeAttribute(theme.name)}">` +
-      `<a:accent1><a:srgbClr val="${escapeAttribute(theme.colors.accent1)}"/></a:accent1>` +
+      colorScheme +
       `</a:clrScheme>` +
       `<a:fontScheme name="${escapeAttribute(theme.name)}">` +
       `<a:majorFont><a:latin typeface="${escapeAttribute(theme.fonts.major)}"/></a:majorFont>` +
@@ -1075,6 +1090,10 @@ function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
       `</a:themeElements>` +
       `</a:theme>`,
   );
+}
+
+function themeColorXml(tag: string, color: string | undefined): string {
+  return color ? `<a:${tag}><a:srgbClr val="${escapeAttribute(color)}"/></a:${tag}>` : "";
 }
 
 function stylesXml(document: DocumentJson): string {

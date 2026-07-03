@@ -2065,6 +2065,52 @@ describe("DOCX writer", () => {
     expect(rels).toContain('Target="theme/theme1.xml"');
     expect(contentTypes).toContain('/word/theme/theme1.xml');
   });
+
+  it("writes rich theme color scheme", async () => {
+    const document = {
+      version: "1.0" as const,
+      theme: {
+        name: "Contract Theme",
+        fonts: { major: "Aptos Display", minor: "Aptos" },
+        colors: {
+          dark1: "000000",
+          light1: "FFFFFF",
+          dark2: "1F2937",
+          light2: "F8FAFC",
+          accent1: "4472C4",
+          accent2: "ED7D31",
+          accent3: "A5A5A5",
+          accent4: "FFC000",
+          accent5: "5B9BD5",
+          accent6: "70AD47",
+          hyperlink: "0563C1",
+          followedHyperlink: "954F72",
+        },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const theme = await zip.file("word/theme/theme1.xml")!.async("string");
+
+    expect(theme).toContain('<a:dk1><a:srgbClr val="000000"/></a:dk1>');
+    expect(theme).toContain('<a:lt1><a:srgbClr val="FFFFFF"/></a:lt1>');
+    expect(theme).toContain('<a:dk2><a:srgbClr val="1F2937"/></a:dk2>');
+    expect(theme).toContain('<a:lt2><a:srgbClr val="F8FAFC"/></a:lt2>');
+    expect(theme).toContain('<a:accent1><a:srgbClr val="4472C4"/></a:accent1>');
+    expect(theme).toContain('<a:accent2><a:srgbClr val="ED7D31"/></a:accent2>');
+    expect(theme).toContain('<a:accent3><a:srgbClr val="A5A5A5"/></a:accent3>');
+    expect(theme).toContain('<a:accent4><a:srgbClr val="FFC000"/></a:accent4>');
+    expect(theme).toContain('<a:accent5><a:srgbClr val="5B9BD5"/></a:accent5>');
+    expect(theme).toContain('<a:accent6><a:srgbClr val="70AD47"/></a:accent6>');
+    expect(theme).toContain('<a:hlink><a:srgbClr val="0563C1"/></a:hlink>');
+    expect(theme).toContain('<a:folHlink><a:srgbClr val="954F72"/></a:folHlink>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -3787,6 +3833,40 @@ describe("DOCX reader", () => {
         name: "Contract Theme",
         fonts: { major: "Aptos Display", minor: "Aptos" },
         colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips rich theme color scheme", async () => {
+    const source = {
+      version: "1.0" as const,
+      theme: {
+        name: "Contract Theme",
+        fonts: { major: "Aptos Display", minor: "Aptos" },
+        colors: {
+          dark1: "000000",
+          light1: "FFFFFF",
+          dark2: "1F2937",
+          light2: "F8FAFC",
+          accent1: "4472C4",
+          accent2: "ED7D31",
+          accent3: "A5A5A5",
+          accent4: "FFC000",
+          accent5: "5B9BD5",
+          accent6: "70AD47",
+          hyperlink: "0563C1",
+          followedHyperlink: "954F72",
+        },
       },
       sections: [
         {
