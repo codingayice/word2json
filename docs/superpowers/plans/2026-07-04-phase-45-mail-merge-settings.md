@@ -148,7 +148,7 @@ git add docs/superpowers/plans/2026-07-04-phase-45-mail-merge-settings.md src/sc
 git commit -m "feat: add phase 45 mail merge settings"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-45-mail-merge-settings
