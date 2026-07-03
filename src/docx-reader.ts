@@ -271,6 +271,10 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const fonts = asObject(properties.rFonts);
   const size = asObject(properties.sz);
   const color = asObject(properties.color);
+  const highlight = asObject(properties.highlight);
+  const verticalAlign = asObject(properties.vertAlign);
+  const characterSpacing = asObject(properties.spacing);
+  const scale = asObject(properties.w);
   const parsed = {
     ...(properties.b !== undefined ? { bold: true } : {}),
     ...(properties.i !== undefined ? { italic: true } : {}),
@@ -279,6 +283,14 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
     ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
     ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<StyleRunProperties["highlight"]> } : {}),
+    ...(properties.strike !== undefined ? { strike: true } : {}),
+    ...(properties.dstrike !== undefined ? { doubleStrike: true } : {}),
+    ...(properties.smallCaps !== undefined ? { smallCaps: true } : {}),
+    ...(properties.caps !== undefined ? { allCaps: true } : {}),
+    ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<StyleRunProperties["verticalAlign"]> } : {}),
+    ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
+    ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -892,12 +904,24 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   const fonts = asObject(properties.rFonts);
   const size = asObject(properties.sz);
   const color = asObject(properties.color);
+  const highlight = asObject(properties.highlight);
+  const verticalAlign = asObject(properties.vertAlign);
+  const characterSpacing = asObject(properties.spacing);
+  const scale = asObject(properties.w);
 
   return {
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
     ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
     ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<TextRun["highlight"]> } : {}),
+    ...(properties.strike !== undefined ? { strike: true } : {}),
+    ...(properties.dstrike !== undefined ? { doubleStrike: true } : {}),
+    ...(properties.smallCaps !== undefined ? { smallCaps: true } : {}),
+    ...(properties.caps !== undefined ? { allCaps: true } : {}),
+    ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
+    ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
+    ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
   };
 }
 
@@ -1001,8 +1025,16 @@ function parseText(value: unknown): string {
     return value;
   }
 
+  if (typeof value === "number") {
+    return String(value);
+  }
+
   const node = asObject(value);
   const text = node["#text"];
+  if (typeof text === "number") {
+    return String(text);
+  }
+
   return typeof text === "string" ? text : "";
 }
 

@@ -354,6 +354,14 @@ function runPropertiesXml(run: TextRun): string {
     run.fontFamily ? `<w:rFonts w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"/>` : "",
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
+    run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
+    run.strike ? "<w:strike/>" : "",
+    run.doubleStrike ? "<w:dstrike/>" : "",
+    run.smallCaps ? "<w:smallCaps/>" : "",
+    run.allCaps ? "<w:caps/>" : "",
+    run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
+    run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
+    run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
@@ -610,6 +618,14 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
     run.fontFamily ? `<w:rFonts w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"/>` : "",
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
+    run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
+    run.strike ? "<w:strike/>" : "",
+    run.doubleStrike ? "<w:dstrike/>" : "",
+    run.smallCaps ? "<w:smallCaps/>" : "",
+    run.allCaps ? "<w:caps/>" : "",
+    run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
+    run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
+    run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";

@@ -75,6 +75,64 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:color w:val="C00000"/>');
   });
 
+  it("writes run highlight and strike", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Marked", highlight: "yellow", strike: true, doubleStrike: true },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:highlight w:val="yellow"/>');
+    expect(xml).toContain("<w:strike/>");
+    expect(xml).toContain("<w:dstrike/>");
+  });
+
+  it("writes run caps and vertical align", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Formula", smallCaps: true, allCaps: true, verticalAlign: "superscript" as const },
+          { text: "2", verticalAlign: "subscript" as const },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:smallCaps/>");
+    expect(xml).toContain("<w:caps/>");
+    expect(xml).toContain('<w:vertAlign w:val="superscript"/>');
+    expect(xml).toContain('<w:vertAlign w:val="subscript"/>');
+  });
+
+  it("writes run character spacing and scale", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Tracked", characterSpacing: 20, scale: 90 },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:spacing w:val="20"/>');
+    expect(xml).toContain('<w:w w:val="90"/>');
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -822,6 +880,38 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:i/><w:u w:val="single"/><w:color w:val="C00000"/></w:rPr>');
   });
 
+  it("writes style run advanced formatting", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [
+          {
+            id: "WarningText",
+            name: "Warning Text",
+            run: { highlight: "yellow" as const, strike: true, verticalAlign: "superscript" as const, characterSpacing: 20, scale: 90 },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Warning", styleId: "WarningText" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="character" w:styleId="WarningText">');
+    expect(styles).toContain('<w:rPr><w:highlight w:val="yellow"/><w:strike/><w:vertAlign w:val="superscript"/><w:spacing w:val="20"/><w:w w:val="90"/></w:rPr>');
+  });
+
   it("writes table style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -925,6 +1015,55 @@ describe("DOCX reader", () => {
             fontSize: 16,
             color: "C00000",
           },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run highlight and strike", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Marked", highlight: "yellow", strike: true, doubleStrike: true },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run caps and vertical align", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Formula", smallCaps: true, allCaps: true, verticalAlign: "superscript" as const },
+          { text: "2", verticalAlign: "subscript" as const },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run character spacing and scale", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Tracked", characterSpacing: 20, scale: 90 },
         ],
       },
     ]);
@@ -1553,6 +1692,36 @@ describe("DOCX reader", () => {
             {
               type: "paragraph" as const,
               runs: [{ text: "Term", styleId: "DefinedTerm" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run advanced formatting", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [
+          {
+            id: "WarningText",
+            name: "Warning Text",
+            run: { highlight: "yellow" as const, strike: true, verticalAlign: "superscript" as const, characterSpacing: 20, scale: 90 },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Warning", styleId: "WarningText" }],
             },
           ],
         },

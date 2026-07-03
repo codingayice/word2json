@@ -72,7 +72,19 @@ export type StyleRunProperties = {
   fontFamily?: string;
   fontSize?: number;
   color?: string;
+  highlight?: HighlightColor;
+  strike?: boolean;
+  doubleStrike?: boolean;
+  smallCaps?: boolean;
+  allCaps?: boolean;
+  verticalAlign?: RunVerticalAlign;
+  characterSpacing?: number;
+  scale?: number;
 };
+
+export type HighlightColor = "yellow" | "green" | "cyan" | "magenta" | "blue" | "red" | "darkBlue" | "darkCyan" | "darkGreen" | "darkMagenta" | "darkRed" | "darkYellow" | "darkGray" | "lightGray" | "black";
+
+export type RunVerticalAlign = "superscript" | "subscript" | "baseline";
 
 export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
@@ -169,15 +181,9 @@ export type ParagraphStyle = "normal" | "heading1" | "heading2" | "heading3";
 
 export type ParagraphAlignment = "left" | "center" | "right" | "both";
 
-export type TextRun = {
+export type TextRun = StyleRunProperties & {
   text: string;
   styleId?: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  fontFamily?: string;
-  fontSize?: number;
-  color?: string;
   link?: Hyperlink;
   comment?: Comment;
   bookmark?: Bookmark;
