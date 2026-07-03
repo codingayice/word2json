@@ -9,6 +9,9 @@ import type {
   ParagraphAlignment,
   ParagraphNode,
   ParagraphStyle,
+  StyleParagraphProperties,
+  StyleRunProperties,
+  TableStyleDefinition,
   TableCellNode,
   TableNode,
   TextRun,
@@ -105,16 +108,20 @@ async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
       const next = asObject(style.next);
+      const paragraph = parseStyleParagraphProperties(style.pPr);
+      const run = parseStyleRunProperties(style.rPr);
 
       return {
         id: String(style.styleId),
         name: typeof name.val === "string" ? name.val : String(style.styleId),
         ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
         ...(typeof next.val === "string" ? { next: next.val } : {}),
+        ...(paragraph ? { paragraph } : {}),
+        ...(run ? { run } : {}),
       };
     });
   const character = parseStyleDefinitions(styleNodes, "character");
-  const table = parseStyleDefinitions(styleNodes, "table");
+  const table = parseTableStyleDefinitions(styleNodes);
   const styles: DocumentStyles = {
     ...(paragraph.length > 0 ? { paragraph } : {}),
     ...(character.length > 0 ? { character } : {}),
@@ -130,13 +137,69 @@ function parseStyleDefinitions(styleNodes: XmlNode[], type: "character" | "table
     .map((style) => {
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
+      const run = parseStyleRunProperties(style.rPr);
 
       return {
         id: String(style.styleId),
         name: typeof name.val === "string" ? name.val : String(style.styleId),
         ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
+        ...(run ? { run } : {}),
       };
     });
+}
+
+function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition[] {
+  return styleNodes
+    .filter((style) => style.type === "table" && typeof style.styleId === "string")
+    .map((style) => {
+      const name = asObject(style.name);
+      const basedOn = asObject(style.basedOn);
+      const run = parseStyleRunProperties(style.rPr);
+      const table = parseStyleTableProperties(style.tblPr);
+
+      return {
+        id: String(style.styleId),
+        name: typeof name.val === "string" ? name.val : String(style.styleId),
+        ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
+        ...(run ? { run } : {}),
+        ...(table ? { table } : {}),
+      };
+    });
+}
+
+function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties | undefined {
+  const properties = asObject(value);
+  const alignment = asObject(properties.jc);
+  const parsed = {
+    ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined {
+  const properties = asObject(value);
+  const fonts = asObject(properties.rFonts);
+  const size = asObject(properties.sz);
+  const color = asObject(properties.color);
+  const parsed = {
+    ...(properties.b !== undefined ? { bold: true } : {}),
+    ...(properties.i !== undefined ? { italic: true } : {}),
+    ...(properties.u !== undefined ? { underline: true } : {}),
+    ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
+    ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
+    ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
+    ...(typeof color.val === "string" ? { color: color.val } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseStyleTableProperties(value: unknown): TableStyleDefinition["table"] | undefined {
+  const properties = asObject(value);
+  const borders = asObject(properties.tblBorders);
+
+  return borders.top !== undefined ? { borders: "single" } : undefined;
 }
 
 async function parseSections(

@@ -23,17 +23,40 @@ export type ThemeColors = {
 export type DocumentStyles = {
   paragraph?: ParagraphStyleDefinition[];
   character?: StyleDefinition[];
-  table?: StyleDefinition[];
+  table?: TableStyleDefinition[];
 };
 
 export type StyleDefinition = {
   id: string;
   name: string;
   basedOn?: string;
+  run?: StyleRunProperties;
 };
 
 export type ParagraphStyleDefinition = StyleDefinition & {
   next?: string;
+  paragraph?: StyleParagraphProperties;
+};
+
+export type StyleRunProperties = {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  fontFamily?: string;
+  fontSize?: number;
+  color?: string;
+};
+
+export type StyleParagraphProperties = {
+  alignment?: ParagraphAlignment;
+};
+
+export type TableStyleDefinition = StyleDefinition & {
+  table?: StyleTableProperties;
+};
+
+export type StyleTableProperties = {
+  borders?: "single";
 };
 
 export type SectionNode = {

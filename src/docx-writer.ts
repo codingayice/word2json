@@ -6,6 +6,8 @@ import type {
   PageSettings,
   ParagraphNode,
   SectionNode,
+  StyleParagraphProperties,
+  StyleRunProperties,
   TableCellNode,
   TableNode,
   TextRun,
@@ -505,13 +507,15 @@ function stylesXml(document: DocumentJson): string {
       `<w:name w:val="${escapeAttribute(style.name)}"/>` +
       (style.basedOn ? `<w:basedOn w:val="${escapeAttribute(style.basedOn)}"/>` : "") +
       (style.next ? `<w:next w:val="${escapeAttribute(style.next)}"/>` : "") +
+      paragraphStylePropertiesXml(style.paragraph) +
+      styleRunPropertiesXml(style.run) +
       `</w:style>`)
     .join("");
   const characterStyles = (document.styles?.character ?? [])
-    .map((style) => styleXml("character", style.id, style.name, style.basedOn))
+    .map((style) => styleXml("character", style.id, style.name, style.basedOn, style.run))
     .join("");
   const tableStyles = (document.styles?.table ?? [])
-    .map((style) => styleXml("table", style.id, style.name, style.basedOn))
+    .map((style) => styleXml("table", style.id, style.name, style.basedOn, style.run, tableStylePropertiesXml(style.table)))
     .join("");
 
   return xmlDeclaration(
@@ -527,11 +531,46 @@ function stylesXml(document: DocumentJson): string {
   );
 }
 
-function styleXml(type: "character" | "table", id: string, name: string, basedOn?: string): string {
+function styleXml(type: "character" | "table", id: string, name: string, basedOn?: string, run?: StyleRunProperties, properties = ""): string {
   return `<w:style w:type="${type}" w:styleId="${escapeAttribute(id)}">` +
     `<w:name w:val="${escapeAttribute(name)}"/>` +
     (basedOn ? `<w:basedOn w:val="${escapeAttribute(basedOn)}"/>` : "") +
+    styleRunPropertiesXml(run) +
+    properties +
     `</w:style>`;
+}
+
+function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): string {
+  if (!properties?.alignment) {
+    return "";
+  }
+
+  return `<w:pPr><w:jc w:val="${properties.alignment}"/></w:pPr>`;
+}
+
+function styleRunPropertiesXml(run?: StyleRunProperties): string {
+  if (!run) {
+    return "";
+  }
+
+  const properties = [
+    run.bold ? "<w:b/>" : "",
+    run.italic ? "<w:i/>" : "",
+    run.underline ? '<w:u w:val="single"/>' : "",
+    run.fontFamily ? `<w:rFonts w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"/>` : "",
+    run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
+    run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
+  ].join("");
+
+  return properties ? `<w:rPr>${properties}</w:rPr>` : "";
+}
+
+function tableStylePropertiesXml(properties: NonNullable<NonNullable<DocumentJson["styles"]>["table"]>[number]["table"]): string {
+  if (!properties?.borders) {
+    return "";
+  }
+
+  return `<w:tblPr>${tableBordersXml(properties.borders)}</w:tblPr>`;
 }
 
 function numberingXml(): string {
