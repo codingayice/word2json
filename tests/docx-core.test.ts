@@ -448,6 +448,34 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:placeholder><w:docPart w:val="DefaultPlaceholder_22610170"/></w:placeholder>');
   });
 
+  it("writes content control data bindings", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Ada Lovelace",
+            contentControl: {
+              alias: "Customer",
+              tag: "customer",
+              dataBinding: {
+                storeItemId: "{11111111-2222-3333-4444-555555555555}",
+                xpath: "/customer/name[1]",
+                prefixMappings: "xmlns:crm='urn:crm'",
+              },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:dataBinding w:storeItemID="{11111111-2222-3333-4444-555555555555}" w:xpath="/customer/name[1]" w:prefixMappings="xmlns:crm=&apos;urn:crm&apos;"/>');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2234,6 +2262,33 @@ describe("DOCX reader", () => {
               alias: "Recipient",
               tag: "recipient",
               placeholder: { docPart: "DefaultPlaceholder_22610170" },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips content control data bindings", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Ada Lovelace",
+            contentControl: {
+              alias: "Customer",
+              tag: "customer",
+              dataBinding: {
+                storeItemId: "{11111111-2222-3333-4444-555555555555}",
+                xpath: "/customer/name[1]",
+                prefixMappings: "xmlns:crm='urn:crm'",
+              },
             },
           },
         ],

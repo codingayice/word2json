@@ -242,6 +242,7 @@ function contentControlXml(contentControl: NonNullable<ParagraphNode["contentCon
     contentControl.alias ? `<w:alias w:val="${escapeAttribute(contentControl.alias)}"/>` : "",
     contentControl.tag ? `<w:tag w:val="${escapeAttribute(contentControl.tag)}"/>` : "",
     contentControl.lock ? `<w:lock w:val="${contentControl.lock}"/>` : "",
+    contentControl.dataBinding ? dataBindingContentControlXml(contentControl.dataBinding) : "",
     contentControl.placeholder ? placeholderContentControlXml(contentControl.placeholder) : "",
     contentControl.checkbox ? checkboxContentControlXml(contentControl.checkbox) : "",
     contentControl.dropdown ? dropdownContentControlXml(contentControl.dropdown) : "",
@@ -252,6 +253,16 @@ function contentControlXml(contentControl: NonNullable<ParagraphNode["contentCon
   ].join("");
 
   return `<w:sdt><w:sdtPr>${properties}</w:sdtPr><w:sdtContent>${content}</w:sdtContent></w:sdt>`;
+}
+
+function dataBindingContentControlXml(dataBinding: NonNullable<NonNullable<ParagraphNode["contentControl"]>["dataBinding"]>): string {
+  const attributes = [
+    dataBinding.storeItemId ? `w:storeItemID="${escapeAttribute(dataBinding.storeItemId)}"` : "",
+    dataBinding.xpath ? `w:xpath="${escapeAttribute(dataBinding.xpath)}"` : "",
+    dataBinding.prefixMappings ? `w:prefixMappings="${escapeAttribute(dataBinding.prefixMappings)}"` : "",
+  ].filter(Boolean).join(" ");
+
+  return `<w:dataBinding${attributes ? ` ${attributes}` : ""}/>`;
 }
 
 function placeholderContentControlXml(placeholder: NonNullable<NonNullable<ParagraphNode["contentControl"]>["placeholder"]>): string {

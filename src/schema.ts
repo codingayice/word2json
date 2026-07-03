@@ -254,6 +254,7 @@ export type ContentControl = {
   alias?: string;
   tag?: string;
   lock?: "sdtLocked" | "contentLocked" | "sdtContentLocked" | "unlocked";
+  dataBinding?: ContentControlDataBinding;
   placeholder?: ContentControlPlaceholder;
   checkbox?: CheckboxContentControl;
   dropdown?: DropdownContentControl;
@@ -261,6 +262,12 @@ export type ContentControl = {
   date?: DateContentControl;
   repeatingSection?: RepeatingSectionContentControl;
   repeatingSectionItem?: RepeatingSectionItemContentControl;
+};
+
+export type ContentControlDataBinding = {
+  storeItemId?: string;
+  xpath?: string;
+  prefixMappings?: string;
 };
 
 export type ContentControlPlaceholder = {

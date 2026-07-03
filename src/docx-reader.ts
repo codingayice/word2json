@@ -1175,6 +1175,7 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
   const alias = asObject(properties.alias);
   const tag = asObject(properties.tag);
   const lock = asObject(properties.lock);
+  const dataBinding = parseDataBindingContentControl(properties.dataBinding);
   const placeholder = parsePlaceholderContentControl(properties.placeholder);
   const checkbox = parseCheckboxContentControl(properties.checkBox);
   const dropdown = parseDropdownContentControl(properties.dropDownList);
@@ -1186,6 +1187,7 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
     ...(typeof alias.val === "string" ? { alias: alias.val } : {}),
     ...(typeof tag.val === "string" ? { tag: tag.val } : {}),
     ...(typeof lock.val === "string" ? { lock: lock.val as NonNullable<ParagraphNode["contentControl"]>["lock"] } : {}),
+    ...(dataBinding ? { dataBinding } : {}),
     ...(placeholder ? { placeholder } : {}),
     ...(checkbox ? { checkbox } : {}),
     ...(dropdown ? { dropdown } : {}),
@@ -1193,6 +1195,17 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
     ...(date ? { date } : {}),
     ...(repeatingSection ? { repeatingSection } : {}),
     ...(repeatingSectionItem ? { repeatingSectionItem } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseDataBindingContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["dataBinding"]> | undefined {
+  const dataBinding = asObject(value);
+  const parsed = {
+    ...(typeof dataBinding.storeItemID === "string" ? { storeItemId: dataBinding.storeItemID } : {}),
+    ...(typeof dataBinding.xpath === "string" ? { xpath: dataBinding.xpath } : {}),
+    ...(typeof dataBinding.prefixMappings === "string" ? { prefixMappings: dataBinding.prefixMappings } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
