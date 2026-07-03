@@ -250,6 +250,100 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:br/>");
     expect(xml).toContain('<w:br w:type="page"/>');
   });
+
+  it("writes images with media parts relationships and inline drawing metadata", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        altText: "Logo",
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const media = await zip.file("word/media/image1.png")!.async("nodebuffer");
+
+    expect(xml).toContain('<wp:docPr id="1" name="Image 1" descr="Logo"/>');
+    expect(xml).toContain('<a:ext cx="1143000" cy="762000"/>');
+    expect(xml).toContain('<a:blip r:embed="rIdImage1"/>');
+    expect(rels).toContain('Id="rIdImage1"');
+    expect(rels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"');
+    expect(rels).toContain('Target="media/image1.png"');
+    expect(media.toString("base64")).toBe(imageData);
+  });
+
+  it("writes headers and footers with section relationships", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          headers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Header text" }] }],
+          },
+          footers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Footer text" }] }],
+          },
+          blocks: [
+            { type: "paragraph" as const, runs: [{ text: "Body" }] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const header = await zip.file("word/header1.xml")!.async("string");
+    const footer = await zip.file("word/footer1.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+
+    expect(xml).toContain('<w:headerReference w:type="default" r:id="rIdHeader1"/>');
+    expect(xml).toContain('<w:footerReference w:type="default" r:id="rIdFooter1"/>');
+    expect(header).toContain("<w:t>Header text</w:t>");
+    expect(footer).toContain("<w:t>Footer text</w:t>");
+    expect(rels).toContain('Id="rIdHeader1"');
+    expect(rels).toContain('Target="header1.xml"');
+    expect(rels).toContain('Id="rIdFooter1"');
+    expect(rels).toContain('Target="footer1.xml"');
+  });
+
+  it("writes page fields in footer runs", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          footers: {
+            default: [
+              {
+                type: "paragraph" as const,
+                runs: [
+                  { text: "Page " },
+                  { text: "", field: "page" as const },
+                  { text: " of " },
+                  { text: "", field: "numPages" as const },
+                ],
+              },
+            ],
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Body" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const footer = await zip.file("word/footer1.xml")!.async("string");
+
+    expect(footer).toContain('<w:instrText xml:space="preserve">PAGE</w:instrText>');
+    expect(footer).toContain('<w:instrText xml:space="preserve">NUMPAGES</w:instrText>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -429,6 +523,78 @@ describe("DOCX reader", () => {
         ],
       },
     ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips images", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        altText: "Logo",
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips headers and footers", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          headers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Header text" }] }],
+          },
+          footers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Footer text" }] }],
+          },
+          blocks: [
+            { type: "paragraph" as const, runs: [{ text: "Body" }] },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips page fields", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          footers: {
+            default: [
+              {
+                type: "paragraph" as const,
+                runs: [
+                  { text: "Page " },
+                  { text: "", field: "page" as const },
+                  { text: " of " },
+                  { text: "", field: "numPages" as const },
+                ],
+              },
+            ],
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Body" }] }],
+        },
+      ],
+    };
 
     const docx = await buildDocx(source);
     const parsed = await parseDocx(docx);

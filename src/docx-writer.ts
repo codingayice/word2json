@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import type {
   DocumentBlock,
   DocumentJson,
+  ImageNode,
   PageSettings,
   ParagraphNode,
   SectionNode,
@@ -13,6 +14,9 @@ import type {
 type WriterContext = {
   hyperlinks: HyperlinkRelationship[];
   comments: CommentEntry[];
+  images: ImageRelationship[];
+  headers: HeaderFooterRelationship[];
+  footers: HeaderFooterRelationship[];
   bookmarkId: number;
 };
 
@@ -29,12 +33,34 @@ type CommentEntry = {
   text: string;
 };
 
+type ImageRelationship = {
+  id: string;
+  filename: string;
+  contentType: ImageNode["contentType"];
+  data: string;
+};
+
+type HeaderFooterRelationship = {
+  id: string;
+  filename: string;
+  blocks: ParagraphNode[];
+};
+
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], bookmarkId: 0 };
 
   zip.folder("_rels")!.file(".rels", packageRelsXml());
   zip.folder("word")!.file("document.xml", documentXml(document, context));
+  for (const header of context.headers) {
+    zip.folder("word")!.file(header.filename, headerFooterXml("hdr", header.blocks, context));
+  }
+  for (const footer of context.footers) {
+    zip.folder("word")!.file(footer.filename, headerFooterXml("ftr", footer.blocks, context));
+  }
+  for (const image of context.images) {
+    zip.folder("word")!.folder("media")!.file(image.filename, Buffer.from(image.data, "base64"));
+  }
   zip.folder("word")!.file("styles.xml", stylesXml());
   zip.folder("word")!.file("numbering.xml", numberingXml());
   if (context.comments.length > 0) {
@@ -55,7 +81,7 @@ function documentXml(document: DocumentJson, context: WriterContext): string {
 
   return xmlDeclaration(
     `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-      `<w:body>${body}${sectionPropertiesXml(section)}</w:body>` +
+      `<w:body>${body}${sectionPropertiesXml(section, context)}</w:body>` +
       `</w:document>`,
   );
 }
@@ -65,19 +91,45 @@ function blockXml(block: DocumentBlock, context: WriterContext): string {
     return paragraphXml(block, context);
   }
 
-  return tableXml(block, context);
+  if (block.type === "table") {
+    return tableXml(block, context);
+  }
+
+  return imageXml(block, context);
 }
 
-function sectionPropertiesXml(section: SectionNode): string {
+function sectionPropertiesXml(section: SectionNode, context: WriterContext): string {
   const page = section.page ?? defaultPageSettings();
   const orientation = page.orientation && page.orientation !== "portrait"
     ? ` w:orient="${page.orientation}"`
     : "";
+  const headerReference = section.headers?.default
+    ? createHeaderReference(section.headers.default, context)
+    : "";
+  const footerReference = section.footers?.default
+    ? createFooterReference(section.footers.default, context)
+    : "";
 
   return `<w:sectPr>` +
+    headerReference +
+    footerReference +
     `<w:pgSz w:w="${page.width}" w:h="${page.height}"${orientation}/>` +
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
     `</w:sectPr>`;
+}
+
+function createHeaderReference(blocks: ParagraphNode[], context: WriterContext): string {
+  const index = context.headers.length + 1;
+  const id = `rIdHeader${index}`;
+  context.headers.push({ id, filename: `header${index}.xml`, blocks });
+  return `<w:headerReference w:type="default" r:id="${id}"/>`;
+}
+
+function createFooterReference(blocks: ParagraphNode[], context: WriterContext): string {
+  const index = context.footers.length + 1;
+  const id = `rIdFooter${index}`;
+  context.footers.push({ id, filename: `footer${index}.xml`, blocks });
+  return `<w:footerReference w:type="default" r:id="${id}"/>`;
 }
 
 function defaultPageSettings(): PageSettings {
@@ -119,6 +171,10 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
 }
 
 function runXml(run: TextRun, context: WriterContext): string {
+  if (run.field) {
+    return fieldRunXml(run.field);
+  }
+
   if (run.break) {
     return run.break === "page"
       ? '<w:r><w:br w:type="page"/></w:r>'
@@ -138,6 +194,16 @@ function runXml(run: TextRun, context: WriterContext): string {
   const relationshipId = `rIdHyperlink${context.hyperlinks.length + 1}`;
   context.hyperlinks.push({ id: relationshipId, url: run.link.url });
   return `<w:hyperlink r:id="${relationshipId}">${runContent}</w:hyperlink>`;
+}
+
+function fieldRunXml(field: TextRun["field"]): string {
+  const instruction = field === "page" ? "PAGE" : "NUMPAGES";
+
+  return `<w:r><w:fldChar w:fldCharType="begin"/></w:r>` +
+    `<w:r><w:instrText xml:space="preserve">${instruction}</w:instrText></w:r>` +
+    `<w:r><w:fldChar w:fldCharType="separate"/></w:r>` +
+    `<w:r><w:t></w:t></w:r>` +
+    `<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
 }
 
 function wrapBookmarkIfNeeded(run: TextRun, runContent: string, context: WriterContext): string {
@@ -213,18 +279,64 @@ function tableBordersXml(border: "single"): string {
     `</w:tblBorders>`;
 }
 
+function imageXml(image: ImageNode, context: WriterContext): string {
+  const id = context.images.length + 1;
+  const relationshipId = `rIdImage${id}`;
+  const filename = `image${id}.${image.contentType === "image/png" ? "png" : "jpg"}`;
+  const widthEmu = image.width * 9525;
+  const heightEmu = image.height * 9525;
+
+  context.images.push({
+    id: relationshipId,
+    filename,
+    contentType: image.contentType,
+    data: image.data,
+  });
+
+  return `<w:p><w:r><w:drawing>` +
+    `<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">` +
+    `<wp:extent cx="${widthEmu}" cy="${heightEmu}"/>` +
+    `<wp:docPr id="${id}" name="Image ${id}"${image.altText ? ` descr="${escapeAttribute(image.altText)}"` : ""}/>` +
+    `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+    `<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:blipFill><a:blip r:embed="${relationshipId}"/></pic:blipFill>` +
+    `<pic:spPr><a:xfrm><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
+    `</pic:pic></a:graphicData></a:graphic>` +
+    `</wp:inline>` +
+    `</w:drawing></w:r></w:p>`;
+}
+
 function contentTypesXml(context: WriterContext): string {
   const commentsOverride = context.comments.length > 0
     ? `<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/>`
     : "";
 
+  const imageDefaults = [
+    context.images.some((image) => image.contentType === "image/png")
+      ? `<Default Extension="png" ContentType="image/png"/>`
+      : "",
+    context.images.some((image) => image.contentType === "image/jpeg")
+      ? `<Default Extension="jpg" ContentType="image/jpeg"/>`
+      : "",
+  ].join("");
+  const headerOverrides = context.headers
+    .map((header) => `<Override PartName="/word/${header.filename}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>`)
+    .join("");
+  const footerOverrides = context.footers
+    .map((footer) => `<Override PartName="/word/${footer.filename}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>`)
+    .join("");
+
   return xmlDeclaration(
     `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
       `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
       `<Default Extension="xml" ContentType="application/xml"/>` +
+      imageDefaults +
       `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
       `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
       `<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>` +
+      headerOverrides +
+      footerOverrides +
       commentsOverride +
       `</Types>`,
   );
@@ -242,11 +354,23 @@ function documentRelsXml(context: WriterContext): string {
   const hyperlinkRelationships = context.hyperlinks
     .map((relationship) => `<Relationship Id="${relationship.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${escapeAttribute(relationship.url)}" TargetMode="External"/>`)
     .join("");
+  const imageRelationships = context.images
+    .map((image) => `<Relationship Id="${image.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${image.filename}"/>`)
+    .join("");
+  const headerRelationships = context.headers
+    .map((header) => `<Relationship Id="${header.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="${header.filename}"/>`)
+    .join("");
+  const footerRelationships = context.footers
+    .map((footer) => `<Relationship Id="${footer.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="${footer.filename}"/>`)
+    .join("");
 
   return xmlDeclaration(
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
       `<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>` +
       (context.comments.length > 0 ? `<Relationship Id="rIdComments" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>` : "") +
+      headerRelationships +
+      footerRelationships +
+      imageRelationships +
       hyperlinkRelationships +
       `</Relationships>`,
   );
@@ -281,6 +405,14 @@ function commentsXml(context: WriterContext): string {
 
   return xmlDeclaration(
     `<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${comments}</w:comments>`,
+  );
+}
+
+function headerFooterXml(root: "hdr" | "ftr", blocks: ParagraphNode[], context: WriterContext): string {
+  return xmlDeclaration(
+    `<w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+      blocks.map((block) => paragraphXml(block, context)).join("") +
+      `</w:${root}>`,
   );
 }
 

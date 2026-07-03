@@ -2,6 +2,7 @@ import { XMLParser } from "fast-xml-parser";
 import JSZip from "jszip";
 import type {
   DocumentJson,
+  ImageNode,
   PageSettings,
   ParagraphAlignment,
   ParagraphNode,
@@ -14,11 +15,13 @@ import type {
 type XmlNode = Record<string, unknown>;
 type RelationshipMap = Record<string, string>;
 type CommentMap = Record<string, TextRun["comment"]>;
+type MediaMap = Record<string, Pick<ImageNode, "data" | "contentType">>;
 
 const parser = new XMLParser({
   attributeNamePrefix: "",
   ignoreAttributes: false,
   removeNSPrefix: true,
+  trimValues: false,
 });
 
 export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJson> {
@@ -31,20 +34,82 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
 
   const xml = await documentFile.async("string");
   const relationships = await parseDocumentRelationships(zip);
+  const media = await parseMedia(zip, relationships);
   const comments = await parseComments(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
   const page = parsePageSettings(body.sectPr);
+  const headerFooter = await parseHeaderFooterContent(zip, body.sectPr, relationships, comments);
   const section = {
     ...(page ? { page } : {}),
-    blocks: extractBlockXml(xml).map((blockXml) => parseBlockXml(blockXml, relationships, comments)),
+    ...headerFooter,
+    blocks: extractBlockXml(xml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media)),
   };
 
   return {
     version: "1.0",
     sections: [section],
   };
+}
+
+async function parseHeaderFooterContent(
+  zip: JSZip,
+  sectionPropertiesValue: unknown,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+): Promise<Pick<import("./schema.js").SectionNode, "headers" | "footers">> {
+  const sectionProperties = asObject(sectionPropertiesValue);
+  const headerReference = asObject(sectionProperties.headerReference);
+  const footerReference = asObject(sectionProperties.footerReference);
+  const headers = await parseHeaderFooterReference(zip, headerReference, relationships, comments);
+  const footers = await parseHeaderFooterReference(zip, footerReference, relationships, comments);
+
+  return {
+    ...(headers ? { headers: { default: headers } } : {}),
+    ...(footers ? { footers: { default: footers } } : {}),
+  };
+}
+
+async function parseHeaderFooterReference(
+  zip: JSZip,
+  reference: XmlNode,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+): Promise<ParagraphNode[] | undefined> {
+  if (typeof reference.id !== "string") {
+    return undefined;
+  }
+
+  const target = relationships[reference.id];
+  if (!target) {
+    return undefined;
+  }
+
+  const file = zip.file(`word/${target}`);
+  if (!file) {
+    return undefined;
+  }
+
+  const xml = await file.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const root = asObject(parsed.hdr ?? parsed.ftr);
+
+  return asArray(root.p).map((paragraph) => parseParagraph(paragraph, relationships, comments));
+}
+
+async function parseMedia(zip: JSZip, relationships: RelationshipMap): Promise<MediaMap> {
+  const entries = await Promise.all(Object.entries(relationships)
+    .filter(([, target]) => target.startsWith("media/"))
+    .map(async ([id, target]) => {
+      const file = zip.file(`word/${target}`);
+      const data = file ? (await file.async("nodebuffer")).toString("base64") : "";
+      const contentType = target.endsWith(".png") ? "image/png" : "image/jpeg";
+
+      return [id, { data, contentType }] as const;
+    }));
+
+  return Object.fromEntries(entries);
 }
 
 async function parseDocumentRelationships(zip: JSZip): Promise<RelationshipMap> {
@@ -88,14 +153,53 @@ async function parseComments(zip: JSZip): Promise<CommentMap> {
   }));
 }
 
-function parseBlockXml(xml: string, relationships: RelationshipMap, comments: CommentMap): ParagraphNode | TableNode {
+function parseBlockXml(
+  xml: string,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+  media: MediaMap,
+): ParagraphNode | TableNode | ImageNode {
   const parsed = parser.parse(xml) as XmlNode;
 
   if (parsed.p !== undefined) {
+    if (xml.includes("<w:drawing>")) {
+      return parseImageBlock(parsed.p, media);
+    }
+
     return parseParagraph(parsed.p, relationships, comments);
   }
 
   return parseTable(parsed.tbl, relationships, comments);
+}
+
+function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
+  const paragraph = asObject(value);
+  const run = asObject(paragraph.r);
+  const drawing = asObject(run.drawing);
+  const inline = asObject(drawing.inline);
+  const extent = asObject(inline.extent);
+  const docPr = asObject(inline.docPr);
+  const relationshipId = parseImageRelationshipId(inline);
+  const image = relationshipId ? media[relationshipId] : undefined;
+
+  return {
+    type: "image",
+    data: image?.data ?? "",
+    contentType: image?.contentType ?? "image/png",
+    width: parseNumber(extent.cx) / 9525,
+    height: parseNumber(extent.cy) / 9525,
+    ...(typeof docPr.descr === "string" ? { altText: docPr.descr } : {}),
+  };
+}
+
+function parseImageRelationshipId(inline: XmlNode): string | undefined {
+  const graphic = asObject(inline.graphic);
+  const graphicData = asObject(graphic.graphicData);
+  const picture = asObject(graphicData.pic);
+  const blipFill = asObject(picture.blipFill);
+  const blip = asObject(blipFill.blip);
+
+  return typeof blip.embed === "string" ? blip.embed : undefined;
 }
 
 function extractBlockXml(xml: string): string[] {
@@ -197,7 +301,7 @@ function parseParagraphRuns(
   const bookmarkRanges = bookmarkRangesByText(paragraph);
   const normalRuns = asArray(paragraph.r)
     .map((run) => parseRun(run))
-    .filter((run) => run.text !== "" || run.break !== undefined)
+    .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined)
     .map((run) => withMatchingBookmark(run, bookmarkRanges))
     .map((run) => withMatchingComment(run, commentRanges, comments));
   const hyperlinkRuns = asArray(paragraph.hyperlink)
@@ -291,6 +395,13 @@ function parseRun(value: unknown): TextRun {
     };
   }
 
+  if (run.instrText !== undefined) {
+    return {
+      text: "",
+      field: parseField(run.instrText),
+    };
+  }
+
   return {
     text: parseText(run.t),
     ...(properties.b !== undefined ? { bold: true } : {}),
@@ -298,6 +409,11 @@ function parseRun(value: unknown): TextRun {
     ...(properties.u !== undefined ? { underline: true } : {}),
     ...parseRunFont(properties),
   };
+}
+
+function parseField(value: unknown): TextRun["field"] {
+  const instruction = parseText(value).trim();
+  return instruction === "NUMPAGES" ? "numPages" : "page";
 }
 
 function parseRunFont(properties: XmlNode): Partial<TextRun> {

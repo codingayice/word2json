@@ -5,7 +5,13 @@ export type DocumentJson = {
 
 export type SectionNode = {
   page?: PageSettings;
+  headers?: HeaderFooterContent;
+  footers?: HeaderFooterContent;
   blocks: DocumentBlock[];
+};
+
+export type HeaderFooterContent = {
+  default?: ParagraphNode[];
 };
 
 export type PageSettings = {
@@ -25,7 +31,7 @@ export type PageMargins = {
   gutter: number;
 };
 
-export type DocumentBlock = ParagraphNode | TableNode;
+export type DocumentBlock = ParagraphNode | TableNode | ImageNode;
 
 export type ParagraphNode = {
   type: "paragraph";
@@ -56,6 +62,7 @@ export type TextRun = {
   comment?: Comment;
   bookmark?: Bookmark;
   break?: BreakKind;
+  field?: FieldKind;
 };
 
 export type Hyperlink = {
@@ -75,6 +82,8 @@ export type Bookmark = {
 
 export type BreakKind = "line" | "page";
 
+export type FieldKind = "page" | "numPages";
+
 export type TableNode = {
   type: "table";
   width?: number;
@@ -90,6 +99,15 @@ export type TableCellNode = {
   width?: number;
   colSpan?: number;
   blocks: ParagraphNode[];
+};
+
+export type ImageNode = {
+  type: "image";
+  data: string;
+  contentType: "image/png" | "image/jpeg";
+  width: number;
+  height: number;
+  altText?: string;
 };
 
 export function createDocumentJson(blocks: DocumentBlock[]): DocumentJson {
