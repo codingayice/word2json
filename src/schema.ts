@@ -429,7 +429,8 @@ export type MathNode =
   | { type: "equationArray"; rows: MathNode[][] }
   | { type: "box"; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
   | { type: "borderBox"; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
-  | { type: "phantom"; show?: boolean; zeroWidth?: boolean; zeroAscent?: boolean; zeroDescent?: boolean; transparent?: boolean; content: MathNode[] };
+  | { type: "phantom"; show?: boolean; zeroWidth?: boolean; zeroAscent?: boolean; zeroDescent?: boolean; transparent?: boolean; content: MathNode[] }
+  | { type: "groupCharacter"; character?: string; position?: "top" | "bottom"; verticalJustification?: "top" | "bottom"; content: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";

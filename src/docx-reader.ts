@@ -1779,7 +1779,30 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           content: parseMathNodes(asObject(phantomNode.e)),
         };
       }),
+    ...asArray(container.groupChr)
+      .map((groupCharacter) => {
+        const groupCharacterNode = asObject(groupCharacter);
+        const groupCharacterProperties = asObject(groupCharacterNode.groupChrPr);
+        const character = asObject(groupCharacterProperties.chr).val;
+        const position = groupCharacterPositionValue(asObject(groupCharacterProperties.pos).val);
+        const verticalJustification = groupCharacterVerticalJustificationValue(asObject(groupCharacterProperties.vertJc).val);
+        return {
+          type: "groupCharacter" as const,
+          ...(typeof character === "string" ? { character } : {}),
+          ...(position ? { position } : {}),
+          ...(verticalJustification ? { verticalJustification } : {}),
+          content: parseMathNodes(asObject(groupCharacterNode.e)),
+        };
+      }),
   ];
+}
+
+function groupCharacterPositionValue(value: unknown): "top" | "bottom" | undefined {
+  return value === "top" || value === "bottom" ? value : undefined;
+}
+
+function groupCharacterVerticalJustificationValue(value: unknown): "top" | "bottom" | undefined {
+  return value === "top" || value === "bottom" ? value : undefined;
 }
 
 function mathOptionalBooleanProperty<K extends string>(node: unknown, key: K): Partial<Record<K, boolean>> {

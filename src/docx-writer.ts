@@ -771,6 +771,15 @@ function mathNodeXml(node: MathNode): string {
     return `<m:phant>${properties ? `<m:phantPr>${properties}</m:phantPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:phant>`;
   }
 
+  if (node.type === "groupCharacter") {
+    const properties = [
+      node.character !== undefined ? `<m:chr m:val="${escapeAttribute(node.character)}"/>` : "",
+      node.position !== undefined ? `<m:pos m:val="${node.position}"/>` : "",
+      node.verticalJustification !== undefined ? `<m:vertJc m:val="${node.verticalJustification}"/>` : "",
+    ].join("");
+    return `<m:groupChr>${properties ? `<m:groupChrPr>${properties}</m:groupChrPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:groupChr>`;
+  }
+
   return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +

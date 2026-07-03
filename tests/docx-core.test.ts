@@ -459,6 +459,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:phant><m:phantPr><m:show m:val="0"/><m:zeroWid m:val="1"/></m:phantPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:phant>');
   });
 
+  it("writes group character office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "groupCharacter" as const,
+                  character: "⏞",
+                  position: "top",
+                  verticalJustification: "bottom",
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:groupChr><m:groupChrPr><m:chr m:val="⏞"/><m:pos m:val="top"/><m:vertJc m:val="bottom"/></m:groupChrPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:groupChr>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -3231,6 +3261,41 @@ describe("DOCX reader", () => {
                   show: false,
                   zeroAscent: true,
                   zeroDescent: true,
+                  content: [
+                    {
+                      type: "fraction" as const,
+                      numerator: [{ type: "text" as const, text: "a" }],
+                      denominator: [{ type: "text" as const, text: "b" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips group character office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "groupCharacter" as const,
+                  character: "⏟",
+                  position: "bottom" as const,
+                  verticalJustification: "top" as const,
                   content: [
                     {
                       type: "fraction" as const,
