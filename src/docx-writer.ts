@@ -215,6 +215,8 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   const alignment = paragraph.alignment
     ? `<w:jc w:val="${paragraph.alignment}"/>`
     : "";
+  const spacing = paragraph.spacing ? paragraphSpacingXml(paragraph.spacing) : "";
+  const indent = paragraph.indent ? paragraphIndentXml(paragraph.indent) : "";
   const list = paragraph.list
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
@@ -225,9 +227,27 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
       paragraph.pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
     ].join("")
     : "";
-  const properties = `${style}${alignment}${list}${pagination}`;
+  const properties = `${style}${alignment}${spacing}${indent}${list}${pagination}`;
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
+}
+
+function paragraphSpacingXml(spacing: NonNullable<ParagraphNode["spacing"]>): string {
+  return `<w:spacing` +
+    (spacing.before !== undefined ? ` w:before="${spacing.before}"` : "") +
+    (spacing.after !== undefined ? ` w:after="${spacing.after}"` : "") +
+    (spacing.line !== undefined ? ` w:line="${spacing.line}"` : "") +
+    (spacing.lineRule ? ` w:lineRule="${spacing.lineRule}"` : "") +
+    `/>`;
+}
+
+function paragraphIndentXml(indent: NonNullable<ParagraphNode["indent"]>): string {
+  return `<w:ind` +
+    (indent.left !== undefined ? ` w:left="${indent.left}"` : "") +
+    (indent.right !== undefined ? ` w:right="${indent.right}"` : "") +
+    (indent.firstLine !== undefined ? ` w:firstLine="${indent.firstLine}"` : "") +
+    (indent.hanging !== undefined ? ` w:hanging="${indent.hanging}"` : "") +
+    `/>`;
 }
 
 function runXml(run: TextRun, context: WriterContext): string {
@@ -565,11 +585,17 @@ function styleXml(type: "character" | "table", id: string, name: string, basedOn
 }
 
 function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): string {
-  if (!properties?.alignment) {
+  if (!properties) {
     return "";
   }
 
-  return `<w:pPr><w:jc w:val="${properties.alignment}"/></w:pPr>`;
+  const paragraphProperties = [
+    properties.alignment ? `<w:jc w:val="${properties.alignment}"/>` : "",
+    properties.spacing ? paragraphSpacingXml(properties.spacing) : "",
+    properties.indent ? paragraphIndentXml(properties.indent) : "",
+  ].join("");
+
+  return paragraphProperties ? `<w:pPr>${paragraphProperties}</w:pPr>` : "";
 }
 
 function styleRunPropertiesXml(run?: StyleRunProperties): string {

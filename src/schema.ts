@@ -76,6 +76,8 @@ export type StyleRunProperties = {
 
 export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
+  spacing?: ParagraphSpacing;
+  indent?: ParagraphIndent;
 };
 
 export type TableStyleDefinition = StyleDefinition & {
@@ -130,9 +132,25 @@ export type ParagraphNode = {
   style?: ParagraphStyle;
   styleId?: string;
   alignment?: ParagraphAlignment;
+  spacing?: ParagraphSpacing;
+  indent?: ParagraphIndent;
   list?: ListSettings;
   pagination?: ParagraphPagination;
   runs: TextRun[];
+};
+
+export type ParagraphSpacing = {
+  before?: number;
+  after?: number;
+  line?: number;
+  lineRule?: "auto" | "exact" | "atLeast";
+};
+
+export type ParagraphIndent = {
+  left?: number;
+  right?: number;
+  firstLine?: number;
+  hanging?: number;
 };
 
 export type ParagraphPagination = {

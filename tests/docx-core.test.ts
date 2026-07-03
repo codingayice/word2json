@@ -545,6 +545,38 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:pageBreakBefore/>");
   });
 
+  it("writes paragraph spacing", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        spacing: { before: 240, after: 120, line: 360, lineRule: "auto" as const },
+        runs: [{ text: "Spaced paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:spacing w:before="240" w:after="120" w:line="360" w:lineRule="auto"/>');
+  });
+
+  it("writes paragraph indentation", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        indent: { left: 720, right: 360, firstLine: 240, hanging: 120 },
+        runs: [{ text: "Indented paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:ind w:left="720" w:right="360" w:firstLine="240" w:hanging="120"/>');
+  });
+
   it("writes footnotes with references relationships and notes part", async () => {
     const document = createDocumentJson([
       {
@@ -675,6 +707,37 @@ describe("DOCX writer", () => {
 
     expect(styles).toContain('<w:pPr><w:jc w:val="center"/></w:pPr>');
     expect(styles).toContain('<w:rPr><w:b/><w:rFonts w:ascii="Aptos Display" w:hAnsi="Aptos Display"/><w:sz w:val="36"/><w:color w:val="1F4E79"/></w:rPr>');
+  });
+
+  it("writes paragraph style layout properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          {
+            id: "BodyText",
+            name: "Body Text",
+            paragraph: {
+              spacing: { before: 120, after: 120 },
+              indent: { left: 360, hanging: 180 },
+            },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            { type: "paragraph" as const, styleId: "BodyText", runs: [{ text: "Styled body" }] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:pPr><w:spacing w:before="120" w:after="120"/><w:ind w:left="360" w:hanging="180"/></w:pPr>');
   });
 
   it("writes character and table styles", async () => {
@@ -1265,6 +1328,36 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips paragraph spacing", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        spacing: { before: 240, after: 120, line: 360, lineRule: "auto" as const },
+        runs: [{ text: "Spaced paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph indentation", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        indent: { left: 720, right: 360, firstLine: 240, hanging: 120 },
+        runs: [{ text: "Indented paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips footnotes", async () => {
     const source = createDocumentJson([
       {
@@ -1360,6 +1453,36 @@ describe("DOCX reader", () => {
         {
           blocks: [
             { type: "paragraph" as const, styleId: "ContractTitle", runs: [{ text: "Agreement" }] },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph style layout properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          {
+            id: "BodyText",
+            name: "Body Text",
+            paragraph: {
+              spacing: { before: 120, after: 120 },
+              indent: { left: 360, hanging: 180 },
+            },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            { type: "paragraph" as const, styleId: "BodyText", runs: [{ text: "Styled body" }] },
           ],
         },
       ],

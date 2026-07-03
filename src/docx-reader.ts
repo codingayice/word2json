@@ -255,8 +255,12 @@ function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition
 function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties | undefined {
   const properties = asObject(value);
   const alignment = asObject(properties.jc);
+  const spacing = parseParagraphSpacing(properties.spacing);
+  const indent = parseParagraphIndent(properties.ind);
   const parsed = {
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
+    ...(spacing ? { spacing } : {}),
+    ...(indent ? { indent } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -647,6 +651,8 @@ function parseParagraph(
   const properties = asObject(paragraph.pPr);
   const styleNode = asObject(properties.pStyle);
   const alignmentNode = asObject(properties.jc);
+  const spacing = parseParagraphSpacing(properties.spacing);
+  const indent = parseParagraphIndent(properties.ind);
   const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
   const style = typeof styleNode.val === "string"
@@ -664,10 +670,36 @@ function parseParagraph(
     ...(style ? { style } : {}),
     ...(styleId ? { styleId } : {}),
     ...(alignment ? { alignment } : {}),
+    ...(spacing ? { spacing } : {}),
+    ...(indent ? { indent } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
     runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes),
   };
+}
+
+function parseParagraphSpacing(value: unknown): ParagraphNode["spacing"] | undefined {
+  const spacing = asObject(value);
+  const parsed = {
+    ...(spacing.before !== undefined ? { before: parseNumber(spacing.before) } : {}),
+    ...(spacing.after !== undefined ? { after: parseNumber(spacing.after) } : {}),
+    ...(spacing.line !== undefined ? { line: parseNumber(spacing.line) } : {}),
+    ...(typeof spacing.lineRule === "string" ? { lineRule: spacing.lineRule as NonNullable<ParagraphNode["spacing"]>["lineRule"] } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseParagraphIndent(value: unknown): ParagraphNode["indent"] | undefined {
+  const indent = asObject(value);
+  const parsed = {
+    ...(indent.left !== undefined ? { left: parseNumber(indent.left) } : {}),
+    ...(indent.right !== undefined ? { right: parseNumber(indent.right) } : {}),
+    ...(indent.firstLine !== undefined ? { firstLine: parseNumber(indent.firstLine) } : {}),
+    ...(indent.hanging !== undefined ? { hanging: parseNumber(indent.hanging) } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | undefined {
