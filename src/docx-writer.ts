@@ -25,6 +25,7 @@ type WriterContext = {
   endnotes: NoteEntry[];
   theme: DocumentJson["theme"];
   settings: DocumentJson["settings"];
+  properties: DocumentJson["properties"];
   customXmlParts: NonNullable<DocumentJson["customXmlParts"]>;
   bookmarkId: number;
 };
@@ -62,10 +63,16 @@ type NoteEntry = {
 
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, customXmlParts: document.customXmlParts ?? [], bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, properties: document.properties, customXmlParts: document.customXmlParts ?? [], bookmarkId: 0 };
 
   zip.folder("_rels")!.file(".rels", packageRelsXml(context));
   zip.folder("word")!.file("document.xml", documentXml(document, context));
+  if (document.properties?.core) {
+    zip.folder("docProps")!.file("core.xml", corePropertiesXml(document.properties.core));
+  }
+  if (document.properties?.app) {
+    zip.folder("docProps")!.file("app.xml", appPropertiesXml(document.properties.app));
+  }
   context.customXmlParts.forEach((part, index) => {
     zip.file(part.path, part.xml);
 
@@ -812,6 +819,12 @@ function contentTypesXml(context: WriterContext): string {
   const settingsOverride = context.settings
     ? `<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>`
     : "";
+  const corePropertiesOverride = context.properties?.core
+    ? `<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>`
+    : "";
+  const appPropertiesOverride = context.properties?.app
+    ? `<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>`
+    : "";
 
   const imageDefaults = [
     context.images.some((image) => image.contentType === "image/png")
@@ -848,6 +861,8 @@ function contentTypesXml(context: WriterContext): string {
       endnotesOverride +
       themeOverride +
       settingsOverride +
+      corePropertiesOverride +
+      appPropertiesOverride +
       customXmlPropertiesOverrides +
       `</Types>`,
   );
@@ -857,12 +872,50 @@ function packageRelsXml(context: WriterContext): string {
   const customXmlRelationships = context.customXmlParts
     .map((part, index) => `<Relationship Id="rIdCustomXml${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="${escapeAttribute(part.path)}"/>`)
     .join("");
+  const corePropertiesRelationship = context.properties?.core
+    ? `<Relationship Id="rIdCoreProperties" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>`
+    : "";
+  const appPropertiesRelationship = context.properties?.app
+    ? `<Relationship Id="rIdAppProperties" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>`
+    : "";
 
   return xmlDeclaration(
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
       `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+      corePropertiesRelationship +
+      appPropertiesRelationship +
       customXmlRelationships +
       `</Relationships>`,
+  );
+}
+
+function corePropertiesXml(core: NonNullable<NonNullable<DocumentJson["properties"]>["core"]>): string {
+  return xmlDeclaration(
+    `<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">` +
+      (core.title ? `<dc:title>${escapeXml(core.title)}</dc:title>` : "") +
+      (core.subject ? `<dc:subject>${escapeXml(core.subject)}</dc:subject>` : "") +
+      (core.creator ? `<dc:creator>${escapeXml(core.creator)}</dc:creator>` : "") +
+      (core.keywords ? `<cp:keywords>${escapeXml(core.keywords)}</cp:keywords>` : "") +
+      (core.description ? `<dc:description>${escapeXml(core.description)}</dc:description>` : "") +
+      (core.lastModifiedBy ? `<cp:lastModifiedBy>${escapeXml(core.lastModifiedBy)}</cp:lastModifiedBy>` : "") +
+      (core.created ? `<dcterms:created xsi:type="dcterms:W3CDTF">${escapeXml(core.created)}</dcterms:created>` : "") +
+      (core.modified ? `<dcterms:modified xsi:type="dcterms:W3CDTF">${escapeXml(core.modified)}</dcterms:modified>` : "") +
+      `</cp:coreProperties>`,
+  );
+}
+
+function appPropertiesXml(app: NonNullable<NonNullable<DocumentJson["properties"]>["app"]>): string {
+  return xmlDeclaration(
+    `<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">` +
+      (app.application ? `<Application>${escapeXml(app.application)}</Application>` : "") +
+      (app.company ? `<Company>${escapeXml(app.company)}</Company>` : "") +
+      (app.manager ? `<Manager>${escapeXml(app.manager)}</Manager>` : "") +
+      (app.pages !== undefined ? `<Pages>${app.pages}</Pages>` : "") +
+      (app.words !== undefined ? `<Words>${app.words}</Words>` : "") +
+      (app.characters !== undefined ? `<Characters>${app.characters}</Characters>` : "") +
+      (app.lines !== undefined ? `<Lines>${app.lines}</Lines>` : "") +
+      (app.paragraphs !== undefined ? `<Paragraphs>${app.paragraphs}</Paragraphs>` : "") +
+      `</Properties>`,
   );
 }
 

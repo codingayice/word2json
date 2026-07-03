@@ -1,11 +1,39 @@
 export type DocumentJson = {
   version: "1.0";
   settings?: DocumentSettings;
+  properties?: DocumentProperties;
   theme?: DocumentTheme;
   styles?: DocumentStyles;
   numbering?: DocumentNumbering;
   customXmlParts?: CustomXmlPart[];
   sections: SectionNode[];
+};
+
+export type DocumentProperties = {
+  core?: DocumentCoreProperties;
+  app?: DocumentAppProperties;
+};
+
+export type DocumentCoreProperties = {
+  title?: string;
+  subject?: string;
+  creator?: string;
+  keywords?: string;
+  description?: string;
+  lastModifiedBy?: string;
+  created?: string;
+  modified?: string;
+};
+
+export type DocumentAppProperties = {
+  application?: string;
+  company?: string;
+  manager?: string;
+  pages?: number;
+  words?: number;
+  characters?: number;
+  lines?: number;
+  paragraphs?: number;
 };
 
 export type CustomXmlPart = {

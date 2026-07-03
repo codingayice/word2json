@@ -60,6 +60,7 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const styles = await parseStyles(zip);
   const theme = await parseTheme(zip);
   const settings = await parseSettings(zip);
+  const properties = await parseDocumentProperties(zip);
   const customXmlParts = await parseCustomXmlParts(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
@@ -68,12 +69,72 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   return {
     version: "1.0",
     ...(settings ? { settings } : {}),
+    ...(properties ? { properties } : {}),
     ...(theme ? { theme } : {}),
     ...(styles ? { styles } : {}),
     ...(numberingContext.numbering ? { numbering: numberingContext.numbering } : {}),
     ...(customXmlParts.length > 0 ? { customXmlParts } : {}),
     sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes, numberingContext),
   };
+}
+
+async function parseDocumentProperties(zip: JSZip): Promise<DocumentJson["properties"] | undefined> {
+  const core = await parseCoreProperties(zip);
+  const app = await parseAppProperties(zip);
+  const properties = {
+    ...(core ? { core } : {}),
+    ...(app ? { app } : {}),
+  };
+
+  return Object.keys(properties).length > 0 ? properties : undefined;
+}
+
+async function parseCoreProperties(zip: JSZip): Promise<NonNullable<DocumentJson["properties"]>["core"] | undefined> {
+  const coreFile = zip.file("docProps/core.xml");
+
+  if (!coreFile) {
+    return undefined;
+  }
+
+  const xml = await coreFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const coreProperties = asObject(parsed.coreProperties);
+  const core = {
+    ...(typeof coreProperties.title === "string" ? { title: coreProperties.title } : {}),
+    ...(typeof coreProperties.subject === "string" ? { subject: coreProperties.subject } : {}),
+    ...(typeof coreProperties.creator === "string" ? { creator: coreProperties.creator } : {}),
+    ...(typeof coreProperties.keywords === "string" ? { keywords: coreProperties.keywords } : {}),
+    ...(typeof coreProperties.description === "string" ? { description: coreProperties.description } : {}),
+    ...(typeof coreProperties.lastModifiedBy === "string" ? { lastModifiedBy: coreProperties.lastModifiedBy } : {}),
+    ...(xmlText(coreProperties.created) ? { created: xmlText(coreProperties.created) } : {}),
+    ...(xmlText(coreProperties.modified) ? { modified: xmlText(coreProperties.modified) } : {}),
+  };
+
+  return Object.keys(core).length > 0 ? core : undefined;
+}
+
+async function parseAppProperties(zip: JSZip): Promise<NonNullable<DocumentJson["properties"]>["app"] | undefined> {
+  const appFile = zip.file("docProps/app.xml");
+
+  if (!appFile) {
+    return undefined;
+  }
+
+  const xml = await appFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const appProperties = asObject(parsed.Properties);
+  const app = {
+    ...(typeof appProperties.Application === "string" ? { application: appProperties.Application } : {}),
+    ...(typeof appProperties.Company === "string" ? { company: appProperties.Company } : {}),
+    ...(typeof appProperties.Manager === "string" ? { manager: appProperties.Manager } : {}),
+    ...(appProperties.Pages !== undefined ? { pages: parseNumber(appProperties.Pages) } : {}),
+    ...(appProperties.Words !== undefined ? { words: parseNumber(appProperties.Words) } : {}),
+    ...(appProperties.Characters !== undefined ? { characters: parseNumber(appProperties.Characters) } : {}),
+    ...(appProperties.Lines !== undefined ? { lines: parseNumber(appProperties.Lines) } : {}),
+    ...(appProperties.Paragraphs !== undefined ? { paragraphs: parseNumber(appProperties.Paragraphs) } : {}),
+  };
+
+  return Object.keys(app).length > 0 ? app : undefined;
 }
 
 async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | undefined> {
@@ -1784,6 +1845,17 @@ function pathDirname(path: string): string {
   parts.pop();
 
   return parts.join("/");
+}
+
+function xmlText(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  const object = asObject(value);
+  const text = object["#text"];
+
+  return typeof text === "string" ? text : undefined;
 }
 
 function paragraphStyleFromId(styleId: string): ParagraphStyle | undefined {

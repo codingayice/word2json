@@ -561,6 +561,70 @@ describe("DOCX writer", () => {
     expect(itemProps).toContain('<ds:schemaRef ds:uri="urn:crm"/>');
   });
 
+  it("writes document core properties", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      properties: {
+        core: {
+          title: "Quarterly Report",
+          subject: "Sales",
+          creator: "Ada Lovelace",
+          keywords: "sales,quarterly",
+          description: "Executive summary",
+          lastModifiedBy: "Grace Hopper",
+          created: "2026-07-04T00:00:00Z",
+          modified: "2026-07-04T01:00:00Z",
+        },
+      },
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const core = await zip.file("docProps/core.xml")!.async("string");
+    const packageRels = await zip.file("_rels/.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(core).toContain("<dc:title>Quarterly Report</dc:title>");
+    expect(core).toContain("<dc:creator>Ada Lovelace</dc:creator>");
+    expect(core).toContain("<cp:lastModifiedBy>Grace Hopper</cp:lastModifiedBy>");
+    expect(core).toContain('<dcterms:created xsi:type="dcterms:W3CDTF">2026-07-04T00:00:00Z</dcterms:created>');
+    expect(packageRels).toContain('Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"');
+    expect(packageRels).toContain('Target="docProps/core.xml"');
+    expect(contentTypes).toContain('PartName="/docProps/core.xml"');
+  });
+
+  it("writes document app properties", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      properties: {
+        app: {
+          application: "word2json",
+          company: "ACME",
+          manager: "Mira",
+          pages: 3,
+          words: 1200,
+          characters: 6400,
+          lines: 80,
+          paragraphs: 12,
+        },
+      },
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const app = await zip.file("docProps/app.xml")!.async("string");
+    const packageRels = await zip.file("_rels/.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(app).toContain("<Application>word2json</Application>");
+    expect(app).toContain("<Company>ACME</Company>");
+    expect(app).toContain("<Manager>Mira</Manager>");
+    expect(app).toContain("<Pages>3</Pages>");
+    expect(packageRels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"');
+    expect(packageRels).toContain('Target="docProps/app.xml"');
+    expect(contentTypes).toContain('PartName="/docProps/app.xml"');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2452,6 +2516,52 @@ describe("DOCX reader", () => {
     const parsed = await parseDocx(docx);
 
     expect(parsed.customXmlParts).toEqual(source.customXmlParts);
+  });
+
+  it("round-trips document core properties", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      properties: {
+        core: {
+          title: "Quarterly Report",
+          subject: "Sales",
+          creator: "Ada Lovelace",
+          keywords: "sales,quarterly",
+          description: "Executive summary",
+          lastModifiedBy: "Grace Hopper",
+          created: "2026-07-04T00:00:00Z",
+          modified: "2026-07-04T01:00:00Z",
+        },
+      },
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.properties).toEqual(source.properties);
+  });
+
+  it("round-trips document app properties", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      properties: {
+        app: {
+          application: "word2json",
+          company: "ACME",
+          manager: "Mira",
+          pages: 3,
+          words: 1200,
+          characters: 6400,
+          lines: 80,
+          paragraphs: 12,
+        },
+      },
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.properties).toEqual(source.properties);
   });
 
   it("round-trips repeating section content controls", async () => {
