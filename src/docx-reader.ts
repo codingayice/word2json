@@ -12,6 +12,8 @@ import type {
 } from "./schema.js";
 
 type XmlNode = Record<string, unknown>;
+type RelationshipMap = Record<string, string>;
+type CommentMap = Record<string, TextRun["comment"]>;
 
 const parser = new XMLParser({
   attributeNamePrefix: "",
@@ -28,13 +30,15 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   }
 
   const xml = await documentFile.async("string");
+  const relationships = await parseDocumentRelationships(zip);
+  const comments = await parseComments(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
   const page = parsePageSettings(body.sectPr);
   const section = {
     ...(page ? { page } : {}),
-    blocks: extractBlockXml(xml).map(parseBlockXml),
+    blocks: extractBlockXml(xml).map((blockXml) => parseBlockXml(blockXml, relationships, comments)),
   };
 
   return {
@@ -43,14 +47,55 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   };
 }
 
-function parseBlockXml(xml: string): ParagraphNode | TableNode {
+async function parseDocumentRelationships(zip: JSZip): Promise<RelationshipMap> {
+  const relsFile = zip.file("word/_rels/document.xml.rels");
+
+  if (!relsFile) {
+    return {};
+  }
+
+  const xml = await relsFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const relationships = asArray(asObject(parsed.Relationships).Relationship);
+
+  return Object.fromEntries(relationships
+    .map((value) => asObject(value))
+    .filter((relationship) => relationship.Id !== undefined && relationship.Target !== undefined)
+    .map((relationship) => [String(relationship.Id), String(relationship.Target)]));
+}
+
+async function parseComments(zip: JSZip): Promise<CommentMap> {
+  const commentsFile = zip.file("word/comments.xml");
+
+  if (!commentsFile) {
+    return {};
+  }
+
+  const xml = await commentsFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const comments = asArray(asObject(parsed.comments).comment);
+
+  return Object.fromEntries(comments.map((commentValue) => {
+    const comment = asObject(commentValue);
+    const paragraph = asObject(asObject(comment.p).r);
+
+    return [String(comment.id), {
+      author: String(comment.author ?? ""),
+      ...(typeof comment.initials === "string" ? { initials: comment.initials } : {}),
+      ...(typeof comment.date === "string" ? { date: comment.date } : {}),
+      text: parseText(paragraph.t),
+    }];
+  }));
+}
+
+function parseBlockXml(xml: string, relationships: RelationshipMap, comments: CommentMap): ParagraphNode | TableNode {
   const parsed = parser.parse(xml) as XmlNode;
 
   if (parsed.p !== undefined) {
-    return parseParagraph(parsed.p);
+    return parseParagraph(parsed.p, relationships, comments);
   }
 
-  return parseTable(parsed.tbl);
+  return parseTable(parsed.tbl, relationships, comments);
 }
 
 function extractBlockXml(xml: string): string[] {
@@ -121,7 +166,7 @@ function parsePageSettings(value: unknown): PageSettings | undefined {
   return isDefaultPageSettings(page) ? undefined : page;
 }
 
-function parseParagraph(value: unknown): ParagraphNode {
+function parseParagraph(value: unknown, relationships: RelationshipMap = {}, comments: CommentMap = {}): ParagraphNode {
   const paragraph = asObject(value);
   const properties = asObject(paragraph.pPr);
   const styleNode = asObject(properties.pStyle);
@@ -139,8 +184,84 @@ function parseParagraph(value: unknown): ParagraphNode {
     ...(style ? { style } : {}),
     ...(alignment ? { alignment } : {}),
     ...(numbering ? { list: numbering } : {}),
-    runs: asArray(paragraph.r).map(parseRun),
+    runs: parseParagraphRuns(paragraph, relationships, comments),
   };
+}
+
+function parseParagraphRuns(
+  paragraph: XmlNode,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+): TextRun[] {
+  const commentRanges = commentRangesByText(paragraph);
+  const bookmarkRanges = bookmarkRangesByText(paragraph);
+  const normalRuns = asArray(paragraph.r)
+    .map((run) => parseRun(run))
+    .filter((run) => run.text !== "" || run.break !== undefined)
+    .map((run) => withMatchingBookmark(run, bookmarkRanges))
+    .map((run) => withMatchingComment(run, commentRanges, comments));
+  const hyperlinkRuns = asArray(paragraph.hyperlink)
+    .flatMap((hyperlink) => parseHyperlink(hyperlink, relationships, comments));
+
+  return [...normalRuns, ...hyperlinkRuns];
+}
+
+function commentRangesByText(paragraph: XmlNode): Map<string, string> {
+  const starts = asArray(paragraph.commentRangeStart)
+    .map((value) => asObject(value))
+    .filter((value) => value.id !== undefined);
+  const ranges = new Map<string, string>();
+  const runs = asArray(paragraph.r).map((run) => parseRun(run)).filter((run) => run.text !== "");
+
+  starts.forEach((start, index) => {
+    const run = runs[index];
+    if (run) {
+      ranges.set(run.text, String(start.id));
+    }
+  });
+
+  return ranges;
+}
+
+function withMatchingComment(run: TextRun, ranges: Map<string, string>, comments: CommentMap): TextRun {
+  const commentId = ranges.get(run.text);
+  const comment = commentId ? comments[commentId] : undefined;
+
+  return comment ? { ...run, comment } : run;
+}
+
+function bookmarkRangesByText(paragraph: XmlNode): Map<string, string> {
+  const starts = asArray(paragraph.bookmarkStart)
+    .map((value) => asObject(value))
+    .filter((value) => value.name !== undefined);
+  const ranges = new Map<string, string>();
+  const runs = asArray(paragraph.r).map((run) => parseRun(run)).filter((run) => run.text !== "");
+
+  starts.forEach((start, index) => {
+    const run = runs[index];
+    if (run) {
+      ranges.set(run.text, String(start.name));
+    }
+  });
+
+  return ranges;
+}
+
+function withMatchingBookmark(run: TextRun, ranges: Map<string, string>): TextRun {
+  const name = ranges.get(run.text);
+
+  return name ? { ...run, bookmark: { name } } : run;
+}
+
+function parseHyperlink(value: unknown, relationships: RelationshipMap, comments: CommentMap): TextRun[] {
+  const hyperlink = asObject(value);
+  const url = typeof hyperlink.id === "string" ? relationships[hyperlink.id] : undefined;
+  const ranges = commentRangesByText(hyperlink);
+
+  return asArray(hyperlink.r).map((run) => ({
+    ...withMatchingComment(parseRun(run), ranges, comments),
+    ...(url ? { link: { url } } : {}),
+  })).filter((run) => run.text !== "");
 }
 
 function parseListSettings(value: unknown): ParagraphNode["list"] | undefined {
@@ -161,6 +282,14 @@ function parseListSettings(value: unknown): ParagraphNode["list"] | undefined {
 function parseRun(value: unknown): TextRun {
   const run = asObject(value);
   const properties = asObject(run.rPr);
+  const breakNode = asObject(run.br);
+
+  if (run.br !== undefined) {
+    return {
+      text: "",
+      break: breakNode.type === "page" ? "page" : "line",
+    };
+  }
 
   return {
     text: parseText(run.t),
@@ -184,7 +313,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   };
 }
 
-function parseTable(value: unknown): TableNode {
+function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap): TableNode {
   const table = asObject(value);
   const properties = asObject(table.tblPr);
   const width = asObject(properties.tblW);
@@ -198,13 +327,13 @@ function parseTable(value: unknown): TableNode {
       const row = asObject(rowValue);
 
       return {
-        cells: asArray(row.tc).map(parseTableCell),
+        cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments)),
       };
     }),
   };
 }
 
-function parseTableCell(value: unknown): TableCellNode {
+function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap): TableCellNode {
   const cell = asObject(value);
   const properties = asObject(cell.tcPr);
   const width = asObject(properties.tcW);
@@ -213,7 +342,7 @@ function parseTableCell(value: unknown): TableCellNode {
   return {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(gridSpan.val !== undefined ? { colSpan: parseNumber(gridSpan.val) } : {}),
-    blocks: asArray(cell.p).map(parseParagraph),
+    blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments)),
   };
 }
 

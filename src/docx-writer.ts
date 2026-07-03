@@ -10,39 +10,62 @@ import type {
   TextRun,
 } from "./schema.js";
 
+type WriterContext = {
+  hyperlinks: HyperlinkRelationship[];
+  comments: CommentEntry[];
+  bookmarkId: number;
+};
+
+type HyperlinkRelationship = {
+  id: string;
+  url: string;
+};
+
+type CommentEntry = {
+  id: number;
+  author: string;
+  initials?: string;
+  date?: string;
+  text: string;
+};
+
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
+  const context: WriterContext = { hyperlinks: [], comments: [], bookmarkId: 0 };
 
-  zip.file("[Content_Types].xml", contentTypesXml());
   zip.folder("_rels")!.file(".rels", packageRelsXml());
-  zip.folder("word")!.file("document.xml", documentXml(document));
+  zip.folder("word")!.file("document.xml", documentXml(document, context));
   zip.folder("word")!.file("styles.xml", stylesXml());
   zip.folder("word")!.file("numbering.xml", numberingXml());
-  zip.folder("word")!.folder("_rels")!.file("document.xml.rels", documentRelsXml());
+  if (context.comments.length > 0) {
+    zip.folder("word")!.file("comments.xml", commentsXml(context));
+  }
+  zip.file("[Content_Types].xml", contentTypesXml(context));
+  zip.folder("word")!.folder("_rels")!.file("document.xml.rels", documentRelsXml(context));
 
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
-function documentXml(document: DocumentJson): string {
+function documentXml(document: DocumentJson, context: WriterContext): string {
   const section = document.sections[0] ?? { blocks: [] };
   const body = document.sections
     .flatMap((currentSection) => currentSection.blocks)
-    .map(blockXml)
+    .map((block) => blockXml(block, context))
     .join("");
 
   return xmlDeclaration(
-    `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+    `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
       `<w:body>${body}${sectionPropertiesXml(section)}</w:body>` +
       `</w:document>`,
   );
 }
 
-function blockXml(block: DocumentBlock): string {
+function blockXml(block: DocumentBlock, context: WriterContext): string {
   if (block.type === "paragraph") {
-    return paragraphXml(block);
+    return paragraphXml(block, context);
   }
 
-  return tableXml(block);
+  return tableXml(block, context);
 }
 
 function sectionPropertiesXml(section: SectionNode): string {
@@ -73,9 +96,9 @@ function defaultPageSettings(): PageSettings {
   };
 }
 
-function paragraphXml(paragraph: ParagraphNode): string {
+function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string {
   const properties = paragraphPropertiesXml(paragraph);
-  const runs = paragraph.runs.map(runXml).join("");
+  const runs = paragraph.runs.map((run) => runXml(run, context)).join("");
 
   return `<w:p>${properties}${runs}</w:p>`;
 }
@@ -95,11 +118,53 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }
 
-function runXml(run: TextRun): string {
+function runXml(run: TextRun, context: WriterContext): string {
+  if (run.break) {
+    return run.break === "page"
+      ? '<w:r><w:br w:type="page"/></w:r>'
+      : "<w:r><w:br/></w:r>";
+  }
+
   const properties = runPropertiesXml(run);
   const textSpace = /^\s|\s$/.test(run.text) ? ' xml:space="preserve"' : "";
+  const plainRun = `<w:r>${properties}<w:t${textSpace}>${escapeXml(run.text)}</w:t></w:r>`;
+  const bookmarkedRun = wrapBookmarkIfNeeded(run, plainRun, context);
+  const runContent = wrapCommentIfNeeded(run, bookmarkedRun, context);
 
-  return `<w:r>${properties}<w:t${textSpace}>${escapeXml(run.text)}</w:t></w:r>`;
+  if (!run.link) {
+    return runContent;
+  }
+
+  const relationshipId = `rIdHyperlink${context.hyperlinks.length + 1}`;
+  context.hyperlinks.push({ id: relationshipId, url: run.link.url });
+  return `<w:hyperlink r:id="${relationshipId}">${runContent}</w:hyperlink>`;
+}
+
+function wrapBookmarkIfNeeded(run: TextRun, runContent: string, context: WriterContext): string {
+  if (!run.bookmark) {
+    return runContent;
+  }
+
+  const id = context.bookmarkId;
+  context.bookmarkId += 1;
+
+  return `<w:bookmarkStart w:id="${id}" w:name="${escapeAttribute(run.bookmark.name)}"/>` +
+    runContent +
+    `<w:bookmarkEnd w:id="${id}"/>`;
+}
+
+function wrapCommentIfNeeded(run: TextRun, runContent: string, context: WriterContext): string {
+  if (!run.comment) {
+    return runContent;
+  }
+
+  const id = context.comments.length;
+  context.comments.push({ id, ...run.comment });
+
+  return `<w:commentRangeStart w:id="${id}"/>` +
+    runContent +
+    `<w:commentRangeEnd w:id="${id}"/>` +
+    `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`;
 }
 
 function runPropertiesXml(run: TextRun): string {
@@ -115,24 +180,24 @@ function runPropertiesXml(run: TextRun): string {
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
 }
 
-function tableXml(table: TableNode): string {
+function tableXml(table: TableNode, context: WriterContext): string {
   const properties = [
     table.width ? `<w:tblW w:w="${table.width}" w:type="dxa"/>` : "",
     table.borders ? tableBordersXml(table.borders) : "",
   ].join("");
   const rows = table.rows
-    .map((row) => `<w:tr>${row.cells.map(tableCellXml).join("")}</w:tr>`)
+    .map((row) => `<w:tr>${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`)
     .join("");
 
   return `<w:tbl>${properties ? `<w:tblPr>${properties}</w:tblPr>` : ""}${rows}</w:tbl>`;
 }
 
-function tableCellXml(cell: TableCellNode): string {
+function tableCellXml(cell: TableCellNode, context: WriterContext): string {
   const properties = [
     cell.width ? `<w:tcW w:w="${cell.width}" w:type="dxa"/>` : "",
     cell.colSpan ? `<w:gridSpan w:val="${cell.colSpan}"/>` : "",
   ].join("");
-  const blocks = cell.blocks.map(paragraphXml).join("");
+  const blocks = cell.blocks.map((block) => paragraphXml(block, context)).join("");
 
   return `<w:tc>${properties ? `<w:tcPr>${properties}</w:tcPr>` : ""}${blocks}</w:tc>`;
 }
@@ -148,7 +213,11 @@ function tableBordersXml(border: "single"): string {
     `</w:tblBorders>`;
 }
 
-function contentTypesXml(): string {
+function contentTypesXml(context: WriterContext): string {
+  const commentsOverride = context.comments.length > 0
+    ? `<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/>`
+    : "";
+
   return xmlDeclaration(
     `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
       `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
@@ -156,6 +225,7 @@ function contentTypesXml(): string {
       `<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>` +
       `<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>` +
       `<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>` +
+      commentsOverride +
       `</Types>`,
   );
 }
@@ -168,10 +238,16 @@ function packageRelsXml(): string {
   );
 }
 
-function documentRelsXml(): string {
+function documentRelsXml(context: WriterContext): string {
+  const hyperlinkRelationships = context.hyperlinks
+    .map((relationship) => `<Relationship Id="${relationship.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${escapeAttribute(relationship.url)}" TargetMode="External"/>`)
+    .join("");
+
   return xmlDeclaration(
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
       `<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>` +
+      (context.comments.length > 0 ? `<Relationship Id="rIdComments" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>` : "") +
+      hyperlinkRelationships +
       `</Relationships>`,
   );
 }
@@ -195,6 +271,16 @@ function numberingXml(): string {
       `<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>` +
       `<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>` +
       `</w:numbering>`,
+  );
+}
+
+function commentsXml(context: WriterContext): string {
+  const comments = context.comments
+    .map((comment) => `<w:comment w:id="${comment.id}" w:author="${escapeAttribute(comment.author)}"${comment.initials ? ` w:initials="${escapeAttribute(comment.initials)}"` : ""}${comment.date ? ` w:date="${escapeAttribute(comment.date)}"` : ""}><w:p><w:r><w:t>${escapeXml(comment.text)}</w:t></w:r></w:p></w:comment>`)
+    .join("");
+
+  return xmlDeclaration(
+    `<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${comments}</w:comments>`,
   );
 }
 

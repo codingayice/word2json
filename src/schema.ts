@@ -52,7 +52,28 @@ export type TextRun = {
   fontFamily?: string;
   fontSize?: number;
   color?: string;
+  link?: Hyperlink;
+  comment?: Comment;
+  bookmark?: Bookmark;
+  break?: BreakKind;
 };
+
+export type Hyperlink = {
+  url: string;
+};
+
+export type Comment = {
+  author: string;
+  initials?: string;
+  date?: string;
+  text: string;
+};
+
+export type Bookmark = {
+  name: string;
+};
+
+export type BreakKind = "line" | "page";
 
 export type TableNode = {
   type: "table";

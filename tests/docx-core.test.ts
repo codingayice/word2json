@@ -169,6 +169,87 @@ describe("DOCX writer", () => {
     expect(numbering).toContain('<w:numFmt w:val="bullet"/>');
     expect(numbering).toContain('<w:numFmt w:val="decimal"/>');
   });
+
+  it("writes hyperlinks with external relationships", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "OpenAI",
+            link: { url: "https://example.com" },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+
+    expect(xml).toContain('<w:hyperlink r:id="rIdHyperlink1">');
+    expect(xml).toContain("<w:t>OpenAI</w:t>");
+    expect(rels).toContain('Id="rIdHyperlink1"');
+    expect(rels).toContain('Target="https://example.com"');
+    expect(rels).toContain('TargetMode="External"');
+  });
+
+  it("writes comments with ranges references and comments part", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Needs review",
+            comment: {
+              author: "Ada",
+              initials: "AL",
+              date: "2026-07-04T00:00:00.000Z",
+              text: "Please verify this clause.",
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const comments = await zip.file("word/comments.xml")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+
+    expect(xml).toContain('<w:commentRangeStart w:id="0"/>');
+    expect(xml).toContain('<w:commentRangeEnd w:id="0"/>');
+    expect(xml).toContain('<w:commentReference w:id="0"/>');
+    expect(comments).toContain('<w:comment w:id="0" w:author="Ada" w:initials="AL" w:date="2026-07-04T00:00:00.000Z">');
+    expect(comments).toContain("<w:t>Please verify this clause.</w:t>");
+    expect(contentTypes).toContain('/word/comments.xml');
+    expect(rels).toContain('Target="comments.xml"');
+  });
+
+  it("writes bookmarks and breaks", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Anchor", bookmark: { name: "Clause1" } },
+          { text: "", break: "line" },
+          { text: "", break: "page" },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:bookmarkStart w:id="0" w:name="Clause1"/>');
+    expect(xml).toContain('<w:bookmarkEnd w:id="0"/>');
+    expect(xml).toContain("<w:br/>");
+    expect(xml).toContain('<w:br w:type="page"/>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -285,6 +366,67 @@ describe("DOCX reader", () => {
         type: "paragraph",
         list: { type: "ordered", level: 1 },
         runs: [{ text: "Ordered item" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips hyperlinks", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "OpenAI",
+            link: { url: "https://example.com" },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips comments", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Needs review",
+            comment: {
+              author: "Ada",
+              initials: "AL",
+              date: "2026-07-04T00:00:00.000Z",
+              text: "Please verify this clause.",
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips bookmarks and breaks", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Anchor", bookmark: { name: "Clause1" } },
+          { text: "", break: "line" },
+          { text: "", break: "page" },
+        ],
       },
     ]);
 
