@@ -1765,7 +1765,28 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           content: parseMathNodes(asObject(borderBoxNode.e)),
         };
       }),
+    ...asArray(container.phant)
+      .map((phantom) => {
+        const phantomNode = asObject(phantom);
+        const phantomProperties = asObject(phantomNode.phantPr);
+        return {
+          type: "phantom" as const,
+          ...mathOptionalBooleanProperty(phantomProperties.show, "show"),
+          ...mathBooleanProperty(phantomProperties.zeroWid, "zeroWidth"),
+          ...mathBooleanProperty(phantomProperties.zeroAsc, "zeroAscent"),
+          ...mathBooleanProperty(phantomProperties.zeroDesc, "zeroDescent"),
+          ...mathBooleanProperty(phantomProperties.transp, "transparent"),
+          content: parseMathNodes(asObject(phantomNode.e)),
+        };
+      }),
   ];
+}
+
+function mathOptionalBooleanProperty<K extends string>(node: unknown, key: K): Partial<Record<K, boolean>> {
+  if (node === undefined) {
+    return {};
+  }
+  return { [key]: mathBooleanValue(node) } as Partial<Record<K, boolean>>;
 }
 
 function mathBooleanProperty<K extends string>(node: unknown, key: K): Partial<Record<K, true>> {
