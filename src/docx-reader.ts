@@ -181,9 +181,10 @@ function parseCustomProperty(property: XmlNode): NonNullable<NonNullable<Documen
 
 async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | undefined> {
   const settingsFile = zip.file("word/settings.xml");
+  const web = await parseWebSettings(zip);
 
   if (!settingsFile) {
-    return undefined;
+    return web ? { web } : undefined;
   }
 
   const xml = await settingsFile.async("string");
@@ -195,6 +196,28 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(settings.evenAndOddHeaders !== undefined ? { evenAndOddHeaders: true } : {}),
     ...(settings.updateFields !== undefined ? { updateFields: true } : {}),
     ...(settings.trackRevisions !== undefined ? { trackRevisions: true } : {}),
+    ...(web ? { web } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+async function parseWebSettings(zip: JSZip): Promise<NonNullable<NonNullable<DocumentJson["settings"]>["web"]> | undefined> {
+  const webSettingsFile = zip.file("word/webSettings.xml");
+
+  if (!webSettingsFile) {
+    return undefined;
+  }
+
+  const xml = await webSettingsFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const webSettings = asObject(parsed.webSettings);
+  const pixelsPerInch = asObject(webSettings.pixelsPerInch);
+  const result = {
+    ...(webSettings.optimizeForBrowser !== undefined ? { optimizeForBrowser: true } : {}),
+    ...(webSettings.allowPNG !== undefined ? { allowPng: true } : {}),
+    ...(webSettings.doNotSaveAsSingleFile !== undefined ? { doNotSaveAsSingleFile: true } : {}),
+    ...(pixelsPerInch.val !== undefined ? { pixelsPerInch: parseNumber(pixelsPerInch.val) } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;

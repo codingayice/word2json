@@ -60,6 +60,14 @@ export type DocumentSettings = {
   evenAndOddHeaders?: boolean;
   updateFields?: boolean;
   trackRevisions?: boolean;
+  web?: DocumentWebSettings;
+};
+
+export type DocumentWebSettings = {
+  optimizeForBrowser?: boolean;
+  allowPng?: boolean;
+  doNotSaveAsSingleFile?: boolean;
+  pixelsPerInch?: number;
 };
 
 export type DocumentNumbering = {

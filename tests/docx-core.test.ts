@@ -657,6 +657,34 @@ describe("DOCX writer", () => {
     expect(contentTypes).toContain('PartName="/docProps/custom.xml"');
   });
 
+  it("writes web settings", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      settings: {
+        web: {
+          optimizeForBrowser: true,
+          allowPng: true,
+          doNotSaveAsSingleFile: true,
+          pixelsPerInch: 120,
+        },
+      },
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const webSettings = await zip.file("word/webSettings.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(webSettings).toContain("<w:optimizeForBrowser/>");
+    expect(webSettings).toContain("<w:allowPNG/>");
+    expect(webSettings).toContain("<w:doNotSaveAsSingleFile/>");
+    expect(webSettings).toContain('<w:pixelsPerInch w:val="120"/>');
+    expect(rels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings"');
+    expect(rels).toContain('Target="webSettings.xml"');
+    expect(contentTypes).toContain('PartName="/word/webSettings.xml"');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2613,6 +2641,25 @@ describe("DOCX reader", () => {
     const parsed = await parseDocx(docx);
 
     expect(parsed.properties).toEqual(source.properties);
+  });
+
+  it("round-trips web settings", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      settings: {
+        web: {
+          optimizeForBrowser: true,
+          allowPng: true,
+          doNotSaveAsSingleFile: true,
+          pixelsPerInch: 120,
+        },
+      },
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.settings).toEqual(source.settings);
   });
 
   it("round-trips repeating section content controls", async () => {

@@ -102,6 +102,9 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   if (document.settings) {
     zip.folder("word")!.file("settings.xml", settingsXml(document.settings));
   }
+  if (document.settings?.web) {
+    zip.folder("word")!.file("webSettings.xml", webSettingsXml(document.settings.web));
+  }
   if (context.comments.length > 0) {
     zip.folder("word")!.file("comments.xml", commentsXml(context));
   }
@@ -125,6 +128,17 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       (settings.updateFields ? "<w:updateFields/>" : "") +
       (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       `</w:settings>`,
+  );
+}
+
+function webSettingsXml(settings: NonNullable<NonNullable<DocumentJson["settings"]>["web"]>): string {
+  return xmlDeclaration(
+    `<w:webSettings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      (settings.optimizeForBrowser ? "<w:optimizeForBrowser/>" : "") +
+      (settings.allowPng ? "<w:allowPNG/>" : "") +
+      (settings.doNotSaveAsSingleFile ? "<w:doNotSaveAsSingleFile/>" : "") +
+      (settings.pixelsPerInch !== undefined ? `<w:pixelsPerInch w:val="${settings.pixelsPerInch}"/>` : "") +
+      `</w:webSettings>`,
   );
 }
 
@@ -822,6 +836,9 @@ function contentTypesXml(context: WriterContext): string {
   const settingsOverride = context.settings
     ? `<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>`
     : "";
+  const webSettingsOverride = context.settings?.web
+    ? `<Override PartName="/word/webSettings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>`
+    : "";
   const corePropertiesOverride = context.properties?.core
     ? `<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>`
     : "";
@@ -867,6 +884,7 @@ function contentTypesXml(context: WriterContext): string {
       endnotesOverride +
       themeOverride +
       settingsOverride +
+      webSettingsOverride +
       corePropertiesOverride +
       appPropertiesOverride +
       customPropertiesOverride +
@@ -1008,6 +1026,7 @@ function documentRelsXml(context: WriterContext): string {
       (context.endnotes.length > 0 ? `<Relationship Id="rIdEndnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : "") +
       (context.theme ? `<Relationship Id="rIdTheme" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>` : "") +
       (context.settings ? `<Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>` : "") +
+      (context.settings?.web ? `<Relationship Id="rIdWebSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings" Target="webSettings.xml"/>` : "") +
       headerRelationships +
       footerRelationships +
       imageRelationships +
