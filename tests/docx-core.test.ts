@@ -2141,6 +2141,40 @@ describe("DOCX writer", () => {
     expect(theme).toContain('<a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface="SimSun"/><a:cs typeface="Arial"/></a:majorFont>');
     expect(theme).toContain('<a:minorFont><a:latin typeface="Aptos"/><a:ea typeface="Microsoft YaHei"/><a:cs typeface="Arial"/></a:minorFont>');
   });
+
+  it("writes theme supplemental fonts", async () => {
+    const document = {
+      version: "1.0" as const,
+      theme: {
+        name: "Multilingual Theme",
+        fonts: {
+          major: "Aptos Display",
+          minor: "Aptos",
+          supplemental: [
+            { group: "major" as const, script: "Hans", typeface: "SimSun" },
+            { group: "major" as const, script: "Jpan", typeface: "Yu Gothic" },
+            { group: "minor" as const, script: "Hans", typeface: "Microsoft YaHei" },
+            { group: "minor" as const, script: "Hang", typeface: "Malgun Gothic" },
+          ],
+        },
+        colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const theme = await zip.file("word/theme/theme1.xml")!.async("string");
+
+    expect(theme).toContain('<a:font script="Hans" typeface="SimSun"/>');
+    expect(theme).toContain('<a:font script="Jpan" typeface="Yu Gothic"/>');
+    expect(theme).toContain('<a:font script="Hans" typeface="Microsoft YaHei"/>');
+    expect(theme).toContain('<a:font script="Hang" typeface="Malgun Gothic"/>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -3923,6 +3957,36 @@ describe("DOCX reader", () => {
           majorComplexScript: "Arial",
           minorEastAsia: "Microsoft YaHei",
           minorComplexScript: "Arial",
+        },
+        colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips theme supplemental fonts", async () => {
+    const source = {
+      version: "1.0" as const,
+      theme: {
+        name: "Multilingual Theme",
+        fonts: {
+          major: "Aptos Display",
+          minor: "Aptos",
+          supplemental: [
+            { group: "major" as const, script: "Hans", typeface: "SimSun" },
+            { group: "major" as const, script: "Jpan", typeface: "Yu Gothic" },
+            { group: "minor" as const, script: "Hans", typeface: "Microsoft YaHei" },
+            { group: "minor" as const, script: "Hang", typeface: "Malgun Gothic" },
+          ],
         },
         colors: { accent1: "4472C4" },
       },

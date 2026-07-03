@@ -369,6 +369,10 @@ function themeFonts(fontScheme: XmlNode, major: string, minor: string): Document
   const majorComplexScript = themeFontValue(fontScheme, "majorFont", "cs");
   const minorEastAsia = themeFontValue(fontScheme, "minorFont", "ea");
   const minorComplexScript = themeFontValue(fontScheme, "minorFont", "cs");
+  const supplemental = [
+    ...themeSupplementalFonts(fontScheme, "majorFont", "major"),
+    ...themeSupplementalFonts(fontScheme, "minorFont", "minor"),
+  ];
 
   return {
     major,
@@ -377,7 +381,19 @@ function themeFonts(fontScheme: XmlNode, major: string, minor: string): Document
     ...(majorComplexScript ? { majorComplexScript } : {}),
     ...(minorEastAsia ? { minorEastAsia } : {}),
     ...(minorComplexScript ? { minorComplexScript } : {}),
+    ...(supplemental.length > 0 ? { supplemental } : {}),
   };
+}
+
+function themeSupplementalFonts(fontScheme: XmlNode, groupTag: "majorFont" | "minorFont", group: "major" | "minor"): NonNullable<DocumentTheme["fonts"]["supplemental"]> {
+  return asArray(asObject(fontScheme[groupTag]).font)
+    .map((font) => asObject(font))
+    .filter((font) => typeof font.script === "string" && typeof font.typeface === "string")
+    .map((font) => ({
+      group,
+      script: font.script as string,
+      typeface: font.typeface as string,
+    }));
 }
 
 function themeColorValue(colorScheme: XmlNode, slot: string): string | undefined {

@@ -1084,19 +1084,20 @@ function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
       colorScheme +
       `</a:clrScheme>` +
       `<a:fontScheme name="${escapeAttribute(theme.name)}">` +
-      themeFontXml("majorFont", theme.fonts.major, theme.fonts.majorEastAsia, theme.fonts.majorComplexScript) +
-      themeFontXml("minorFont", theme.fonts.minor, theme.fonts.minorEastAsia, theme.fonts.minorComplexScript) +
+      themeFontXml("majorFont", theme.fonts.major, theme.fonts.majorEastAsia, theme.fonts.majorComplexScript, theme.fonts.supplemental?.filter((font) => font.group === "major") ?? []) +
+      themeFontXml("minorFont", theme.fonts.minor, theme.fonts.minorEastAsia, theme.fonts.minorComplexScript, theme.fonts.supplemental?.filter((font) => font.group === "minor") ?? []) +
       `</a:fontScheme>` +
       `</a:themeElements>` +
       `</a:theme>`,
   );
 }
 
-function themeFontXml(tag: "majorFont" | "minorFont", latin: string, eastAsia: string | undefined, complexScript: string | undefined): string {
+function themeFontXml(tag: "majorFont" | "minorFont", latin: string, eastAsia: string | undefined, complexScript: string | undefined, supplemental: NonNullable<DocumentJson["theme"]>["fonts"]["supplemental"]): string {
   return `<a:${tag}>` +
     `<a:latin typeface="${escapeAttribute(latin)}"/>` +
     (eastAsia ? `<a:ea typeface="${escapeAttribute(eastAsia)}"/>` : "") +
     (complexScript ? `<a:cs typeface="${escapeAttribute(complexScript)}"/>` : "") +
+    (supplemental ?? []).map((font) => `<a:font script="${escapeAttribute(font.script)}" typeface="${escapeAttribute(font.typeface)}"/>`).join("") +
     `</a:${tag}>`;
 }
 

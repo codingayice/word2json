@@ -118,6 +118,13 @@ export type ThemeFonts = {
   majorComplexScript?: string;
   minorEastAsia?: string;
   minorComplexScript?: string;
+  supplemental?: ThemeSupplementalFont[];
+};
+
+export type ThemeSupplementalFont = {
+  group: "major" | "minor";
+  script: string;
+  typeface: string;
 };
 
 export type ThemeColors = {
