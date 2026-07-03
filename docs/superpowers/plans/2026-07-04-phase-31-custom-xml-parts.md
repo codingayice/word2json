@@ -174,7 +174,7 @@ git add docs/superpowers/plans/2026-07-04-phase-31-custom-xml-parts.md src/schem
 git commit -m "feat: add phase 31 custom xml parts"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-31-custom-xml-parts
