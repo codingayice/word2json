@@ -1,0 +1,27 @@
+{
+  "name": "word2json",
+  "version": "0.1.0",
+  "description": "High-fidelity-oriented DOCX and JSON conversion toolkit.",
+  "type": "module",
+  "bin": {
+    "word2json": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.1",
+    "jszip": "^3.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "execa": "^9.5.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
