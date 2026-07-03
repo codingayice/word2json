@@ -267,6 +267,41 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:bar><m:barPr><m:pos m:val="top"/></m:barPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:bar>');
   });
 
+  it("writes function office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "function" as const,
+                  name: [{ type: "text" as const, text: "sin" }],
+                  argument: [
+                    {
+                      type: "delimiter" as const,
+                      begin: "(",
+                      end: ")",
+                      content: [{ type: "text" as const, text: "x" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:func><m:fName><m:r><m:t>sin</m:t></m:r></m:fName><m:e><m:d><m:dPr><m:begChr m:val="("/><m:endChr m:val=")"/></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d></m:e></m:func>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2831,6 +2866,39 @@ describe("DOCX reader", () => {
                   type: "bar" as const,
                   position: "bottom" as const,
                   content: [
+                    {
+                      type: "fraction" as const,
+                      numerator: [{ type: "text" as const, text: "a" }],
+                      denominator: [{ type: "text" as const, text: "b" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips function office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "function" as const,
+                  name: [{ type: "text" as const, text: "log" }],
+                  argument: [
                     {
                       type: "fraction" as const,
                       numerator: [{ type: "text" as const, text: "a" }],

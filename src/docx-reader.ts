@@ -1704,6 +1704,15 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           content: parseMathNodes(asObject(barNode.e)),
         };
       }),
+    ...asArray(container.func)
+      .map((func) => {
+        const funcNode = asObject(func);
+        return {
+          type: "function" as const,
+          name: parseMathNodes(asObject(funcNode.fName)),
+          argument: parseMathNodes(asObject(funcNode.e)),
+        };
+      }),
   ];
 }
 
