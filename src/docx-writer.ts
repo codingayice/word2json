@@ -224,7 +224,7 @@ function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string 
     return plainParagraph;
   }
 
-  const wrapper = paragraph.revision.type === "insert" ? "ins" : "del";
+  const wrapper = revisionElement(paragraph.revision.type);
   return `<w:${wrapper}${revisionAttributes(paragraph.revision)}>${plainParagraph}</w:${wrapper}>`;
 }
 
@@ -353,13 +353,30 @@ function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
     return `<w:ins${revisionAttributes(run.revision)}>${runContent}</w:ins>`;
   }
 
+  if (run.revision.type === "moveTo") {
+    return `<w:moveTo${revisionAttributes(run.revision)}>${runContent}</w:moveTo>`;
+  }
+
   const textSpace = /^\s|\s$/.test(run.text) ? ' xml:space="preserve"' : "";
-  return `<w:del${revisionAttributes(run.revision)}><w:r>${runPropertiesXml(run)}<w:delText${textSpace}>${escapeXml(run.text)}</w:delText></w:r></w:del>`;
+  const wrapper = run.revision.type === "moveFrom" ? "moveFrom" : "del";
+  return `<w:${wrapper}${revisionAttributes(run.revision)}><w:r>${runPropertiesXml(run)}<w:delText${textSpace}>${escapeXml(run.text)}</w:delText></w:r></w:${wrapper}>`;
 }
 
 function revisionAttributes(revision: RunRevision): string {
   return ` w:id="${revision.id}" w:author="${escapeAttribute(revision.author)}"` +
     (revision.date ? ` w:date="${escapeAttribute(revision.date)}"` : "");
+}
+
+function revisionElement(type: RunRevision["type"]): "ins" | "del" | "moveFrom" | "moveTo" {
+  if (type === "insert") {
+    return "ins";
+  }
+
+  if (type === "delete") {
+    return "del";
+  }
+
+  return type;
 }
 
 function fieldRunXml(field: TextRun["field"]): string {
@@ -476,7 +493,7 @@ function tableXml(table: TableNode, context: WriterContext): string {
   const rows = table.rows
     .map((row) => {
       const rowRevision = row.revision
-        ? `<w:${row.revision.type === "insert" ? "ins" : "del"}${revisionAttributes(row.revision)}/>`
+        ? `<w:${revisionElement(row.revision.type)}${revisionAttributes(row.revision)}/>`
         : "";
       const rowHeight = row.height
         ? `<w:trHeight w:val="${row.height.value}"${row.height.rule ? ` w:hRule="${row.height.rule}"` : ""}/>`

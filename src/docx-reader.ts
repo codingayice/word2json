@@ -555,6 +555,14 @@ function parseBlockXml(
     return parseRevisedParagraph(parsed.del, "delete", relationships, comments, footnotes, endnotes, numberingContext);
   }
 
+  if (parsed.moveFrom !== undefined) {
+    return parseRevisedParagraph(parsed.moveFrom, "moveFrom", relationships, comments, footnotes, endnotes, numberingContext);
+  }
+
+  if (parsed.moveTo !== undefined) {
+    return parseRevisedParagraph(parsed.moveTo, "moveTo", relationships, comments, footnotes, endnotes, numberingContext);
+  }
+
   if (parsed.p !== undefined) {
     if (xml.includes("<w:drawing>")) {
       return parseImageBlock(parsed.p, media);
@@ -683,7 +691,9 @@ function extractBlockXmlFromContent(body: string): string[] {
     const tableIndex = body.indexOf("<w:tbl", index);
     const insertIndex = body.indexOf("<w:ins", index);
     const deleteIndex = body.indexOf("<w:del", index);
-    const blockIndex = nextBlockIndex(paragraphIndex, tableIndex, insertIndex, deleteIndex);
+    const moveFromIndex = body.indexOf("<w:moveFrom", index);
+    const moveToIndex = body.indexOf("<w:moveTo", index);
+    const blockIndex = nextBlockIndex(paragraphIndex, tableIndex, insertIndex, deleteIndex, moveFromIndex, moveToIndex);
 
     if (blockIndex === -1) {
       break;
@@ -697,6 +707,14 @@ function extractBlockXmlFromContent(body: string): string[] {
       const end = body.indexOf("</w:del>", blockIndex);
       blocks.push(body.slice(blockIndex, end + "</w:del>".length));
       index = end + "</w:del>".length;
+    } else if (blockIndex === moveFromIndex) {
+      const end = body.indexOf("</w:moveFrom>", blockIndex);
+      blocks.push(body.slice(blockIndex, end + "</w:moveFrom>".length));
+      index = end + "</w:moveFrom>".length;
+    } else if (blockIndex === moveToIndex) {
+      const end = body.indexOf("</w:moveTo>", blockIndex);
+      blocks.push(body.slice(blockIndex, end + "</w:moveTo>".length));
+      index = end + "</w:moveTo>".length;
     } else if (blockIndex === paragraphIndex) {
       const end = body.indexOf("</w:p>", blockIndex);
       blocks.push(body.slice(blockIndex, end + "</w:p>".length));
@@ -950,6 +968,8 @@ function parseParagraphRuns(
   const revisionRuns = [
     ...asArray(paragraph.ins).map((ins) => ({ ins })),
     ...asArray(paragraph.del).map((del) => ({ del })),
+    ...asArray(paragraph.moveFrom).map((moveFrom) => ({ moveFrom })),
+    ...asArray(paragraph.moveTo).map((moveTo) => ({ moveTo })),
   ];
   const normalRuns = parseComplexFieldRuns([...asArray(paragraph.r), ...revisionRuns])
     .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined)
@@ -974,6 +994,16 @@ function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
 
     if (run.del !== undefined) {
       runs.push(parseDeletedRevision(run.del));
+      continue;
+    }
+
+    if (run.moveFrom !== undefined) {
+      runs.push(parseMoveRevision(run.moveFrom, "moveFrom"));
+      continue;
+    }
+
+    if (run.moveTo !== undefined) {
+      runs.push(parseMoveRevision(run.moveTo, "moveTo"));
       continue;
     }
 
@@ -1029,6 +1059,19 @@ function parseDeletedRevision(value: unknown): TextRun {
     ...parseRun(revision.r),
     revision: {
       type: "delete",
+      id: parseNumber(revision.id),
+      author: String(revision.author ?? ""),
+      ...(typeof revision.date === "string" ? { date: revision.date } : {}),
+    },
+  };
+}
+
+function parseMoveRevision(value: unknown, type: "moveFrom" | "moveTo"): TextRun {
+  const revision = asObject(value);
+  return {
+    ...parseRun(revision.r),
+    revision: {
+      type,
       id: parseNumber(revision.id),
       author: String(revision.author ?? ""),
       ...(typeof revision.date === "string" ? { date: revision.date } : {}),

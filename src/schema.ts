@@ -234,7 +234,7 @@ export type TextRun = StyleRunProperties & {
 };
 
 export type RunRevision = {
-  type: "insert" | "delete";
+  type: "insert" | "delete" | "moveFrom" | "moveTo";
   id: number;
   author: string;
   date?: string;

@@ -186,6 +186,27 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:delText>Removed</w:delText>");
   });
 
+  it("writes run move revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Moved away", revision: { type: "moveFrom", id: 30, author: "Ada", date: "2026-07-04T09:00:00.000Z" } },
+          { text: "Moved here", revision: { type: "moveTo", id: 31, author: "Lin", date: "2026-07-04T10:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:moveFrom w:id="30" w:author="Ada" w:date="2026-07-04T09:00:00.000Z">');
+    expect(xml).toContain("<w:delText>Moved away</w:delText>");
+    expect(xml).toContain('<w:moveTo w:id="31" w:author="Lin" w:date="2026-07-04T10:00:00.000Z">');
+    expect(xml).toContain("<w:t>Moved here</w:t>");
+  });
+
   it("writes paragraph insert revisions", async () => {
     const document = createDocumentJson([
       {
@@ -218,6 +239,30 @@ describe("DOCX writer", () => {
 
     expect(xml).toContain('<w:del w:id="11" w:author="Lin" w:date="2026-07-04T03:00:00.000Z"><w:p>');
     expect(xml).toContain("<w:t>Deleted paragraph</w:t>");
+  });
+
+  it("writes paragraph move revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        revision: { type: "moveFrom", id: 32, author: "Mira", date: "2026-07-04T11:00:00.000Z" },
+        runs: [{ text: "Moved paragraph from" }],
+      },
+      {
+        type: "paragraph",
+        revision: { type: "moveTo", id: 33, author: "Noor", date: "2026-07-04T12:00:00.000Z" },
+        runs: [{ text: "Moved paragraph to" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:moveFrom w:id="32" w:author="Mira" w:date="2026-07-04T11:00:00.000Z"><w:p>');
+    expect(xml).toContain("<w:t>Moved paragraph from</w:t>");
+    expect(xml).toContain('<w:moveTo w:id="33" w:author="Noor" w:date="2026-07-04T12:00:00.000Z"><w:p>');
+    expect(xml).toContain("<w:t>Moved paragraph to</w:t>");
   });
 
   it("writes paragraph property change metadata", async () => {
@@ -1631,6 +1676,23 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips run move revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Moved away", revision: { type: "moveFrom", id: 30, author: "Ada", date: "2026-07-04T09:00:00.000Z" } },
+          { text: "Moved here", revision: { type: "moveTo", id: 31, author: "Lin", date: "2026-07-04T10:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips table property change metadata", async () => {
     const source = createDocumentJson([
       {
@@ -1717,6 +1779,26 @@ describe("DOCX reader", () => {
         type: "paragraph",
         revision: { type: "delete", id: 11, author: "Lin", date: "2026-07-04T03:00:00.000Z" },
         runs: [{ text: "Deleted paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph move revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        revision: { type: "moveFrom", id: 32, author: "Mira", date: "2026-07-04T11:00:00.000Z" },
+        runs: [{ text: "Moved paragraph from" }],
+      },
+      {
+        type: "paragraph",
+        revision: { type: "moveTo", id: 33, author: "Noor", date: "2026-07-04T12:00:00.000Z" },
+        runs: [{ text: "Moved paragraph to" }],
       },
     ]);
 
