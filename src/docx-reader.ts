@@ -1672,6 +1672,19 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           ),
         };
       }),
+    ...asArray(container.d)
+      .map((delimiter) => {
+        const delimiterNode = asObject(delimiter);
+        const delimiterProperties = asObject(delimiterNode.dPr);
+        const begin = asObject(delimiterProperties.begChr).val;
+        const end = asObject(delimiterProperties.endChr).val;
+        return {
+          type: "delimiter" as const,
+          ...(typeof begin === "string" ? { begin } : {}),
+          ...(typeof end === "string" ? { end } : {}),
+          content: parseMathNodes(asObject(delimiterNode.e)),
+        };
+      }),
   ];
 }
 

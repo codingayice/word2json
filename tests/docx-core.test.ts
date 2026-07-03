@@ -176,6 +176,41 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<m:m><m:mr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:mr><m:mr><m:e><m:r><m:t>c</m:t></m:r></m:e><m:e><m:r><m:t>d</m:t></m:r></m:e></m:mr></m:m>");
   });
 
+  it("writes delimiter office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "delimiter" as const,
+                  begin: "(",
+                  end: ")",
+                  content: [
+                    {
+                      type: "fraction" as const,
+                      numerator: [{ type: "text" as const, text: "a" }],
+                      denominator: [{ type: "text" as const, text: "b" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="("/><m:endChr m:val=")"/></m:dPr><m:e><m:f><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:e></m:d>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2645,6 +2680,40 @@ describe("DOCX reader", () => {
                   rows: [
                     [[{ type: "text" as const, text: "a" }], [{ type: "text" as const, text: "b" }]],
                     [[{ type: "text" as const, text: "c" }], [{ type: "text" as const, text: "d" }]],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips delimiter office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "delimiter" as const,
+                  begin: "|",
+                  end: "|",
+                  content: [
+                    {
+                      type: "superscript" as const,
+                      base: [{ type: "text" as const, text: "x" }],
+                      superscript: [{ type: "text" as const, text: "2" }],
+                    },
                   ],
                 },
               ],

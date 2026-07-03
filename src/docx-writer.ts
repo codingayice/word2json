@@ -709,6 +709,13 @@ function mathNodeXml(node: MathNode): string {
     return `<m:m>${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
   }
 
+  if (node.type === "delimiter") {
+    const delimiterProperties = node.begin !== undefined || node.end !== undefined
+      ? `<m:dPr>${node.begin !== undefined ? `<m:begChr m:val="${escapeAttribute(node.begin)}"/>` : ""}${node.end !== undefined ? `<m:endChr m:val="${escapeAttribute(node.end)}"/>` : ""}</m:dPr>`
+      : "";
+    return `<m:d>${delimiterProperties}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:d>`;
+  }
+
   return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
