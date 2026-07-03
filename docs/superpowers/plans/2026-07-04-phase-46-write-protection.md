@@ -143,7 +143,7 @@ git add docs/superpowers/plans/2026-07-04-phase-46-write-protection.md src/schem
 git commit -m "feat: add phase 46 write protection"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-46-write-protection
