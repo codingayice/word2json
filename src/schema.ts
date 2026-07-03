@@ -408,8 +408,15 @@ export type TextRun = StyleRunProperties & {
 };
 
 export type MathRun = {
-  text: string;
+  text?: string;
+  nodes?: MathNode[];
 };
+
+export type MathNode =
+  | { type: "text"; text: string }
+  | { type: "fraction"; numerator: MathNode[]; denominator: MathNode[] }
+  | { type: "superscript"; base: MathNode[]; superscript: MathNode[] }
+  | { type: "subscript"; base: MathNode[]; subscript: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";

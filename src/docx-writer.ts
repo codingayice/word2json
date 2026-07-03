@@ -4,6 +4,7 @@ import type {
   DocumentBlock,
   DocumentJson,
   ImageNode,
+  MathNode,
   PageSettings,
   ParagraphNode,
   RunRevision,
@@ -642,7 +643,7 @@ function runXml(run: TextRun, context: WriterContext, options: { skipComment?: b
   }
 
   if (run.math) {
-    return `<m:oMath><m:r><m:t>${escapeXml(run.math.text)}</m:t></m:r></m:oMath>`;
+    return mathRunXml(run.math);
   }
 
   if (run.field) {
@@ -674,6 +675,28 @@ function runXml(run: TextRun, context: WriterContext, options: { skipComment?: b
   const relationshipId = `rIdHyperlink${context.hyperlinks.length + 1}`;
   context.hyperlinks.push({ id: relationshipId, url: run.link.url });
   return `<w:hyperlink r:id="${relationshipId}">${runContent}</w:hyperlink>`;
+}
+
+function mathRunXml(math: NonNullable<TextRun["math"]>): string {
+  const nodes = math.nodes ?? (math.text !== undefined ? [{ type: "text" as const, text: math.text }] : []);
+
+  return `<m:oMath>${nodes.map((node) => mathNodeXml(node)).join("")}</m:oMath>`;
+}
+
+function mathNodeXml(node: MathNode): string {
+  if (node.type === "text") {
+    return `<m:r><m:t>${escapeXml(node.text)}</m:t></m:r>`;
+  }
+
+  if (node.type === "fraction") {
+    return `<m:f><m:num>${node.numerator.map((child) => mathNodeXml(child)).join("")}</m:num><m:den>${node.denominator.map((child) => mathNodeXml(child)).join("")}</m:den></m:f>`;
+  }
+
+  if (node.type === "superscript") {
+    return `<m:sSup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:sSup>`;
+  }
+
+  return `<m:sSub><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub></m:sSub>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {

@@ -1591,11 +1591,55 @@ function parseMathRunXml(xml: string): TextRun | undefined {
     `<root xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">${xml}</root>`,
   ) as XmlNode;
   const math = asObject(asObject(parsed.root).oMath);
+  const nodes = parseMathNodes(math);
+
+  if (nodes.some((node) => node.type !== "text")) {
+    return { text: "", math: { nodes } };
+  }
+
   const text = asArray(math.r)
     .map((run) => parseText(asObject(run).t))
     .join("");
 
   return text ? { text: "", math: { text } } : undefined;
+}
+
+function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["math"]>["nodes"]> {
+  return [
+    ...asArray(container.r)
+      .map((run) => {
+        const text = parseText(asObject(run).t);
+        return text ? { type: "text" as const, text } : undefined;
+      })
+      .filter((node): node is { type: "text"; text: string } => node !== undefined),
+    ...asArray(container.f)
+      .map((fraction) => {
+        const fractionNode = asObject(fraction);
+        return {
+          type: "fraction" as const,
+          numerator: parseMathNodes(asObject(fractionNode.num)),
+          denominator: parseMathNodes(asObject(fractionNode.den)),
+        };
+      }),
+    ...asArray(container.sSup)
+      .map((superscript) => {
+        const superscriptNode = asObject(superscript);
+        return {
+          type: "superscript" as const,
+          base: parseMathNodes(asObject(superscriptNode.e)),
+          superscript: parseMathNodes(asObject(superscriptNode.sup)),
+        };
+      }),
+    ...asArray(container.sSub)
+      .map((subscript) => {
+        const subscriptNode = asObject(subscript);
+        return {
+          type: "subscript" as const,
+          base: parseMathNodes(asObject(subscriptNode.e)),
+          subscript: parseMathNodes(asObject(subscriptNode.sub)),
+        };
+      }),
+  ];
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
