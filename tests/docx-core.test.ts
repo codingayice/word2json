@@ -685,6 +685,32 @@ describe("DOCX writer", () => {
     expect(contentTypes).toContain('PartName="/word/webSettings.xml"');
   });
 
+  it("writes font table", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      fonts: [
+        { name: "Aptos", family: "swiss", pitch: "variable", charset: "00", panose1: "020F0502020204030204" },
+        { name: "SimSun", family: "roman", pitch: "fixed", charset: "86" },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const fontTable = await zip.file("word/fontTable.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(fontTable).toContain('<w:font w:name="Aptos">');
+    expect(fontTable).toContain('<w:panose1 w:val="020F0502020204030204"/>');
+    expect(fontTable).toContain('<w:charset w:val="00"/>');
+    expect(fontTable).toContain('<w:family w:val="swiss"/>');
+    expect(fontTable).toContain('<w:pitch w:val="variable"/>');
+    expect(fontTable).toContain('<w:font w:name="SimSun">');
+    expect(rels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable"');
+    expect(rels).toContain('Target="fontTable.xml"');
+    expect(contentTypes).toContain('PartName="/word/fontTable.xml"');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2660,6 +2686,21 @@ describe("DOCX reader", () => {
     const parsed = await parseDocx(docx);
 
     expect(parsed.settings).toEqual(source.settings);
+  });
+
+  it("round-trips font table", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      fonts: [
+        { name: "Aptos", family: "swiss", pitch: "variable", charset: "00", panose1: "020F0502020204030204" },
+        { name: "SimSun", family: "roman", pitch: "fixed", charset: "86" },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.fonts).toEqual(source.fonts);
   });
 
   it("round-trips repeating section content controls", async () => {

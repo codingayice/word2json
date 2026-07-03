@@ -61,6 +61,7 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const theme = await parseTheme(zip);
   const settings = await parseSettings(zip);
   const properties = await parseDocumentProperties(zip);
+  const fonts = await parseFontTable(zip);
   const customXmlParts = await parseCustomXmlParts(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
@@ -74,8 +75,39 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
     ...(styles ? { styles } : {}),
     ...(numberingContext.numbering ? { numbering: numberingContext.numbering } : {}),
     ...(customXmlParts.length > 0 ? { customXmlParts } : {}),
+    ...(fonts.length > 0 ? { fonts } : {}),
     sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes, numberingContext),
   };
+}
+
+async function parseFontTable(zip: JSZip): Promise<NonNullable<DocumentJson["fonts"]>> {
+  const fontTableFile = zip.file("word/fontTable.xml");
+
+  if (!fontTableFile) {
+    return [];
+  }
+
+  const xml = await fontTableFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const fontsRoot = asObject(parsed.fonts);
+
+  return asArray(fontsRoot.font)
+    .map((fontValue) => asObject(fontValue))
+    .filter((font) => typeof font.name === "string")
+    .map((font) => {
+      const panose1 = asObject(font.panose1);
+      const charset = asObject(font.charset);
+      const family = asObject(font.family);
+      const pitch = asObject(font.pitch);
+
+      return {
+        name: String(font.name),
+        ...(typeof family.val === "string" ? { family: family.val as NonNullable<DocumentJson["fonts"]>[number]["family"] } : {}),
+        ...(typeof pitch.val === "string" ? { pitch: pitch.val as NonNullable<DocumentJson["fonts"]>[number]["pitch"] } : {}),
+        ...(typeof charset.val === "string" ? { charset: charset.val } : {}),
+        ...(typeof panose1.val === "string" ? { panose1: panose1.val } : {}),
+      };
+    });
 }
 
 async function parseDocumentProperties(zip: JSZip): Promise<DocumentJson["properties"] | undefined> {

@@ -26,6 +26,7 @@ type WriterContext = {
   theme: DocumentJson["theme"];
   settings: DocumentJson["settings"];
   properties: DocumentJson["properties"];
+  fonts: DocumentJson["fonts"];
   customXmlParts: NonNullable<DocumentJson["customXmlParts"]>;
   bookmarkId: number;
 };
@@ -63,7 +64,7 @@ type NoteEntry = {
 
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, properties: document.properties, customXmlParts: document.customXmlParts ?? [], bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, properties: document.properties, fonts: document.fonts, customXmlParts: document.customXmlParts ?? [], bookmarkId: 0 };
 
   zip.folder("_rels")!.file(".rels", packageRelsXml(context));
   zip.folder("word")!.file("document.xml", documentXml(document, context));
@@ -105,6 +106,9 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   if (document.settings?.web) {
     zip.folder("word")!.file("webSettings.xml", webSettingsXml(document.settings.web));
   }
+  if (document.fonts && document.fonts.length > 0) {
+    zip.folder("word")!.file("fontTable.xml", fontTableXml(document.fonts));
+  }
   if (context.comments.length > 0) {
     zip.folder("word")!.file("comments.xml", commentsXml(context));
   }
@@ -139,6 +143,23 @@ function webSettingsXml(settings: NonNullable<NonNullable<DocumentJson["settings
       (settings.doNotSaveAsSingleFile ? "<w:doNotSaveAsSingleFile/>" : "") +
       (settings.pixelsPerInch !== undefined ? `<w:pixelsPerInch w:val="${settings.pixelsPerInch}"/>` : "") +
       `</w:webSettings>`,
+  );
+}
+
+function fontTableXml(fonts: NonNullable<DocumentJson["fonts"]>): string {
+  const fontEntries = fonts.map((font) =>
+    `<w:font w:name="${escapeAttribute(font.name)}">` +
+      (font.panose1 ? `<w:panose1 w:val="${escapeAttribute(font.panose1)}"/>` : "") +
+      (font.charset ? `<w:charset w:val="${escapeAttribute(font.charset)}"/>` : "") +
+      (font.family ? `<w:family w:val="${font.family}"/>` : "") +
+      (font.pitch ? `<w:pitch w:val="${font.pitch}"/>` : "") +
+      `</w:font>`,
+  ).join("");
+
+  return xmlDeclaration(
+    `<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      fontEntries +
+      `</w:fonts>`,
   );
 }
 
@@ -839,6 +860,9 @@ function contentTypesXml(context: WriterContext): string {
   const webSettingsOverride = context.settings?.web
     ? `<Override PartName="/word/webSettings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>`
     : "";
+  const fontTableOverride = context.fonts && context.fonts.length > 0
+    ? `<Override PartName="/word/fontTable.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>`
+    : "";
   const corePropertiesOverride = context.properties?.core
     ? `<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>`
     : "";
@@ -885,6 +909,7 @@ function contentTypesXml(context: WriterContext): string {
       themeOverride +
       settingsOverride +
       webSettingsOverride +
+      fontTableOverride +
       corePropertiesOverride +
       appPropertiesOverride +
       customPropertiesOverride +
@@ -1027,6 +1052,7 @@ function documentRelsXml(context: WriterContext): string {
       (context.theme ? `<Relationship Id="rIdTheme" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>` : "") +
       (context.settings ? `<Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>` : "") +
       (context.settings?.web ? `<Relationship Id="rIdWebSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings" Target="webSettings.xml"/>` : "") +
+      (context.fonts && context.fonts.length > 0 ? `<Relationship Id="rIdFontTable" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" Target="fontTable.xml"/>` : "") +
       headerRelationships +
       footerRelationships +
       imageRelationships +

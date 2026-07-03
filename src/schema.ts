@@ -6,7 +6,16 @@ export type DocumentJson = {
   styles?: DocumentStyles;
   numbering?: DocumentNumbering;
   customXmlParts?: CustomXmlPart[];
+  fonts?: DocumentFont[];
   sections: SectionNode[];
+};
+
+export type DocumentFont = {
+  name: string;
+  family?: "decorative" | "modern" | "roman" | "script" | "swiss" | "system";
+  pitch?: "fixed" | "variable" | "default";
+  charset?: string;
+  panose1?: string;
 };
 
 export type DocumentProperties = {
