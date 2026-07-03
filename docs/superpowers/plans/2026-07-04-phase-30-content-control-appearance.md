@@ -177,7 +177,7 @@ git add docs/superpowers/plans/2026-07-04-phase-30-content-control-appearance.md
 git commit -m "feat: add phase 30 content control appearance"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-30-content-control-appearance
