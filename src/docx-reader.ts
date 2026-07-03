@@ -225,6 +225,7 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const defaultTabStop = asObject(settings.defaultTabStop);
   const compatibility = parseCompatibilitySettings(settings);
   const proofing = parseProofingSettings(settings);
+  const protection = parseDocumentProtection(settings);
   const view = parseViewSettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
@@ -233,11 +234,38 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(settings.trackRevisions !== undefined ? { trackRevisions: true } : {}),
     ...(compatibility ? { compatibility } : {}),
     ...(proofing ? { proofing } : {}),
+    ...(protection ? { protection } : {}),
     ...(view ? { view } : {}),
     ...(web ? { web } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseDocumentProtection(settings: XmlNode): NonNullable<DocumentJson["settings"]>["protection"] | undefined {
+  const protection = asObject(settings.documentProtection);
+  const edit = protectionEditValue(protection.edit);
+  const result = {
+    ...(edit ? { edit } : {}),
+    ...(protection.enforcement !== undefined ? { enforcement: parseOnOff(protection.enforcement) } : {}),
+    ...(typeof protection.cryptProviderType === "string" ? { cryptProviderType: protection.cryptProviderType } : {}),
+    ...(typeof protection.cryptAlgorithmClass === "string" ? { cryptAlgorithmClass: protection.cryptAlgorithmClass } : {}),
+    ...(typeof protection.cryptAlgorithmType === "string" ? { cryptAlgorithmType: protection.cryptAlgorithmType } : {}),
+    ...(protection.cryptAlgorithmSid !== undefined ? { cryptAlgorithmSid: parseNumber(protection.cryptAlgorithmSid) } : {}),
+    ...(protection.cryptSpinCount !== undefined ? { cryptSpinCount: parseNumber(protection.cryptSpinCount) } : {}),
+    ...(typeof protection.hash === "string" ? { hash: protection.hash } : {}),
+    ...(typeof protection.salt === "string" ? { salt: protection.salt } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function protectionEditValue(value: unknown): NonNullable<NonNullable<DocumentJson["settings"]>["protection"]>["edit"] | undefined {
+  return value === "none" || value === "readOnly" || value === "comments" || value === "trackedChanges" || value === "forms" ? value : undefined;
+}
+
+function parseOnOff(value: unknown): boolean {
+  return value === true || value === "true" || value === "1" || value === "on";
 }
 
 function parseViewSettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["view"] | undefined {

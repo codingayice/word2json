@@ -870,6 +870,32 @@ describe("DOCX writer", () => {
     expect(settings).toContain('<w:zoom w:val="fullPage" w:percent="125"/>');
   });
 
+  it("writes document protection settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: {
+        protection: {
+          edit: "trackedChanges" as const,
+          enforcement: true,
+          cryptProviderType: "rsaFull",
+          cryptAlgorithmClass: "hash",
+          cryptAlgorithmType: "typeAny",
+          cryptAlgorithmSid: 4,
+          cryptSpinCount: 100000,
+          hash: "ABCDEF0123456789",
+          salt: "0123456789ABCDEF",
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Protected" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain('<w:documentProtection w:edit="trackedChanges" w:enforcement="1" w:cryptProviderType="rsaFull" w:cryptAlgorithmClass="hash" w:cryptAlgorithmType="typeAny" w:cryptAlgorithmSid="4" w:cryptSpinCount="100000" w:hash="ABCDEF0123456789" w:salt="0123456789ABCDEF"/>');
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -3051,6 +3077,31 @@ describe("DOCX reader", () => {
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "View" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips document protection settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: {
+        protection: {
+          edit: "trackedChanges" as const,
+          enforcement: true,
+          cryptProviderType: "rsaFull",
+          cryptAlgorithmClass: "hash",
+          cryptAlgorithmType: "typeAny",
+          cryptAlgorithmSid: 4,
+          cryptSpinCount: 100000,
+          hash: "ABCDEF0123456789",
+          salt: "0123456789ABCDEF",
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Protected" }] }] }],
     };
 
     const docx = await buildDocx(source);

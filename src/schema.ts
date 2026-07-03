@@ -71,8 +71,21 @@ export type DocumentSettings = {
   trackRevisions?: boolean;
   compatibility?: DocumentCompatibilitySettings;
   proofing?: DocumentProofingSettings;
+  protection?: DocumentProtectionSettings;
   view?: DocumentViewSettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentProtectionSettings = {
+  edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
+  enforcement?: boolean;
+  cryptProviderType?: string;
+  cryptAlgorithmClass?: string;
+  cryptAlgorithmType?: string;
+  cryptAlgorithmSid?: number;
+  cryptSpinCount?: number;
+  hash?: string;
+  salt?: string;
 };
 
 export type DocumentViewSettings = {

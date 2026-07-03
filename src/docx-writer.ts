@@ -133,9 +133,30 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       compatibilitySettingsXml(settings.compatibility) +
       proofingSettingsXml(settings.proofing) +
+      documentProtectionXml(settings.protection) +
       viewSettingsXml(settings.view) +
       `</w:settings>`,
   );
+}
+
+function documentProtectionXml(protection: NonNullable<DocumentJson["settings"]>["protection"]): string {
+  if (!protection) {
+    return "";
+  }
+
+  const attributes = [
+    protection.edit ? `w:edit="${escapeAttribute(protection.edit)}"` : "",
+    protection.enforcement !== undefined ? `w:enforcement="${protection.enforcement ? "1" : "0"}"` : "",
+    protection.cryptProviderType ? `w:cryptProviderType="${escapeAttribute(protection.cryptProviderType)}"` : "",
+    protection.cryptAlgorithmClass ? `w:cryptAlgorithmClass="${escapeAttribute(protection.cryptAlgorithmClass)}"` : "",
+    protection.cryptAlgorithmType ? `w:cryptAlgorithmType="${escapeAttribute(protection.cryptAlgorithmType)}"` : "",
+    protection.cryptAlgorithmSid !== undefined ? `w:cryptAlgorithmSid="${protection.cryptAlgorithmSid}"` : "",
+    protection.cryptSpinCount !== undefined ? `w:cryptSpinCount="${protection.cryptSpinCount}"` : "",
+    protection.hash ? `w:hash="${escapeAttribute(protection.hash)}"` : "",
+    protection.salt ? `w:salt="${escapeAttribute(protection.salt)}"` : "",
+  ].filter(Boolean).join(" ");
+
+  return attributes ? `<w:documentProtection ${attributes}/>` : "";
 }
 
 function viewSettingsXml(view: NonNullable<DocumentJson["settings"]>["view"]): string {
