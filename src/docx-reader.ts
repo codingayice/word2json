@@ -223,15 +223,41 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const parsed = parser.parse(xml) as XmlNode;
   const settings = asObject(parsed.settings);
   const defaultTabStop = asObject(settings.defaultTabStop);
+  const compatibility = parseCompatibilitySettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
     ...(settings.evenAndOddHeaders !== undefined ? { evenAndOddHeaders: true } : {}),
     ...(settings.updateFields !== undefined ? { updateFields: true } : {}),
     ...(settings.trackRevisions !== undefined ? { trackRevisions: true } : {}),
+    ...(compatibility ? { compatibility } : {}),
     ...(web ? { web } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseCompatibilitySettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["compatibility"] | undefined {
+  const compat = asObject(settings.compat);
+  const compatSettings = asArray(compat.compatSetting)
+    .map((setting) => asObject(setting))
+    .filter((setting) => typeof setting.name === "string" && typeof setting.uri === "string" && setting.val !== undefined);
+  const compatMode = compatSettings.find((setting) => setting.name === "compatibilityMode");
+  const otherSettings = compatSettings
+    .filter((setting) => setting.name !== "compatibilityMode")
+    .map((setting) => ({
+      name: setting.name as string,
+      uri: setting.uri as string,
+      value: String(setting.val),
+    }));
+
+  if (!compatMode && otherSettings.length === 0) {
+    return undefined;
+  }
+
+  return {
+    ...(compatMode ? { compatMode: String(compatMode.val) } : {}),
+    ...(otherSettings.length > 0 ? { settings: otherSettings } : {}),
+  };
 }
 
 async function parseWebSettings(zip: JSZip): Promise<NonNullable<NonNullable<DocumentJson["settings"]>["web"]> | undefined> {

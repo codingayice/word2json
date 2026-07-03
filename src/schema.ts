@@ -69,7 +69,19 @@ export type DocumentSettings = {
   evenAndOddHeaders?: boolean;
   updateFields?: boolean;
   trackRevisions?: boolean;
+  compatibility?: DocumentCompatibilitySettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentCompatibilitySettings = {
+  compatMode?: string;
+  settings?: DocumentCompatSetting[];
+};
+
+export type DocumentCompatSetting = {
+  name: string;
+  uri: string;
+  value: string;
 };
 
 export type DocumentWebSettings = {

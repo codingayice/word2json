@@ -131,8 +131,24 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       (settings.evenAndOddHeaders ? "<w:evenAndOddHeaders/>" : "") +
       (settings.updateFields ? "<w:updateFields/>" : "") +
       (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
+      compatibilitySettingsXml(settings.compatibility) +
       `</w:settings>`,
   );
+}
+
+function compatibilitySettingsXml(compatibility: NonNullable<DocumentJson["settings"]>["compatibility"]): string {
+  if (!compatibility?.compatMode && !compatibility?.settings?.length) {
+    return "";
+  }
+
+  const compatMode = compatibility.compatMode
+    ? `<w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="${escapeAttribute(compatibility.compatMode)}"/>`
+    : "";
+  const settings = (compatibility.settings ?? [])
+    .map((setting) => `<w:compatSetting w:name="${escapeAttribute(setting.name)}" w:uri="${escapeAttribute(setting.uri)}" w:val="${escapeAttribute(setting.value)}"/>`)
+    .join("");
+
+  return `<w:compat>${compatMode}${settings}</w:compat>`;
 }
 
 function webSettingsXml(settings: NonNullable<NonNullable<DocumentJson["settings"]>["web"]>): string {

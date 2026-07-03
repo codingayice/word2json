@@ -801,6 +801,32 @@ describe("DOCX writer", () => {
     expect(settings).toContain("<w:trackRevisions/>");
   });
 
+  it("writes compatibility settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: {
+        compatibility: {
+          compatMode: "15",
+          settings: [
+            { name: "overrideTableStyleFontSizeAndJustification", uri: "http://schemas.microsoft.com/office/word", value: "1" },
+            { name: "useWord2013TrackBottomHyphenation", uri: "http://schemas.microsoft.com/office/word", value: "0" },
+          ],
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Compat" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain("<w:compat>");
+    expect(settings).toContain('<w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/>');
+    expect(settings).toContain('<w:compatSetting w:name="overrideTableStyleFontSizeAndJustification" w:uri="http://schemas.microsoft.com/office/word" w:val="1"/>');
+    expect(settings).toContain('<w:compatSetting w:name="useWord2013TrackBottomHyphenation" w:uri="http://schemas.microsoft.com/office/word" w:val="0"/>');
+    expect(settings).toContain("</w:compat>");
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -2923,6 +2949,27 @@ describe("DOCX reader", () => {
       version: "1.0" as const,
       settings: { trackRevisions: true },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Tracked" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips compatibility settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: {
+        compatibility: {
+          compatMode: "15",
+          settings: [
+            { name: "overrideTableStyleFontSizeAndJustification", uri: "http://schemas.microsoft.com/office/word", value: "1" },
+            { name: "useWord2013TrackBottomHyphenation", uri: "http://schemas.microsoft.com/office/word", value: "0" },
+          ],
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Compat" }] }] }],
     };
 
     const docx = await buildDocx(source);
