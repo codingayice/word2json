@@ -2,8 +2,35 @@ export type DocumentJson = {
   version: "1.0";
   theme?: DocumentTheme;
   styles?: DocumentStyles;
+  numbering?: DocumentNumbering;
   sections: SectionNode[];
 };
+
+export type DocumentNumbering = {
+  abstractNums: AbstractNumberingDefinition[];
+  nums: NumberingInstance[];
+};
+
+export type AbstractNumberingDefinition = {
+  id: number;
+  levels: NumberingLevelDefinition[];
+};
+
+export type NumberingInstance = {
+  id: number;
+  abstractId: number;
+};
+
+export type NumberingLevelDefinition = {
+  level: number;
+  format: NumberingFormat;
+  text: string;
+  start?: number;
+  left?: number;
+  hanging?: number;
+};
+
+export type NumberingFormat = "bullet" | "decimal" | "lowerLetter" | "upperLetter" | "lowerRoman" | "upperRoman";
 
 export type DocumentTheme = {
   name: string;
@@ -117,6 +144,7 @@ export type ParagraphPagination = {
 export type ListSettings = {
   type: "bullet" | "ordered";
   level: number;
+  numberingId?: number;
 };
 
 export type ParagraphStyle = "normal" | "heading1" | "heading2" | "heading3";

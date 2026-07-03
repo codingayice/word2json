@@ -72,7 +72,7 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
     zip.folder("word")!.folder("media")!.file(image.filename, Buffer.from(image.data, "base64"));
   }
   zip.folder("word")!.file("styles.xml", stylesXml(document));
-  zip.folder("word")!.file("numbering.xml", numberingXml());
+  zip.folder("word")!.file("numbering.xml", numberingXml(document));
   if (document.theme) {
     zip.folder("word")!.folder("theme")!.file("theme1.xml", themeXml(document.theme));
   }
@@ -216,7 +216,7 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
     ? `<w:jc w:val="${paragraph.alignment}"/>`
     : "";
   const list = paragraph.list
-    ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.type === "bullet" ? 1 : 2}"/></w:numPr>`
+    ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
   const pagination = paragraph.pagination
     ? [
@@ -573,15 +573,39 @@ function tableStylePropertiesXml(properties: NonNullable<NonNullable<DocumentJso
   return `<w:tblPr>${tableBordersXml(properties.borders)}</w:tblPr>`;
 }
 
-function numberingXml(): string {
+function numberingXml(document: DocumentJson): string {
+  const customAbstractNums = (document.numbering?.abstractNums ?? [])
+    .map((abstractNum) => `<w:abstractNum w:abstractNumId="${abstractNum.id}">` +
+      abstractNum.levels.map((level) => numberingLevelXml(level)).join("") +
+      `</w:abstractNum>`)
+    .join("");
+  const customNums = (document.numbering?.nums ?? [])
+    .map((num) => `<w:num w:numId="${num.id}"><w:abstractNumId w:val="${num.abstractId}"/></w:num>`)
+    .join("");
+
   return xmlDeclaration(
     `<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
       `<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/></w:lvl><w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="◦"/></w:lvl></w:abstractNum>` +
       `<w:abstractNum w:abstractNumId="2"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl><w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%2."/></w:lvl></w:abstractNum>` +
+      customAbstractNums +
       `<w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>` +
       `<w:num w:numId="2"><w:abstractNumId w:val="2"/></w:num>` +
+      customNums +
       `</w:numbering>`,
   );
+}
+
+function numberingLevelXml(level: NonNullable<DocumentJson["numbering"]>["abstractNums"][number]["levels"][number]): string {
+  const indentation = level.left !== undefined || level.hanging !== undefined
+    ? `<w:pPr><w:ind${level.left !== undefined ? ` w:left="${level.left}"` : ""}${level.hanging !== undefined ? ` w:hanging="${level.hanging}"` : ""}/></w:pPr>`
+    : "";
+
+  return `<w:lvl w:ilvl="${level.level}">` +
+    `<w:start w:val="${level.start ?? 1}"/>` +
+    `<w:numFmt w:val="${level.format}"/>` +
+    `<w:lvlText w:val="${escapeAttribute(level.text)}"/>` +
+    indentation +
+    `</w:lvl>`;
 }
 
 function commentsXml(context: WriterContext): string {

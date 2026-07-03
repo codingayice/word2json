@@ -170,6 +170,46 @@ describe("DOCX writer", () => {
     expect(numbering).toContain('<w:numFmt w:val="decimal"/>');
   });
 
+  it("writes custom numbering definitions", async () => {
+    const document = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 10,
+            levels: [
+              { level: 0, format: "decimal" as const, text: "%1.", start: 1, left: 720, hanging: 360 },
+              { level: 1, format: "lowerLetter" as const, text: "%2)", start: 1, left: 1440, hanging: 360 },
+            ],
+          },
+        ],
+        nums: [{ id: 10, abstractId: 10 }],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              list: { type: "ordered" as const, level: 1, numberingId: 10 },
+              runs: [{ text: "Nested clause" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const numbering = await zip.file("word/numbering.xml")!.async("string");
+
+    expect(xml).toContain('<w:numPr><w:ilvl w:val="1"/><w:numId w:val="10"/></w:numPr>');
+    expect(numbering).toContain('<w:abstractNum w:abstractNumId="10">');
+    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl>');
+    expect(numbering).toContain('<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="%2)"/><w:pPr><w:ind w:left="1440" w:hanging="360"/></w:pPr></w:lvl>');
+    expect(numbering).toContain('<w:num w:numId="10"><w:abstractNumId w:val="10"/></w:num>');
+  });
+
   it("writes hyperlinks with external relationships", async () => {
     const document = createDocumentJson([
       {
@@ -819,6 +859,40 @@ describe("DOCX reader", () => {
         runs: [{ text: "Ordered item" }],
       },
     ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips custom numbering definitions", async () => {
+    const source = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 10,
+            levels: [
+              { level: 0, format: "decimal" as const, text: "%1.", start: 1, left: 720, hanging: 360 },
+              { level: 1, format: "lowerLetter" as const, text: "%2)", start: 1, left: 1440, hanging: 360 },
+            ],
+          },
+        ],
+        nums: [{ id: 10, abstractId: 10 }],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              list: { type: "ordered" as const, level: 1, numberingId: 10 },
+              runs: [{ text: "Nested clause" }],
+            },
+          ],
+        },
+      ],
+    };
 
     const docx = await buildDocx(source);
     const parsed = await parseDocx(docx);

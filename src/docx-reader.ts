@@ -1,7 +1,9 @@
 import { XMLParser } from "fast-xml-parser";
 import JSZip from "jszip";
 import type {
+  AbstractNumberingDefinition,
   DocumentJson,
+  DocumentNumbering,
   DocumentStyles,
   DocumentTheme,
   ImageNode,
@@ -9,6 +11,7 @@ import type {
   ParagraphAlignment,
   ParagraphNode,
   ParagraphStyle,
+  NumberingFormat,
   StyleParagraphProperties,
   StyleRunProperties,
   TableStyleDefinition,
@@ -22,6 +25,10 @@ type RelationshipMap = Record<string, string>;
 type CommentMap = Record<string, TextRun["comment"]>;
 type MediaMap = Record<string, Pick<ImageNode, "data" | "contentType">>;
 type NoteMap = Record<string, NonNullable<TextRun["footnote"]>>;
+type NumberingContext = {
+  numbering?: DocumentNumbering;
+  listTypes: Map<number, "bullet" | "ordered">;
+};
 
 const parser = new XMLParser({
   attributeNamePrefix: "",
@@ -44,6 +51,7 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const comments = await parseComments(zip);
   const footnotes = await parseNotes(zip, "footnotes", "footnote");
   const endnotes = await parseNotes(zip, "endnotes", "endnote");
+  const numberingContext = await parseNumbering(zip);
   const styles = await parseStyles(zip);
   const theme = await parseTheme(zip);
   const parsed = parser.parse(xml) as XmlNode;
@@ -54,8 +62,85 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
     version: "1.0",
     ...(theme ? { theme } : {}),
     ...(styles ? { styles } : {}),
-    sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes),
+    ...(numberingContext.numbering ? { numbering: numberingContext.numbering } : {}),
+    sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes, numberingContext),
   };
+}
+
+async function parseNumbering(zip: JSZip): Promise<NumberingContext> {
+  const numberingFile = zip.file("word/numbering.xml");
+  const builtInListTypes = new Map<number, "bullet" | "ordered">([[1, "bullet"], [2, "ordered"]]);
+
+  if (!numberingFile) {
+    return { listTypes: builtInListTypes };
+  }
+
+  const xml = await numberingFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const numberingRoot = asObject(parsed.numbering);
+  const abstractNums = asArray(numberingRoot.abstractNum)
+    .map((abstractNumValue) => asObject(abstractNumValue))
+    .filter((abstractNum) => abstractNum.abstractNumId !== undefined)
+    .map((abstractNum) => parseAbstractNumberingDefinition(abstractNum));
+  const nums = asArray(numberingRoot.num)
+    .map((numValue) => asObject(numValue))
+    .filter((num) => num.numId !== undefined)
+    .map((num) => ({
+      id: parseNumber(num.numId),
+      abstractId: parseNumber(asObject(num.abstractNumId).val),
+    }));
+  const customAbstractNums = abstractNums.filter((abstractNum) => !isBuiltInNumberingId(abstractNum.id));
+  const customNums = nums.filter((num) => !isBuiltInNumberingId(num.id));
+  const abstractTypes = new Map(abstractNums.map((abstractNum) => [
+    abstractNum.id,
+    abstractNum.levels.some((level) => level.format === "bullet") ? "bullet" as const : "ordered" as const,
+  ]));
+  const listTypes = new Map(builtInListTypes);
+
+  nums.forEach((num) => {
+    listTypes.set(num.id, abstractTypes.get(num.abstractId) ?? "ordered");
+  });
+
+  return {
+    listTypes,
+    ...(customAbstractNums.length > 0 || customNums.length > 0
+      ? { numbering: { abstractNums: customAbstractNums, nums: customNums } }
+      : {}),
+  };
+}
+
+function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefinition {
+  return {
+    id: parseNumber(value.abstractNumId),
+    levels: asArray(value.lvl).map((levelValue) => {
+      const level = asObject(levelValue);
+      const start = asObject(level.start);
+      const format = asObject(level.numFmt);
+      const text = asObject(level.lvlText);
+      const indentation = asObject(asObject(level.pPr).ind);
+
+      return {
+        level: parseNumber(level.ilvl),
+        format: parseNumberingFormat(format.val),
+        text: typeof text.val === "string" ? text.val : "",
+        ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
+        ...(indentation.left !== undefined ? { left: parseNumber(indentation.left) } : {}),
+        ...(indentation.hanging !== undefined ? { hanging: parseNumber(indentation.hanging) } : {}),
+      };
+    }),
+  };
+}
+
+function parseNumberingFormat(value: unknown): NumberingFormat {
+  if (value === "bullet" || value === "decimal" || value === "lowerLetter" || value === "upperLetter" || value === "lowerRoman" || value === "upperRoman") {
+    return value;
+  }
+
+  return "decimal";
+}
+
+function isBuiltInNumberingId(id: number): boolean {
+  return id === 1 || id === 2;
 }
 
 async function parseTheme(zip: JSZip): Promise<DocumentTheme | undefined> {
@@ -211,6 +296,7 @@ async function parseSections(
   media: MediaMap,
   footnotes: NoteMap,
   endnotes: NoteMap,
+  numberingContext: NumberingContext,
 ): Promise<DocumentJson["sections"]> {
   const bodyContent = documentXml.match(/<w:body>([\s\S]*?)<\/w:body>/)?.[1] ?? "";
   const breakPattern = /<w:p><w:pPr>(<w:sectPr>[\s\S]*?<\/w:sectPr>)<\/w:pPr><\/w:p>/g;
@@ -244,7 +330,7 @@ async function parseSections(
     return [{
       ...(page ? { page } : {}),
       ...headerFooter,
-      blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes)),
+      blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
   }
 
@@ -260,7 +346,7 @@ async function parseSections(
       ...(page ? { page } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
-      blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes)),
+      blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     };
   }));
 }
@@ -398,6 +484,7 @@ function parseBlockXml(
   media: MediaMap,
   footnotes: NoteMap,
   endnotes: NoteMap,
+  numberingContext: NumberingContext,
 ): ParagraphNode | TableNode | ImageNode {
   const parsed = parser.parse(xml) as XmlNode;
 
@@ -406,10 +493,10 @@ function parseBlockXml(
       return parseImageBlock(parsed.p, media);
     }
 
-    return parseParagraph(parsed.p, relationships, comments, footnotes, endnotes);
+    return parseParagraph(parsed.p, relationships, comments, footnotes, endnotes, numberingContext);
   }
 
-  return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes);
+  return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes, numberingContext);
 }
 
 function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
@@ -554,12 +641,13 @@ function parseParagraph(
   comments: CommentMap = {},
   footnotes: NoteMap = {},
   endnotes: NoteMap = {},
+  numberingContext: NumberingContext = { listTypes: new Map([[1, "bullet"], [2, "ordered"]]) },
 ): ParagraphNode {
   const paragraph = asObject(value);
   const properties = asObject(paragraph.pPr);
   const styleNode = asObject(properties.pStyle);
   const alignmentNode = asObject(properties.jc);
-  const numbering = parseListSettings(properties.numPr);
+  const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
@@ -685,7 +773,7 @@ function parseHyperlink(value: unknown, relationships: RelationshipMap, comments
   })).filter((run) => run.text !== "");
 }
 
-function parseListSettings(value: unknown): ParagraphNode["list"] | undefined {
+function parseListSettings(value: unknown, numberingContext: NumberingContext): ParagraphNode["list"] | undefined {
   const numbering = asObject(value);
   const level = asObject(numbering.ilvl);
   const numId = asObject(numbering.numId);
@@ -694,9 +782,12 @@ function parseListSettings(value: unknown): ParagraphNode["list"] | undefined {
     return undefined;
   }
 
+  const parsedNumId = parseNumber(numId.val);
+
   return {
-    type: parseNumber(numId.val) === 1 ? "bullet" : "ordered",
+    type: numberingContext.listTypes.get(parsedNumId) ?? (parsedNumId === 1 ? "bullet" : "ordered"),
     level: parseNumber(level.val),
+    ...(!isBuiltInNumberingId(parsedNumId) ? { numberingId: parsedNumId } : {}),
   };
 }
 
@@ -778,7 +869,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   };
 }
 
-function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap): TableNode {
+function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap, numberingContext: NumberingContext): TableNode {
   const table = asObject(value);
   const properties = asObject(table.tblPr);
   const style = asObject(properties.tblStyle);
@@ -794,13 +885,13 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       const row = asObject(rowValue);
 
       return {
-        cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes)),
+        cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes, numberingContext)),
       };
     }),
   };
 }
 
-function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap): TableCellNode {
+function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap, numberingContext: NumberingContext): TableCellNode {
   const cell = asObject(value);
   const properties = asObject(cell.tcPr);
   const width = asObject(properties.tcW);
@@ -809,7 +900,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   return {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(gridSpan.val !== undefined ? { colSpan: parseNumber(gridSpan.val) } : {}),
-    blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes)),
+    blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes, numberingContext)),
   };
 }
 
