@@ -1695,7 +1695,20 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           content: parseMathNodes(asObject(accentNode.e)),
         };
       }),
+    ...asArray(container.bar)
+      .map((bar) => {
+        const barNode = asObject(bar);
+        return {
+          type: "bar" as const,
+          position: barPositionValue(asObject(asObject(barNode.barPr).pos).val),
+          content: parseMathNodes(asObject(barNode.e)),
+        };
+      }),
   ];
+}
+
+function barPositionValue(value: unknown): "top" | "bottom" {
+  return value === "bottom" ? "bottom" : "top";
 }
 
 function naryOperatorValue(value: unknown): "sum" {

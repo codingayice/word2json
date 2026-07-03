@@ -239,6 +239,34 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:acc><m:accPr><m:chr m:val="¯"/></m:accPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:acc>');
   });
 
+  it("writes bar office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "bar" as const,
+                  position: "top",
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:bar><m:barPr><m:pos m:val="top"/></m:barPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:bar>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2774,6 +2802,39 @@ describe("DOCX reader", () => {
                       type: "subscript" as const,
                       base: [{ type: "text" as const, text: "v" }],
                       subscript: [{ type: "text" as const, text: "i" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips bar office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "bar" as const,
+                  position: "bottom" as const,
+                  content: [
+                    {
+                      type: "fraction" as const,
+                      numerator: [{ type: "text" as const, text: "a" }],
+                      denominator: [{ type: "text" as const, text: "b" }],
                     },
                   ],
                 },

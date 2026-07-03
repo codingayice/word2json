@@ -421,7 +421,8 @@ export type MathNode =
   | { type: "nary"; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
   | { type: "matrix"; rows: MathNode[][][] }
   | { type: "delimiter"; begin?: string; end?: string; content: MathNode[] }
-  | { type: "accent"; mark: string; content: MathNode[] };
+  | { type: "accent"; mark: string; content: MathNode[] }
+  | { type: "bar"; position: "top" | "bottom"; content: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";

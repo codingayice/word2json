@@ -720,6 +720,10 @@ function mathNodeXml(node: MathNode): string {
     return `<m:acc><m:accPr><m:chr m:val="${escapeAttribute(node.mark)}"/></m:accPr><m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:acc>`;
   }
 
+  if (node.type === "bar") {
+    return `<m:bar><m:barPr><m:pos m:val="${node.position}"/></m:barPr><m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:bar>`;
+  }
+
   return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
