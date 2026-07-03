@@ -4,7 +4,19 @@ export type DocumentJson = {
   theme?: DocumentTheme;
   styles?: DocumentStyles;
   numbering?: DocumentNumbering;
+  customXmlParts?: CustomXmlPart[];
   sections: SectionNode[];
+};
+
+export type CustomXmlPart = {
+  path: string;
+  xml: string;
+  properties?: CustomXmlPartProperties;
+};
+
+export type CustomXmlPartProperties = {
+  path?: string;
+  storeItemId?: string;
 };
 
 export type DocumentSettings = {

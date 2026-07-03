@@ -504,6 +504,39 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:showingPlcHdr/>");
   });
 
+  it("writes custom xml parts with relationships", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      customXmlParts: [
+        {
+          path: "customXml/item1.xml",
+          xml: "<customer><name>Ada Lovelace</name></customer>",
+          properties: {
+            path: "customXml/itemProps1.xml",
+            storeItemId: "{11111111-2222-3333-4444-555555555555}",
+          },
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const packageRels = await zip.file("_rels/.rels")!.async("string");
+    const item = await zip.file("customXml/item1.xml")!.async("string");
+    const itemRels = await zip.file("customXml/_rels/item1.xml.rels")!.async("string");
+    const itemProps = await zip.file("customXml/itemProps1.xml")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(packageRels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml"');
+    expect(packageRels).toContain('Target="customXml/item1.xml"');
+    expect(item).toBe("<customer><name>Ada Lovelace</name></customer>");
+    expect(itemRels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps"');
+    expect(itemRels).toContain('Target="itemProps1.xml"');
+    expect(itemProps).toContain('<ds:datastoreItem ds:itemID="{11111111-2222-3333-4444-555555555555}"');
+    expect(contentTypes).toContain('PartName="/customXml/itemProps1.xml"');
+    expect(contentTypes).toContain('ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2352,6 +2385,27 @@ describe("DOCX reader", () => {
     const parsed = await parseDocx(docx);
 
     expect(parsed).toEqual(source);
+  });
+
+  it("round-trips custom xml parts", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      customXmlParts: [
+        {
+          path: "customXml/item1.xml",
+          xml: "<customer><name>Ada Lovelace</name></customer>",
+          properties: {
+            path: "customXml/itemProps1.xml",
+            storeItemId: "{11111111-2222-3333-4444-555555555555}",
+          },
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.customXmlParts).toEqual(source.customXmlParts);
   });
 
   it("round-trips repeating section content controls", async () => {

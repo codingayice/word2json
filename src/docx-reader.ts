@@ -22,6 +22,11 @@ import type {
 
 type XmlNode = Record<string, unknown>;
 type RelationshipMap = Record<string, string>;
+type RelationshipEntry = {
+  id: string;
+  type: string;
+  target: string;
+};
 type CommentMap = Record<string, TextRun["comment"]>;
 type MediaMap = Record<string, Pick<ImageNode, "data" | "contentType">>;
 type NoteMap = Record<string, NonNullable<TextRun["footnote"]>>;
@@ -55,6 +60,7 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const styles = await parseStyles(zip);
   const theme = await parseTheme(zip);
   const settings = await parseSettings(zip);
+  const customXmlParts = await parseCustomXmlParts(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
@@ -65,6 +71,7 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
     ...(theme ? { theme } : {}),
     ...(styles ? { styles } : {}),
     ...(numberingContext.numbering ? { numbering: numberingContext.numbering } : {}),
+    ...(customXmlParts.length > 0 ? { customXmlParts } : {}),
     sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes, numberingContext),
   };
 }
@@ -476,20 +483,76 @@ async function parseMedia(zip: JSZip, relationships: RelationshipMap): Promise<M
 }
 
 async function parseDocumentRelationships(zip: JSZip): Promise<RelationshipMap> {
-  const relsFile = zip.file("word/_rels/document.xml.rels");
+  const relationships = await parseRelationships(zip, "word/_rels/document.xml.rels");
+
+  return Object.fromEntries(relationships.map((relationship) => [relationship.id, relationship.target]));
+}
+
+async function parseRelationships(zip: JSZip, path: string): Promise<RelationshipEntry[]> {
+  const relsFile = zip.file(path);
 
   if (!relsFile) {
-    return {};
+    return [];
   }
-
   const xml = await relsFile.async("string");
   const parsed = parser.parse(xml) as XmlNode;
   const relationships = asArray(asObject(parsed.Relationships).Relationship);
 
-  return Object.fromEntries(relationships
+  return relationships
     .map((value) => asObject(value))
     .filter((relationship) => relationship.Id !== undefined && relationship.Target !== undefined)
-    .map((relationship) => [String(relationship.Id), String(relationship.Target)]));
+    .map((relationship) => ({
+      id: String(relationship.Id),
+      type: relationship.Type !== undefined ? String(relationship.Type) : "",
+      target: String(relationship.Target),
+    }));
+}
+
+async function parseCustomXmlParts(zip: JSZip): Promise<NonNullable<DocumentJson["customXmlParts"]>> {
+  const packageRelationships = await parseRelationships(zip, "_rels/.rels");
+  const customXmlRelationships = packageRelationships.filter((relationship) =>
+    relationship.type === "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" &&
+    relationship.target.startsWith("customXml/"));
+  const parts = await Promise.all(customXmlRelationships.map(async (relationship) => {
+    const file = zip.file(relationship.target);
+    const xml = file ? await file.async("string") : "";
+    const properties = await parseCustomXmlPartProperties(zip, relationship.target);
+
+    return {
+      path: relationship.target,
+      xml,
+      ...(properties ? { properties } : {}),
+    };
+  }));
+
+  return parts;
+}
+
+async function parseCustomXmlPartProperties(zip: JSZip, partPath: string): Promise<NonNullable<NonNullable<DocumentJson["customXmlParts"]>[number]["properties"]> | undefined> {
+  const relationships = await parseRelationships(zip, `${pathDirname(partPath)}/_rels/${pathBasename(partPath)}.rels`);
+  const propertiesRelationship = relationships.find((relationship) =>
+    relationship.type === "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps");
+
+  if (!propertiesRelationship) {
+    return undefined;
+  }
+
+  const propertiesPath = `${pathDirname(partPath)}/${propertiesRelationship.target}`;
+  const propertiesFile = zip.file(propertiesPath);
+  const parsedProperties = {
+    path: propertiesPath,
+    ...(propertiesFile ? await parseCustomXmlPropertiesFile(propertiesFile) : {}),
+  };
+
+  return parsedProperties;
+}
+
+async function parseCustomXmlPropertiesFile(file: JSZip.JSZipObject): Promise<Pick<NonNullable<NonNullable<DocumentJson["customXmlParts"]>[number]["properties"]>, "storeItemId">> {
+  const xml = await file.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const datastoreItem = asObject(parsed.datastoreItem);
+
+  return typeof datastoreItem.itemID === "string" ? { storeItemId: datastoreItem.itemID } : {};
 }
 
 async function parseComments(zip: JSZip): Promise<CommentMap> {
@@ -1704,6 +1767,17 @@ function asObject(value: unknown): XmlNode {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as XmlNode)
     : {};
+}
+
+function pathBasename(path: string): string {
+  return path.split("/").pop() ?? path;
+}
+
+function pathDirname(path: string): string {
+  const parts = path.split("/");
+  parts.pop();
+
+  return parts.join("/");
 }
 
 function paragraphStyleFromId(styleId: string): ParagraphStyle | undefined {

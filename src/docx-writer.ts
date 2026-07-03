@@ -25,6 +25,7 @@ type WriterContext = {
   endnotes: NoteEntry[];
   theme: DocumentJson["theme"];
   settings: DocumentJson["settings"];
+  customXmlParts: NonNullable<DocumentJson["customXmlParts"]>;
   bookmarkId: number;
 };
 
@@ -61,10 +62,19 @@ type NoteEntry = {
 
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, customXmlParts: document.customXmlParts ?? [], bookmarkId: 0 };
 
-  zip.folder("_rels")!.file(".rels", packageRelsXml());
+  zip.folder("_rels")!.file(".rels", packageRelsXml(context));
   zip.folder("word")!.file("document.xml", documentXml(document, context));
+  context.customXmlParts.forEach((part, index) => {
+    zip.file(part.path, part.xml);
+
+    if (part.properties) {
+      const propertiesPath = part.properties.path ?? defaultCustomXmlPropertiesPath(index);
+      zip.file(propertiesPath, customXmlPropertiesXml(part.properties));
+      zip.file(customXmlRelationshipPath(part.path), customXmlItemRelsXml(propertiesPath));
+    }
+  });
   for (const header of context.headers) {
     zip.folder("word")!.file(header.filename, headerFooterXml("hdr", header.blocks, context));
   }
@@ -817,6 +827,11 @@ function contentTypesXml(context: WriterContext): string {
   const footerOverrides = context.footers
     .map((footer) => `<Override PartName="/word/${footer.filename}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>`)
     .join("");
+  const customXmlPropertiesOverrides = context.customXmlParts
+    .map((part, index) => part.properties ? (part.properties.path ?? defaultCustomXmlPropertiesPath(index)) : undefined)
+    .filter((path): path is string => path !== undefined)
+    .map((path) => `<Override PartName="/${escapeAttribute(path)}" ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/>`)
+    .join("");
 
   return xmlDeclaration(
     `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
@@ -833,16 +848,46 @@ function contentTypesXml(context: WriterContext): string {
       endnotesOverride +
       themeOverride +
       settingsOverride +
+      customXmlPropertiesOverrides +
       `</Types>`,
   );
 }
 
-function packageRelsXml(): string {
+function packageRelsXml(context: WriterContext): string {
+  const customXmlRelationships = context.customXmlParts
+    .map((part, index) => `<Relationship Id="rIdCustomXml${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="${escapeAttribute(part.path)}"/>`)
+    .join("");
+
   return xmlDeclaration(
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
       `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+      customXmlRelationships +
       `</Relationships>`,
   );
+}
+
+function customXmlPropertiesXml(properties: NonNullable<NonNullable<DocumentJson["customXmlParts"]>[number]["properties"]>): string {
+  return xmlDeclaration(
+    `<ds:datastoreItem ds:itemID="${escapeAttribute(properties.storeItemId ?? "")}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml">` +
+      `<ds:schemaRefs/>` +
+      `</ds:datastoreItem>`,
+  );
+}
+
+function customXmlItemRelsXml(propertiesPath: string): string {
+  return xmlDeclaration(
+    `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rIdCustomXmlProps1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps" Target="${escapeAttribute(pathBasename(propertiesPath))}"/>` +
+      `</Relationships>`,
+  );
+}
+
+function customXmlRelationshipPath(partPath: string): string {
+  return `${pathDirname(partPath)}/_rels/${pathBasename(partPath)}.rels`;
+}
+
+function defaultCustomXmlPropertiesPath(index: number): string {
+  return `customXml/itemProps${index + 1}.xml`;
 }
 
 function documentRelsXml(context: WriterContext): string {
@@ -1074,6 +1119,17 @@ function escapeXml(value: string): string {
 
 function escapeAttribute(value: string): string {
   return escapeXml(value);
+}
+
+function pathBasename(path: string): string {
+  return path.split("/").pop() ?? path;
+}
+
+function pathDirname(path: string): string {
+  const parts = path.split("/");
+  parts.pop();
+
+  return parts.join("/");
 }
 
 function paragraphStyleId(style: string): string {
