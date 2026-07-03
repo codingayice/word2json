@@ -12,6 +12,7 @@ export type DocumentJson = {
 export type DocumentProperties = {
   core?: DocumentCoreProperties;
   app?: DocumentAppProperties;
+  custom?: CustomDocumentProperty[];
 };
 
 export type DocumentCoreProperties = {
@@ -34,6 +35,12 @@ export type DocumentAppProperties = {
   characters?: number;
   lines?: number;
   paragraphs?: number;
+};
+
+export type CustomDocumentProperty = {
+  name: string;
+  type: "string" | "number" | "boolean" | "date";
+  value: string | number | boolean;
 };
 
 export type CustomXmlPart = {

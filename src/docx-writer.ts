@@ -73,6 +73,9 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   if (document.properties?.app) {
     zip.folder("docProps")!.file("app.xml", appPropertiesXml(document.properties.app));
   }
+  if (document.properties?.custom && document.properties.custom.length > 0) {
+    zip.folder("docProps")!.file("custom.xml", customPropertiesXml(document.properties.custom));
+  }
   context.customXmlParts.forEach((part, index) => {
     zip.file(part.path, part.xml);
 
@@ -825,6 +828,9 @@ function contentTypesXml(context: WriterContext): string {
   const appPropertiesOverride = context.properties?.app
     ? `<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>`
     : "";
+  const customPropertiesOverride = context.properties?.custom && context.properties.custom.length > 0
+    ? `<Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>`
+    : "";
 
   const imageDefaults = [
     context.images.some((image) => image.contentType === "image/png")
@@ -863,6 +869,7 @@ function contentTypesXml(context: WriterContext): string {
       settingsOverride +
       corePropertiesOverride +
       appPropertiesOverride +
+      customPropertiesOverride +
       customXmlPropertiesOverrides +
       `</Types>`,
   );
@@ -878,12 +885,16 @@ function packageRelsXml(context: WriterContext): string {
   const appPropertiesRelationship = context.properties?.app
     ? `<Relationship Id="rIdAppProperties" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>`
     : "";
+  const customPropertiesRelationship = context.properties?.custom && context.properties.custom.length > 0
+    ? `<Relationship Id="rIdCustomProperties" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/>`
+    : "";
 
   return xmlDeclaration(
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
       `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
       corePropertiesRelationship +
       appPropertiesRelationship +
+      customPropertiesRelationship +
       customXmlRelationships +
       `</Relationships>`,
   );
@@ -917,6 +928,34 @@ function appPropertiesXml(app: NonNullable<NonNullable<DocumentJson["properties"
       (app.paragraphs !== undefined ? `<Paragraphs>${app.paragraphs}</Paragraphs>` : "") +
       `</Properties>`,
   );
+}
+
+function customPropertiesXml(custom: NonNullable<NonNullable<DocumentJson["properties"]>["custom"]>): string {
+  const properties = custom
+    .map((property, index) => `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${index + 2}" name="${escapeAttribute(property.name)}">${customPropertyValueXml(property)}</property>`)
+    .join("");
+
+  return xmlDeclaration(
+    `<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">` +
+      properties +
+      `</Properties>`,
+  );
+}
+
+function customPropertyValueXml(property: NonNullable<NonNullable<DocumentJson["properties"]>["custom"]>[number]): string {
+  if (property.type === "number") {
+    return `<vt:i4>${property.value}</vt:i4>`;
+  }
+
+  if (property.type === "boolean") {
+    return `<vt:bool>${property.value ? "true" : "false"}</vt:bool>`;
+  }
+
+  if (property.type === "date") {
+    return `<vt:filetime>${escapeXml(String(property.value))}</vt:filetime>`;
+  }
+
+  return `<vt:lpwstr>${escapeXml(String(property.value))}</vt:lpwstr>`;
 }
 
 function customXmlPropertiesXml(properties: NonNullable<NonNullable<DocumentJson["customXmlParts"]>[number]["properties"]>): string {

@@ -625,6 +625,38 @@ describe("DOCX writer", () => {
     expect(contentTypes).toContain('PartName="/docProps/app.xml"');
   });
 
+  it("writes custom document properties", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      properties: {
+        custom: [
+          { name: "ContractId", type: "string", value: "C-2026-001" },
+          { name: "RiskScore", type: "number", value: 42 },
+          { name: "Approved", type: "boolean", value: true },
+          { name: "EffectiveDate", type: "date", value: "2026-07-04T00:00:00Z" },
+        ],
+      },
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const custom = await zip.file("docProps/custom.xml")!.async("string");
+    const packageRels = await zip.file("_rels/.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(custom).toContain('name="ContractId"');
+    expect(custom).toContain("<vt:lpwstr>C-2026-001</vt:lpwstr>");
+    expect(custom).toContain('name="RiskScore"');
+    expect(custom).toContain("<vt:i4>42</vt:i4>");
+    expect(custom).toContain('name="Approved"');
+    expect(custom).toContain("<vt:bool>true</vt:bool>");
+    expect(custom).toContain('name="EffectiveDate"');
+    expect(custom).toContain("<vt:filetime>2026-07-04T00:00:00Z</vt:filetime>");
+    expect(packageRels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties"');
+    expect(packageRels).toContain('Target="docProps/custom.xml"');
+    expect(contentTypes).toContain('PartName="/docProps/custom.xml"');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2555,6 +2587,25 @@ describe("DOCX reader", () => {
           lines: 80,
           paragraphs: 12,
         },
+      },
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.properties).toEqual(source.properties);
+  });
+
+  it("round-trips custom document properties", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      properties: {
+        custom: [
+          { name: "ContractId", type: "string", value: "C-2026-001" },
+          { name: "RiskScore", type: "number", value: 42 },
+          { name: "Approved", type: "boolean", value: true },
+          { name: "EffectiveDate", type: "date", value: "2026-07-04T00:00:00Z" },
+        ],
       },
     };
 

@@ -81,9 +81,11 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
 async function parseDocumentProperties(zip: JSZip): Promise<DocumentJson["properties"] | undefined> {
   const core = await parseCoreProperties(zip);
   const app = await parseAppProperties(zip);
+  const custom = await parseCustomProperties(zip);
   const properties = {
     ...(core ? { core } : {}),
     ...(app ? { app } : {}),
+    ...(custom.length > 0 ? { custom } : {}),
   };
 
   return Object.keys(properties).length > 0 ? properties : undefined;
@@ -135,6 +137,46 @@ async function parseAppProperties(zip: JSZip): Promise<NonNullable<DocumentJson[
   };
 
   return Object.keys(app).length > 0 ? app : undefined;
+}
+
+async function parseCustomProperties(zip: JSZip): Promise<NonNullable<NonNullable<DocumentJson["properties"]>["custom"]>> {
+  const customFile = zip.file("docProps/custom.xml");
+
+  if (!customFile) {
+    return [];
+  }
+
+  const xml = await customFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const properties = asArray(asObject(parsed.Properties).property)
+    .map((property) => parseCustomProperty(asObject(property)))
+    .filter((property): property is NonNullable<NonNullable<DocumentJson["properties"]>["custom"]>[number] => property !== undefined);
+
+  return properties;
+}
+
+function parseCustomProperty(property: XmlNode): NonNullable<NonNullable<DocumentJson["properties"]>["custom"]>[number] | undefined {
+  if (typeof property.name !== "string") {
+    return undefined;
+  }
+
+  if (property.lpwstr !== undefined) {
+    return { name: property.name, type: "string", value: String(property.lpwstr) };
+  }
+
+  if (property.i4 !== undefined) {
+    return { name: property.name, type: "number", value: parseNumber(property.i4) };
+  }
+
+  if (property.bool !== undefined) {
+    return { name: property.name, type: "boolean", value: property.bool === true || property.bool === "true" };
+  }
+
+  if (property.filetime !== undefined) {
+    return { name: property.name, type: "date", value: String(property.filetime) };
+  }
+
+  return undefined;
 }
 
 async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | undefined> {
