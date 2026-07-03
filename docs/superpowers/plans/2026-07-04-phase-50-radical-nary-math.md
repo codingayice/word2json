@@ -190,11 +190,11 @@ git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test
 git commit -m "feat: add phase 50 radical nary math"
 ```
 
-- [ ] **Step 3: Push branch**
+- [x] **Step 3: Push branch**
 
 Run: `git push -u origin phase-50-radical-nary-math`
 
-- [ ] **Step 4: Mark the plan pushed and commit docs status**
+- [x] **Step 4: Mark the plan pushed and commit docs status**
 
 Append the pushed branch and commit hash to this plan, then run:
 
@@ -203,3 +203,9 @@ git add docs/superpowers/plans/2026-07-04-phase-50-radical-nary-math.md
 git commit -m "docs: mark phase 50 pushed"
 git push
 ```
+
+---
+
+**Pushed Branch:** `phase-50-radical-nary-math`
+
+**Implementation Commit:** `13b329c feat: add phase 50 radical nary math`
