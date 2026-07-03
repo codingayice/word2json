@@ -6,6 +6,7 @@ import type {
   ImageNode,
   PageSettings,
   ParagraphNode,
+  RunRevision,
   SectionNode,
   StyleParagraphProperties,
   StyleRunProperties,
@@ -217,8 +218,14 @@ function defaultPageSettings(): PageSettings {
 function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string {
   const properties = paragraphPropertiesXml(paragraph);
   const runs = paragraph.runs.map((run) => runXml(run, context)).join("");
+  const plainParagraph = `<w:p>${properties}${runs}</w:p>`;
 
-  return `<w:p>${properties}${runs}</w:p>`;
+  if (!paragraph.revision) {
+    return plainParagraph;
+  }
+
+  const wrapper = paragraph.revision.type === "insert" ? "ins" : "del";
+  return `<w:${wrapper}${revisionAttributes(paragraph.revision)}>${plainParagraph}</w:${wrapper}>`;
 }
 
 function paragraphPropertiesXml(paragraph: ParagraphNode): string {
@@ -245,7 +252,12 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
       paragraph.pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
     ].join("")
     : "";
-  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}`;
+  const propertyRevision = paragraph.propertyRevision
+    ? `<w:pPrChange w:id="${paragraph.propertyRevision.id}" w:author="${escapeAttribute(paragraph.propertyRevision.author)}"` +
+      (paragraph.propertyRevision.date ? ` w:date="${escapeAttribute(paragraph.propertyRevision.date)}"` : "") +
+      `><w:pPr/></w:pPrChange>`
+    : "";
+  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}${propertyRevision}`;
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }
@@ -347,7 +359,7 @@ function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
   return `<w:del${revisionAttributes(run.revision)}><w:r>${runPropertiesXml(run)}<w:delText${textSpace}>${escapeXml(run.text)}</w:delText></w:r></w:del>`;
 }
 
-function revisionAttributes(revision: NonNullable<TextRun["revision"]>): string {
+function revisionAttributes(revision: RunRevision): string {
   return ` w:id="${revision.id}" w:author="${escapeAttribute(revision.author)}"` +
     (revision.date ? ` w:date="${escapeAttribute(revision.date)}"` : "");
 }

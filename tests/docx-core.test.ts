@@ -186,6 +186,58 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:delText>Removed</w:delText>");
   });
 
+  it("writes paragraph insert revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        revision: { type: "insert", id: 10, author: "Ada", date: "2026-07-04T02:00:00.000Z" },
+        runs: [{ text: "Inserted paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:ins w:id="10" w:author="Ada" w:date="2026-07-04T02:00:00.000Z"><w:p>');
+    expect(xml).toContain("<w:t>Inserted paragraph</w:t>");
+  });
+
+  it("writes paragraph delete revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        revision: { type: "delete", id: 11, author: "Lin", date: "2026-07-04T03:00:00.000Z" },
+        runs: [{ text: "Deleted paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:del w:id="11" w:author="Lin" w:date="2026-07-04T03:00:00.000Z"><w:p>');
+    expect(xml).toContain("<w:t>Deleted paragraph</w:t>");
+  });
+
+  it("writes paragraph property change metadata", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        spacing: { before: 240 },
+        propertyRevision: { id: 12, author: "Mira", date: "2026-07-04T04:00:00.000Z" },
+        runs: [{ text: "Changed spacing" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:spacing w:before="240"/>');
+    expect(xml).toContain('<w:pPrChange w:id="12" w:author="Mira" w:date="2026-07-04T04:00:00.000Z"><w:pPr/></w:pPrChange>');
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -1499,6 +1551,52 @@ describe("DOCX reader", () => {
         runs: [
           { text: "Removed", revision: { type: "delete", id: 2, author: "Lin", date: "2026-07-04T01:00:00.000Z" } },
         ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph insert revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        revision: { type: "insert", id: 10, author: "Ada", date: "2026-07-04T02:00:00.000Z" },
+        runs: [{ text: "Inserted paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph delete revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        revision: { type: "delete", id: 11, author: "Lin", date: "2026-07-04T03:00:00.000Z" },
+        runs: [{ text: "Deleted paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph property change metadata", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        spacing: { before: 240 },
+        propertyRevision: { id: 12, author: "Mira", date: "2026-07-04T04:00:00.000Z" },
+        runs: [{ text: "Changed spacing" }],
       },
     ]);
 

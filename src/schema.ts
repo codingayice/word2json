@@ -178,6 +178,8 @@ export type ParagraphNode = {
   type: "paragraph";
   style?: ParagraphStyle;
   styleId?: string;
+  revision?: RunRevision;
+  propertyRevision?: ParagraphPropertyRevision;
   alignment?: ParagraphAlignment;
   spacing?: ParagraphSpacing;
   indent?: ParagraphIndent;
@@ -233,6 +235,12 @@ export type TextRun = StyleRunProperties & {
 
 export type RunRevision = {
   type: "insert" | "delete";
+  id: number;
+  author: string;
+  date?: string;
+};
+
+export type ParagraphPropertyRevision = {
   id: number;
   author: string;
   date?: string;

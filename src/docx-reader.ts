@@ -547,6 +547,14 @@ function parseBlockXml(
 ): ParagraphNode | TableNode | ImageNode {
   const parsed = parser.parse(xml) as XmlNode;
 
+  if (parsed.ins !== undefined) {
+    return parseRevisedParagraph(parsed.ins, "insert", relationships, comments, footnotes, endnotes, numberingContext);
+  }
+
+  if (parsed.del !== undefined) {
+    return parseRevisedParagraph(parsed.del, "delete", relationships, comments, footnotes, endnotes, numberingContext);
+  }
+
   if (parsed.p !== undefined) {
     if (xml.includes("<w:drawing>")) {
       return parseImageBlock(parsed.p, media);
@@ -556,6 +564,29 @@ function parseBlockXml(
   }
 
   return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes, numberingContext);
+}
+
+function parseRevisedParagraph(
+  value: unknown,
+  type: NonNullable<ParagraphNode["revision"]>["type"],
+  relationships: RelationshipMap,
+  comments: CommentMap,
+  footnotes: NoteMap,
+  endnotes: NoteMap,
+  numberingContext: NumberingContext,
+): ParagraphNode {
+  const revision = asObject(value);
+  const paragraph = parseParagraph(revision.p, relationships, comments, footnotes, endnotes, numberingContext);
+
+  return {
+    ...paragraph,
+    revision: {
+      type,
+      id: parseNumber(revision.id),
+      author: String(revision.author ?? ""),
+      ...(typeof revision.date === "string" ? { date: revision.date } : {}),
+    },
+  };
 }
 
 function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
@@ -650,13 +681,23 @@ function extractBlockXmlFromContent(body: string): string[] {
   while (index < body.length) {
     const paragraphIndex = body.indexOf("<w:p", index);
     const tableIndex = body.indexOf("<w:tbl", index);
-    const blockIndex = nextBlockIndex(paragraphIndex, tableIndex);
+    const insertIndex = body.indexOf("<w:ins", index);
+    const deleteIndex = body.indexOf("<w:del", index);
+    const blockIndex = nextBlockIndex(paragraphIndex, tableIndex, insertIndex, deleteIndex);
 
     if (blockIndex === -1) {
       break;
     }
 
-    if (blockIndex === paragraphIndex) {
+    if (blockIndex === insertIndex) {
+      const end = body.indexOf("</w:ins>", blockIndex);
+      blocks.push(body.slice(blockIndex, end + "</w:ins>".length));
+      index = end + "</w:ins>".length;
+    } else if (blockIndex === deleteIndex) {
+      const end = body.indexOf("</w:del>", blockIndex);
+      blocks.push(body.slice(blockIndex, end + "</w:del>".length));
+      index = end + "</w:del>".length;
+    } else if (blockIndex === paragraphIndex) {
       const end = body.indexOf("</w:p>", blockIndex);
       blocks.push(body.slice(blockIndex, end + "</w:p>".length));
       index = end + "</w:p>".length;
@@ -670,16 +711,9 @@ function extractBlockXmlFromContent(body: string): string[] {
   return blocks;
 }
 
-function nextBlockIndex(paragraphIndex: number, tableIndex: number): number {
-  if (paragraphIndex === -1) {
-    return tableIndex;
-  }
-
-  if (tableIndex === -1) {
-    return paragraphIndex;
-  }
-
-  return Math.min(paragraphIndex, tableIndex);
+function nextBlockIndex(...indexes: number[]): number {
+  const presentIndexes = indexes.filter((index) => index !== -1);
+  return presentIndexes.length > 0 ? Math.min(...presentIndexes) : -1;
 }
 
 function parsePageSettings(value: unknown, preserveDefault: boolean): PageSettings | undefined {
@@ -762,6 +796,7 @@ function parseParagraph(
   const borders = parseParagraphBorders(properties.pBdr);
   const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
+  const propertyRevision = parseParagraphPropertyRevision(properties.pPrChange);
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
     : undefined;
@@ -783,7 +818,22 @@ function parseParagraph(
     ...(borders ? { borders } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
+    ...(propertyRevision ? { propertyRevision } : {}),
     runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes),
+  };
+}
+
+function parseParagraphPropertyRevision(value: unknown): ParagraphNode["propertyRevision"] | undefined {
+  const revision = asObject(value);
+
+  if (revision.id === undefined && revision.author === undefined) {
+    return undefined;
+  }
+
+  return {
+    id: parseNumber(revision.id),
+    author: String(revision.author ?? ""),
+    ...(typeof revision.date === "string" ? { date: revision.date } : {}),
   };
 }
 
