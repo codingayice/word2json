@@ -70,7 +70,15 @@ export type DocumentSettings = {
   updateFields?: boolean;
   trackRevisions?: boolean;
   compatibility?: DocumentCompatibilitySettings;
+  proofing?: DocumentProofingSettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentProofingSettings = {
+  spelling?: "clean" | "dirty";
+  grammar?: "clean" | "dirty";
+  doNotHyphenateCaps?: boolean;
+  hyphenationZone?: number;
 };
 
 export type DocumentCompatibilitySettings = {

@@ -224,16 +224,37 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const settings = asObject(parsed.settings);
   const defaultTabStop = asObject(settings.defaultTabStop);
   const compatibility = parseCompatibilitySettings(settings);
+  const proofing = parseProofingSettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
     ...(settings.evenAndOddHeaders !== undefined ? { evenAndOddHeaders: true } : {}),
     ...(settings.updateFields !== undefined ? { updateFields: true } : {}),
     ...(settings.trackRevisions !== undefined ? { trackRevisions: true } : {}),
     ...(compatibility ? { compatibility } : {}),
+    ...(proofing ? { proofing } : {}),
     ...(web ? { web } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseProofingSettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["proofing"] | undefined {
+  const proofState = asObject(settings.proofState);
+  const spelling = proofStateValue(proofState.spelling);
+  const grammar = proofStateValue(proofState.grammar);
+  const hyphenationZone = asObject(settings.hyphenationZone);
+  const result = {
+    ...(spelling ? { spelling } : {}),
+    ...(grammar ? { grammar } : {}),
+    ...(settings.doNotHyphenateCaps !== undefined ? { doNotHyphenateCaps: true } : {}),
+    ...(hyphenationZone.val !== undefined ? { hyphenationZone: parseNumber(hyphenationZone.val) } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function proofStateValue(value: unknown): "clean" | "dirty" | undefined {
+  return value === "clean" || value === "dirty" ? value : undefined;
 }
 
 function parseCompatibilitySettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["compatibility"] | undefined {

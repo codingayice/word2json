@@ -827,6 +827,29 @@ describe("DOCX writer", () => {
     expect(settings).toContain("</w:compat>");
   });
 
+  it("writes proofing settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: {
+        proofing: {
+          spelling: "clean" as const,
+          grammar: "dirty" as const,
+          doNotHyphenateCaps: true,
+          hyphenationZone: 360,
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Proofing" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain('<w:proofState w:spelling="clean" w:grammar="dirty"/>');
+    expect(settings).toContain("<w:doNotHyphenateCaps/>");
+    expect(settings).toContain('<w:hyphenationZone w:val="360"/>');
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -2970,6 +2993,26 @@ describe("DOCX reader", () => {
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Compat" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips proofing settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: {
+        proofing: {
+          spelling: "clean" as const,
+          grammar: "dirty" as const,
+          doNotHyphenateCaps: true,
+          hyphenationZone: 360,
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Proofing" }] }] }],
     };
 
     const docx = await buildDocx(source);

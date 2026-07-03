@@ -132,8 +132,25 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       (settings.updateFields ? "<w:updateFields/>" : "") +
       (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       compatibilitySettingsXml(settings.compatibility) +
+      proofingSettingsXml(settings.proofing) +
       `</w:settings>`,
   );
+}
+
+function proofingSettingsXml(proofing: NonNullable<DocumentJson["settings"]>["proofing"]): string {
+  if (!proofing) {
+    return "";
+  }
+
+  const proofStateAttributes = [
+    proofing.spelling ? `w:spelling="${escapeAttribute(proofing.spelling)}"` : "",
+    proofing.grammar ? `w:grammar="${escapeAttribute(proofing.grammar)}"` : "",
+  ].filter(Boolean).join(" ");
+  const proofState = proofStateAttributes ? `<w:proofState ${proofStateAttributes}/>` : "";
+  const doNotHyphenateCaps = proofing.doNotHyphenateCaps ? "<w:doNotHyphenateCaps/>" : "";
+  const hyphenationZone = proofing.hyphenationZone !== undefined ? `<w:hyphenationZone w:val="${proofing.hyphenationZone}"/>` : "";
+
+  return proofState + doNotHyphenateCaps + hyphenationZone;
 }
 
 function compatibilitySettingsXml(compatibility: NonNullable<DocumentJson["settings"]>["compatibility"]): string {
