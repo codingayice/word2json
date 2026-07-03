@@ -449,13 +449,26 @@ function wrapCommentIfNeeded(run: TextRun, runContent: string, context: WriterCo
     return runContent;
   }
 
-  const id = context.comments.length;
-  context.comments.push({ id, ...run.comment });
+  const id = run.comment.id ?? nextCommentId(context);
+  if (!context.comments.some((comment) => comment.id === id)) {
+    context.comments.push({ id, ...run.comment });
+  }
 
   return `<w:commentRangeStart w:id="${id}"/>` +
     runContent +
     `<w:commentRangeEnd w:id="${id}"/>` +
     `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`;
+}
+
+function nextCommentId(context: WriterContext): number {
+  const usedIds = new Set(context.comments.map((comment) => comment.id));
+  let id = 0;
+
+  while (usedIds.has(id)) {
+    id += 1;
+  }
+
+  return id;
 }
 
 function runPropertiesXml(run: TextRun): string {

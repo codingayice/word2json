@@ -506,8 +506,10 @@ async function parseComments(zip: JSZip): Promise<CommentMap> {
   return Object.fromEntries(comments.map((commentValue) => {
     const comment = asObject(commentValue);
     const paragraph = asObject(asObject(comment.p).r);
+    const id = parseNumber(comment.id);
 
     return [String(comment.id), {
+      ...(id !== 0 ? { id } : {}),
       author: String(comment.author ?? ""),
       ...(typeof comment.initials === "string" ? { initials: comment.initials } : {}),
       ...(typeof comment.date === "string" ? { date: comment.date } : {}),

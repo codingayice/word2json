@@ -763,6 +763,36 @@ describe("DOCX writer", () => {
     expect(rels).toContain('Target="comments.xml"');
   });
 
+  it("writes comment ids", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Reviewed",
+            comment: {
+              id: 42,
+              author: "Ada",
+              initials: "AL",
+              date: "2026-07-04T13:00:00.000Z",
+              text: "Stable comment id.",
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const comments = await zip.file("word/comments.xml")!.async("string");
+
+    expect(xml).toContain('<w:commentRangeStart w:id="42"/>');
+    expect(xml).toContain('<w:commentRangeEnd w:id="42"/>');
+    expect(xml).toContain('<w:commentReference w:id="42"/>');
+    expect(comments).toContain('<w:comment w:id="42" w:author="Ada" w:initials="AL" w:date="2026-07-04T13:00:00.000Z">');
+  });
+
   it("writes bookmarks and breaks", async () => {
     const document = createDocumentJson([
       {
@@ -2161,6 +2191,31 @@ describe("DOCX reader", () => {
               initials: "AL",
               date: "2026-07-04T00:00:00.000Z",
               text: "Please verify this clause.",
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips comment ids", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Reviewed",
+            comment: {
+              id: 42,
+              author: "Ada",
+              initials: "AL",
+              date: "2026-07-04T13:00:00.000Z",
+              text: "Stable comment id.",
             },
           },
         ],

@@ -253,6 +253,7 @@ export type Hyperlink = {
 };
 
 export type Comment = {
+  id?: number;
   author: string;
   initials?: string;
   date?: string;
