@@ -867,9 +867,13 @@ function packageRelsXml(context: WriterContext): string {
 }
 
 function customXmlPropertiesXml(properties: NonNullable<NonNullable<DocumentJson["customXmlParts"]>[number]["properties"]>): string {
+  const schemaRefs = (properties.schemaRefs ?? [])
+    .map((schemaRef) => `<ds:schemaRef ds:uri="${escapeAttribute(schemaRef)}"/>`)
+    .join("");
+
   return xmlDeclaration(
     `<ds:datastoreItem ds:itemID="${escapeAttribute(properties.storeItemId ?? "")}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml">` +
-      `<ds:schemaRefs/>` +
+      `<ds:schemaRefs>${schemaRefs}</ds:schemaRefs>` +
       `</ds:datastoreItem>`,
   );
 }

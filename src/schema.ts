@@ -17,6 +17,7 @@ export type CustomXmlPart = {
 export type CustomXmlPartProperties = {
   path?: string;
   storeItemId?: string;
+  schemaRefs?: string[];
 };
 
 export type DocumentSettings = {

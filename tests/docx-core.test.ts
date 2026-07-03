@@ -537,6 +537,30 @@ describe("DOCX writer", () => {
     expect(contentTypes).toContain('ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"');
   });
 
+  it("writes custom xml schema refs", async () => {
+    const document = {
+      ...createDocumentJson([]),
+      customXmlParts: [
+        {
+          path: "customXml/item1.xml",
+          xml: "<customer><name>Ada Lovelace</name></customer>",
+          properties: {
+            path: "customXml/itemProps1.xml",
+            storeItemId: "{11111111-2222-3333-4444-555555555555}",
+            schemaRefs: ["urn:customer", "urn:crm"],
+          },
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const itemProps = await zip.file("customXml/itemProps1.xml")!.async("string");
+
+    expect(itemProps).toContain('<ds:schemaRef ds:uri="urn:customer"/>');
+    expect(itemProps).toContain('<ds:schemaRef ds:uri="urn:crm"/>');
+  });
+
   it("writes repeating section content controls", async () => {
     const document = createDocumentJson([
       {
@@ -2397,6 +2421,28 @@ describe("DOCX reader", () => {
           properties: {
             path: "customXml/itemProps1.xml",
             storeItemId: "{11111111-2222-3333-4444-555555555555}",
+          },
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed.customXmlParts).toEqual(source.customXmlParts);
+  });
+
+  it("round-trips custom xml schema refs", async () => {
+    const source = {
+      ...createDocumentJson([]),
+      customXmlParts: [
+        {
+          path: "customXml/item1.xml",
+          xml: "<customer><name>Ada Lovelace</name></customer>",
+          properties: {
+            path: "customXml/itemProps1.xml",
+            storeItemId: "{11111111-2222-3333-4444-555555555555}",
+            schemaRefs: ["urn:customer", "urn:crm"],
           },
         },
       ],

@@ -551,8 +551,14 @@ async function parseCustomXmlPropertiesFile(file: JSZip.JSZipObject): Promise<Pi
   const xml = await file.async("string");
   const parsed = parser.parse(xml) as XmlNode;
   const datastoreItem = asObject(parsed.datastoreItem);
+  const schemaRefs = asArray(asObject(datastoreItem.schemaRefs).schemaRef)
+    .map((schemaRef) => asObject(schemaRef).uri)
+    .filter((uri): uri is string => typeof uri === "string");
 
-  return typeof datastoreItem.itemID === "string" ? { storeItemId: datastoreItem.itemID } : {};
+  return {
+    ...(typeof datastoreItem.itemID === "string" ? { storeItemId: datastoreItem.itemID } : {}),
+    ...(schemaRefs.length > 0 ? { schemaRefs } : {}),
+  };
 }
 
 async function parseComments(zip: JSZip): Promise<CommentMap> {
