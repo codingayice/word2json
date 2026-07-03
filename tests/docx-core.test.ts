@@ -110,6 +110,42 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<m:sSub><m:e><m:r><m:t>a</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub></m:sSub>");
   });
 
+  it("writes radical and n-ary office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "radical" as const,
+                  degree: [{ type: "text" as const, text: "3" }],
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+                {
+                  type: "nary" as const,
+                  operator: "sum" as const,
+                  lowerLimit: [{ type: "text" as const, text: "i=1" }],
+                  upperLimit: [{ type: "text" as const, text: "n" }],
+                  body: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<m:rad><m:deg><m:r><m:t>3</m:t></m:r></m:deg><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad>");
+    expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2517,6 +2553,40 @@ describe("DOCX reader", () => {
                   type: "subscript" as const,
                   base: [{ type: "text" as const, text: "a" }],
                   subscript: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips radical and n-ary office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "radical" as const,
+                  degree: [{ type: "text" as const, text: "3" }],
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+                {
+                  type: "nary" as const,
+                  operator: "sum" as const,
+                  lowerLimit: [{ type: "text" as const, text: "i=1" }],
+                  upperLimit: [{ type: "text" as const, text: "n" }],
+                  body: [{ type: "text" as const, text: "i" }],
                 },
               ],
             },

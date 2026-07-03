@@ -1639,7 +1639,34 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           subscript: parseMathNodes(asObject(subscriptNode.sub)),
         };
       }),
+    ...asArray(container.rad)
+      .map((radical) => {
+        const radicalNode = asObject(radical);
+        const degree = parseMathNodes(asObject(radicalNode.deg));
+        return {
+          type: "radical" as const,
+          ...(degree.length > 0 ? { degree } : {}),
+          content: parseMathNodes(asObject(radicalNode.e)),
+        };
+      }),
+    ...asArray(container.nary)
+      .map((nary) => {
+        const naryNode = asObject(nary);
+        const lowerLimit = parseMathNodes(asObject(naryNode.sub));
+        const upperLimit = parseMathNodes(asObject(naryNode.sup));
+        return {
+          type: "nary" as const,
+          operator: naryOperatorValue(asObject(asObject(naryNode.naryPr).chr).val),
+          ...(lowerLimit.length > 0 ? { lowerLimit } : {}),
+          ...(upperLimit.length > 0 ? { upperLimit } : {}),
+          body: parseMathNodes(asObject(naryNode.e)),
+        };
+      }),
   ];
+}
+
+function naryOperatorValue(value: unknown): "sum" {
+  return value === "∑" ? "sum" : "sum";
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {

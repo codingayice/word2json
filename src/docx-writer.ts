@@ -696,7 +696,19 @@ function mathNodeXml(node: MathNode): string {
     return `<m:sSup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:sSup>`;
   }
 
-  return `<m:sSub><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub></m:sSub>`;
+  if (node.type === "subscript") {
+    return `<m:sSub><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub></m:sSub>`;
+  }
+
+  if (node.type === "radical") {
+    const degree = node.degree ? `<m:deg>${node.degree.map((child) => mathNodeXml(child)).join("")}</m:deg>` : "";
+    return `<m:rad>${degree}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:rad>`;
+  }
+
+  return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
+    (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
+    (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
+    `<m:e>${node.body.map((child) => mathNodeXml(child)).join("")}</m:e></m:nary>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {

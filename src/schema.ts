@@ -416,7 +416,9 @@ export type MathNode =
   | { type: "text"; text: string }
   | { type: "fraction"; numerator: MathNode[]; denominator: MathNode[] }
   | { type: "superscript"; base: MathNode[]; superscript: MathNode[] }
-  | { type: "subscript"; base: MathNode[]; subscript: MathNode[] };
+  | { type: "subscript"; base: MathNode[]; subscript: MathNode[] }
+  | { type: "radical"; degree?: MathNode[]; content: MathNode[] }
+  | { type: "nary"; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";
