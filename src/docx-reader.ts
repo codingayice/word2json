@@ -352,11 +352,51 @@ async function parseTheme(zip: JSZip): Promise<DocumentTheme | undefined> {
     return undefined;
   }
 
+  const formatScheme = parseThemeFormatScheme(elements);
+
   return {
     name: typeof theme.name === "string" ? theme.name : "Theme",
     fonts: themeFonts(fontScheme, majorLatin.typeface, minorLatin.typeface),
     colors: themeColors(colorScheme, accent1),
+    ...(formatScheme ? { formatScheme } : {}),
   };
+}
+
+function parseThemeFormatScheme(elements: XmlNode): DocumentTheme["formatScheme"] | undefined {
+  const formatScheme = asObject(elements.fmtScheme);
+
+  if (Object.keys(formatScheme).length === 0) {
+    return undefined;
+  }
+
+  const fillStyleColors = parseSolidFillColors(asObject(formatScheme.fillStyleLst).solidFill);
+  const lineStyleColors = asArray(asObject(formatScheme.lnStyleLst).ln)
+    .map((line) => themeNestedColorValue(line, ["solidFill", "srgbClr"]))
+    .filter((color): color is string => typeof color === "string");
+  const effectStyleColors = asArray(asObject(formatScheme.effectStyleLst).effectStyle)
+    .map((effect) => themeNestedColorValue(effect, ["effectLst", "outerShdw", "srgbClr"]))
+    .filter((color): color is string => typeof color === "string");
+  const backgroundFillStyleColors = parseSolidFillColors(asObject(formatScheme.bgFillStyleLst).solidFill);
+
+  return {
+    name: typeof formatScheme.name === "string" ? formatScheme.name : "Format Scheme",
+    ...(fillStyleColors.length > 0 ? { fillStyleColors } : {}),
+    ...(lineStyleColors.length > 0 ? { lineStyleColors } : {}),
+    ...(effectStyleColors.length > 0 ? { effectStyleColors } : {}),
+    ...(backgroundFillStyleColors.length > 0 ? { backgroundFillStyleColors } : {}),
+  };
+}
+
+function parseSolidFillColors(value: unknown): string[] {
+  return asArray(value)
+    .map((fill) => themeNestedColorValue(fill, ["srgbClr"]))
+    .filter((color): color is string => typeof color === "string");
+}
+
+function themeNestedColorValue(value: unknown, path: string[]): string | undefined {
+  const color = path.reduce<unknown>((current, key) => asObject(current)[key], value);
+  const colorObject = asObject(color);
+  return typeof colorObject.val === "string" ? colorObject.val : undefined;
 }
 
 function themeFontValue(fontScheme: XmlNode, group: "majorFont" | "minorFont", slot: "ea" | "cs"): string | undefined {

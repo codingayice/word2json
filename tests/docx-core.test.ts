@@ -2175,6 +2175,46 @@ describe("DOCX writer", () => {
     expect(theme).toContain('<a:font script="Hans" typeface="Microsoft YaHei"/>');
     expect(theme).toContain('<a:font script="Hang" typeface="Malgun Gothic"/>');
   });
+
+  it("writes theme format scheme", async () => {
+    const document = {
+      version: "1.0" as const,
+      theme: {
+        name: "Visual Theme",
+        fonts: { major: "Aptos Display", minor: "Aptos" },
+        colors: { accent1: "4472C4" },
+        formatScheme: {
+          name: "Visual Formats",
+          fillStyleColors: ["FFFFFF", "F2F2F2"],
+          lineStyleColors: ["4472C4", "70AD47"],
+          effectStyleColors: ["808080"],
+          backgroundFillStyleColors: ["000000", "1F2937"],
+        },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const theme = await zip.file("word/theme/theme1.xml")!.async("string");
+
+    expect(theme).toContain('<a:fmtScheme name="Visual Formats">');
+    expect(theme).toContain("<a:fillStyleLst>");
+    expect(theme).toContain('<a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill>');
+    expect(theme).toContain('<a:solidFill><a:srgbClr val="F2F2F2"/></a:solidFill>');
+    expect(theme).toContain("<a:lnStyleLst>");
+    expect(theme).toContain('<a:ln w="9525"><a:solidFill><a:srgbClr val="4472C4"/></a:solidFill></a:ln>');
+    expect(theme).toContain('<a:ln w="9525"><a:solidFill><a:srgbClr val="70AD47"/></a:solidFill></a:ln>');
+    expect(theme).toContain("<a:effectStyleLst>");
+    expect(theme).toContain('<a:outerShdw><a:srgbClr val="808080"/></a:outerShdw>');
+    expect(theme).toContain("<a:bgFillStyleLst>");
+    expect(theme).toContain('<a:solidFill><a:srgbClr val="000000"/></a:solidFill>');
+    expect(theme).toContain('<a:solidFill><a:srgbClr val="1F2937"/></a:solidFill>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -3989,6 +4029,34 @@ describe("DOCX reader", () => {
           ],
         },
         colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips theme format scheme", async () => {
+    const source = {
+      version: "1.0" as const,
+      theme: {
+        name: "Visual Theme",
+        fonts: { major: "Aptos Display", minor: "Aptos" },
+        colors: { accent1: "4472C4" },
+        formatScheme: {
+          name: "Visual Formats",
+          fillStyleColors: ["FFFFFF", "F2F2F2"],
+          lineStyleColors: ["4472C4", "70AD47"],
+          effectStyleColors: ["808080"],
+          backgroundFillStyleColors: ["000000", "1F2937"],
+        },
       },
       sections: [
         {

@@ -109,6 +109,7 @@ export type DocumentTheme = {
   name: string;
   fonts: ThemeFonts;
   colors: ThemeColors;
+  formatScheme?: ThemeFormatScheme;
 };
 
 export type ThemeFonts = {
@@ -140,6 +141,14 @@ export type ThemeColors = {
   accent6?: string;
   hyperlink?: string;
   followedHyperlink?: string;
+};
+
+export type ThemeFormatScheme = {
+  name: string;
+  fillStyleColors?: string[];
+  lineStyleColors?: string[];
+  effectStyleColors?: string[];
+  backgroundFillStyleColors?: string[];
 };
 
 export type DocumentStyles = {

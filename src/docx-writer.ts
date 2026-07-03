@@ -1087,6 +1087,7 @@ function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
       themeFontXml("majorFont", theme.fonts.major, theme.fonts.majorEastAsia, theme.fonts.majorComplexScript, theme.fonts.supplemental?.filter((font) => font.group === "major") ?? []) +
       themeFontXml("minorFont", theme.fonts.minor, theme.fonts.minorEastAsia, theme.fonts.minorComplexScript, theme.fonts.supplemental?.filter((font) => font.group === "minor") ?? []) +
       `</a:fontScheme>` +
+      (theme.formatScheme ? themeFormatSchemeXml(theme.formatScheme) : "") +
       `</a:themeElements>` +
       `</a:theme>`,
   );
@@ -1103,6 +1104,28 @@ function themeFontXml(tag: "majorFont" | "minorFont", latin: string, eastAsia: s
 
 function themeColorXml(tag: string, color: string | undefined): string {
   return color ? `<a:${tag}><a:srgbClr val="${escapeAttribute(color)}"/></a:${tag}>` : "";
+}
+
+function themeFormatSchemeXml(formatScheme: NonNullable<NonNullable<DocumentJson["theme"]>["formatScheme"]>): string {
+  const fillStyles = (formatScheme.fillStyleColors ?? [])
+    .map((color) => `<a:solidFill><a:srgbClr val="${escapeAttribute(color)}"/></a:solidFill>`)
+    .join("");
+  const lineStyles = (formatScheme.lineStyleColors ?? [])
+    .map((color) => `<a:ln w="9525"><a:solidFill><a:srgbClr val="${escapeAttribute(color)}"/></a:solidFill></a:ln>`)
+    .join("");
+  const effectStyles = (formatScheme.effectStyleColors ?? [])
+    .map((color) => `<a:effectStyle><a:effectLst><a:outerShdw><a:srgbClr val="${escapeAttribute(color)}"/></a:outerShdw></a:effectLst></a:effectStyle>`)
+    .join("");
+  const backgroundFillStyles = (formatScheme.backgroundFillStyleColors ?? [])
+    .map((color) => `<a:solidFill><a:srgbClr val="${escapeAttribute(color)}"/></a:solidFill>`)
+    .join("");
+
+  return `<a:fmtScheme name="${escapeAttribute(formatScheme.name)}">` +
+    `<a:fillStyleLst>${fillStyles}</a:fillStyleLst>` +
+    `<a:lnStyleLst>${lineStyles}</a:lnStyleLst>` +
+    `<a:effectStyleLst>${effectStyles}</a:effectStyleLst>` +
+    `<a:bgFillStyleLst>${backgroundFillStyles}</a:bgFillStyleLst>` +
+    `</a:fmtScheme>`;
 }
 
 function stylesXml(document: DocumentJson): string {
