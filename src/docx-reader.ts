@@ -2,6 +2,8 @@ import { XMLParser } from "fast-xml-parser";
 import JSZip from "jszip";
 import type {
   DocumentJson,
+  DocumentStyles,
+  DocumentTheme,
   ImageNode,
   PageSettings,
   ParagraphAlignment,
@@ -39,14 +41,102 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const comments = await parseComments(zip);
   const footnotes = await parseNotes(zip, "footnotes", "footnote");
   const endnotes = await parseNotes(zip, "endnotes", "endnote");
+  const styles = await parseStyles(zip);
+  const theme = await parseTheme(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
 
   return {
     version: "1.0",
+    ...(theme ? { theme } : {}),
+    ...(styles ? { styles } : {}),
     sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes),
   };
+}
+
+async function parseTheme(zip: JSZip): Promise<DocumentTheme | undefined> {
+  const themeFile = zip.file("word/theme/theme1.xml");
+
+  if (!themeFile) {
+    return undefined;
+  }
+
+  const xml = await themeFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const theme = asObject(parsed.theme);
+  const elements = asObject(theme.themeElements);
+  const fontScheme = asObject(elements.fontScheme);
+  const colorScheme = asObject(elements.clrScheme);
+  const majorLatin = asObject(asObject(fontScheme.majorFont).latin);
+  const minorLatin = asObject(asObject(fontScheme.minorFont).latin);
+  const accent = asObject(asObject(colorScheme.accent1).srgbClr);
+
+  if (typeof majorLatin.typeface !== "string" || typeof minorLatin.typeface !== "string" || typeof accent.val !== "string") {
+    return undefined;
+  }
+
+  return {
+    name: typeof theme.name === "string" ? theme.name : "Theme",
+    fonts: {
+      major: majorLatin.typeface,
+      minor: minorLatin.typeface,
+    },
+    colors: {
+      accent1: accent.val,
+    },
+  };
+}
+
+async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
+  const stylesFile = zip.file("word/styles.xml");
+
+  if (!stylesFile) {
+    return undefined;
+  }
+
+  const xml = await stylesFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const stylesRoot = asObject(parsed.styles);
+  const styleNodes = asArray(stylesRoot.style).map((styleValue) => asObject(styleValue));
+  const paragraph = styleNodes
+    .filter((style) => style.type === "paragraph" && typeof style.styleId === "string" && !isBuiltInParagraphStyleId(style.styleId))
+    .map((style) => {
+      const name = asObject(style.name);
+      const basedOn = asObject(style.basedOn);
+      const next = asObject(style.next);
+
+      return {
+        id: String(style.styleId),
+        name: typeof name.val === "string" ? name.val : String(style.styleId),
+        ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
+        ...(typeof next.val === "string" ? { next: next.val } : {}),
+      };
+    });
+  const character = parseStyleDefinitions(styleNodes, "character");
+  const table = parseStyleDefinitions(styleNodes, "table");
+  const styles: DocumentStyles = {
+    ...(paragraph.length > 0 ? { paragraph } : {}),
+    ...(character.length > 0 ? { character } : {}),
+    ...(table.length > 0 ? { table } : {}),
+  };
+
+  return Object.keys(styles).length > 0 ? styles : undefined;
+}
+
+function parseStyleDefinitions(styleNodes: XmlNode[], type: "character" | "table"): NonNullable<DocumentStyles["character"]> {
+  return styleNodes
+    .filter((style) => style.type === type && typeof style.styleId === "string")
+    .map((style) => {
+      const name = asObject(style.name);
+      const basedOn = asObject(style.basedOn);
+
+      return {
+        id: String(style.styleId),
+        name: typeof name.val === "string" ? name.val : String(style.styleId),
+        ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
+      };
+    });
 }
 
 async function parseSections(
@@ -411,6 +501,9 @@ function parseParagraph(
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
     : undefined;
+  const styleId = typeof styleNode.val === "string" && !style
+    ? styleNode.val
+    : undefined;
   const alignment = typeof alignmentNode.val === "string"
     ? (alignmentNode.val as ParagraphAlignment)
     : undefined;
@@ -418,6 +511,7 @@ function parseParagraph(
   return {
     type: "paragraph",
     ...(style ? { style } : {}),
+    ...(styleId ? { styleId } : {}),
     ...(alignment ? { alignment } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
@@ -580,11 +674,18 @@ function parseRun(value: unknown): TextRun {
 
   return {
     text: parseText(run.t),
+    ...parseRunStyle(properties),
     ...(properties.b !== undefined ? { bold: true } : {}),
     ...(properties.i !== undefined ? { italic: true } : {}),
     ...(properties.u !== undefined ? { underline: true } : {}),
     ...parseRunFont(properties),
   };
+}
+
+function parseRunStyle(properties: XmlNode): Partial<TextRun> {
+  const style = asObject(properties.rStyle);
+
+  return typeof style.val === "string" ? { styleId: style.val } : {};
 }
 
 function parseField(value: unknown): TextRun["field"] {
@@ -617,11 +718,13 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
 function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap): TableNode {
   const table = asObject(value);
   const properties = asObject(table.tblPr);
+  const style = asObject(properties.tblStyle);
   const width = asObject(properties.tblW);
   const borders = asObject(properties.tblBorders);
 
   return {
     type: "table",
+    ...(typeof style.val === "string" ? { styleId: style.val } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     rows: asArray(table.tr).map((rowValue) => {
@@ -689,6 +792,13 @@ function paragraphStyleFromId(styleId: string): ParagraphStyle | undefined {
   }
 
   return undefined;
+}
+
+function isBuiltInParagraphStyleId(styleId: unknown): boolean {
+  return styleId === "Normal" ||
+    styleId === "Heading1" ||
+    styleId === "Heading2" ||
+    styleId === "Heading3";
 }
 
 function parseNumber(value: unknown): number {

@@ -1,6 +1,39 @@
 export type DocumentJson = {
   version: "1.0";
+  theme?: DocumentTheme;
+  styles?: DocumentStyles;
   sections: SectionNode[];
+};
+
+export type DocumentTheme = {
+  name: string;
+  fonts: ThemeFonts;
+  colors: ThemeColors;
+};
+
+export type ThemeFonts = {
+  major: string;
+  minor: string;
+};
+
+export type ThemeColors = {
+  accent1: string;
+};
+
+export type DocumentStyles = {
+  paragraph?: ParagraphStyleDefinition[];
+  character?: StyleDefinition[];
+  table?: StyleDefinition[];
+};
+
+export type StyleDefinition = {
+  id: string;
+  name: string;
+  basedOn?: string;
+};
+
+export type ParagraphStyleDefinition = StyleDefinition & {
+  next?: string;
 };
 
 export type SectionNode = {
@@ -45,6 +78,7 @@ export type DocumentBlock = ParagraphNode | TableNode | ImageNode;
 export type ParagraphNode = {
   type: "paragraph";
   style?: ParagraphStyle;
+  styleId?: string;
   alignment?: ParagraphAlignment;
   list?: ListSettings;
   pagination?: ParagraphPagination;
@@ -68,6 +102,7 @@ export type ParagraphAlignment = "left" | "center" | "right" | "both";
 
 export type TextRun = {
   text: string;
+  styleId?: string;
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -113,6 +148,7 @@ export type NoteContent = {
 
 export type TableNode = {
   type: "table";
+  styleId?: string;
   width?: number;
   borders?: "single";
   rows: TableRowNode[];

@@ -19,6 +19,7 @@ type WriterContext = {
   footers: HeaderFooterRelationship[];
   footnotes: NoteEntry[];
   endnotes: NoteEntry[];
+  theme: DocumentJson["theme"];
   bookmarkId: number;
 };
 
@@ -55,7 +56,7 @@ type NoteEntry = {
 
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, bookmarkId: 0 };
 
   zip.folder("_rels")!.file(".rels", packageRelsXml());
   zip.folder("word")!.file("document.xml", documentXml(document, context));
@@ -68,8 +69,11 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   for (const image of context.images) {
     zip.folder("word")!.folder("media")!.file(image.filename, Buffer.from(image.data, "base64"));
   }
-  zip.folder("word")!.file("styles.xml", stylesXml());
+  zip.folder("word")!.file("styles.xml", stylesXml(document));
   zip.folder("word")!.file("numbering.xml", numberingXml());
+  if (document.theme) {
+    zip.folder("word")!.folder("theme")!.file("theme1.xml", themeXml(document.theme));
+  }
   if (context.comments.length > 0) {
     zip.folder("word")!.file("comments.xml", commentsXml(context));
   }
@@ -200,8 +204,11 @@ function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string 
 }
 
 function paragraphPropertiesXml(paragraph: ParagraphNode): string {
-  const style = paragraph.style && paragraph.style !== "normal"
-    ? `<w:pStyle w:val="${paragraphStyleId(paragraph.style)}"/>`
+  const styleId = paragraph.styleId ?? (paragraph.style && paragraph.style !== "normal"
+    ? paragraphStyleId(paragraph.style)
+    : undefined);
+  const style = styleId
+    ? `<w:pStyle w:val="${escapeAttribute(styleId)}"/>`
     : "";
   const alignment = paragraph.alignment
     ? `<w:jc w:val="${paragraph.alignment}"/>`
@@ -318,6 +325,7 @@ function wrapCommentIfNeeded(run: TextRun, runContent: string, context: WriterCo
 
 function runPropertiesXml(run: TextRun): string {
   const properties = [
+    run.styleId ? `<w:rStyle w:val="${escapeAttribute(run.styleId)}"/>` : "",
     run.bold ? "<w:b/>" : "",
     run.italic ? "<w:i/>" : "",
     run.underline ? '<w:u w:val="single"/>' : "",
@@ -331,6 +339,7 @@ function runPropertiesXml(run: TextRun): string {
 
 function tableXml(table: TableNode, context: WriterContext): string {
   const properties = [
+    table.styleId ? `<w:tblStyle w:val="${escapeAttribute(table.styleId)}"/>` : "",
     table.width ? `<w:tblW w:w="${table.width}" w:type="dxa"/>` : "",
     table.borders ? tableBordersXml(table.borders) : "",
   ].join("");
@@ -400,6 +409,9 @@ function contentTypesXml(context: WriterContext): string {
   const endnotesOverride = context.endnotes.length > 0
     ? `<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>`
     : "";
+  const themeOverride = context.theme
+    ? `<Override PartName="/word/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>`
+    : "";
 
   const imageDefaults = [
     context.images.some((image) => image.contentType === "image/png")
@@ -429,6 +441,7 @@ function contentTypesXml(context: WriterContext): string {
       commentsOverride +
       footnotesOverride +
       endnotesOverride +
+      themeOverride +
       `</Types>`,
   );
 }
@@ -461,6 +474,7 @@ function documentRelsXml(context: WriterContext): string {
       (context.comments.length > 0 ? `<Relationship Id="rIdComments" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>` : "") +
       (context.footnotes.length > 0 ? `<Relationship Id="rIdFootnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>` : "") +
       (context.endnotes.length > 0 ? `<Relationship Id="rIdEndnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : "") +
+      (context.theme ? `<Relationship Id="rIdTheme" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>` : "") +
       headerRelationships +
       footerRelationships +
       imageRelationships +
@@ -469,15 +483,55 @@ function documentRelsXml(context: WriterContext): string {
   );
 }
 
-function stylesXml(): string {
+function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
+  return xmlDeclaration(
+    `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${escapeAttribute(theme.name)}">` +
+      `<a:themeElements>` +
+      `<a:clrScheme name="${escapeAttribute(theme.name)}">` +
+      `<a:accent1><a:srgbClr val="${escapeAttribute(theme.colors.accent1)}"/></a:accent1>` +
+      `</a:clrScheme>` +
+      `<a:fontScheme name="${escapeAttribute(theme.name)}">` +
+      `<a:majorFont><a:latin typeface="${escapeAttribute(theme.fonts.major)}"/></a:majorFont>` +
+      `<a:minorFont><a:latin typeface="${escapeAttribute(theme.fonts.minor)}"/></a:minorFont>` +
+      `</a:fontScheme>` +
+      `</a:themeElements>` +
+      `</a:theme>`,
+  );
+}
+
+function stylesXml(document: DocumentJson): string {
+  const paragraphStyles = (document.styles?.paragraph ?? [])
+    .map((style) => `<w:style w:type="paragraph" w:styleId="${escapeAttribute(style.id)}">` +
+      `<w:name w:val="${escapeAttribute(style.name)}"/>` +
+      (style.basedOn ? `<w:basedOn w:val="${escapeAttribute(style.basedOn)}"/>` : "") +
+      (style.next ? `<w:next w:val="${escapeAttribute(style.next)}"/>` : "") +
+      `</w:style>`)
+    .join("");
+  const characterStyles = (document.styles?.character ?? [])
+    .map((style) => styleXml("character", style.id, style.name, style.basedOn))
+    .join("");
+  const tableStyles = (document.styles?.table ?? [])
+    .map((style) => styleXml("table", style.id, style.name, style.basedOn))
+    .join("");
+
   return xmlDeclaration(
     `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
       `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>` +
       `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
       `<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
       `<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
+      paragraphStyles +
+      characterStyles +
+      tableStyles +
       `</w:styles>`,
   );
+}
+
+function styleXml(type: "character" | "table", id: string, name: string, basedOn?: string): string {
+  return `<w:style w:type="${type}" w:styleId="${escapeAttribute(id)}">` +
+    `<w:name w:val="${escapeAttribute(name)}"/>` +
+    (basedOn ? `<w:basedOn w:val="${escapeAttribute(basedOn)}"/>` : "") +
+    `</w:style>`;
 }
 
 function numberingXml(): string {

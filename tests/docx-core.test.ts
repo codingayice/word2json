@@ -487,6 +487,115 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:instrText xml:space="preserve">REF Clause1</w:instrText>');
     expect(xml).toContain('<w:instrText xml:space="preserve">PAGEREF Clause1</w:instrText>');
   });
+
+  it("writes paragraph style definitions and paragraph style ids", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          { id: "ContractTitle", name: "Contract Title", basedOn: "Normal", next: "Normal" },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            { type: "paragraph" as const, styleId: "ContractTitle", runs: [{ text: "Agreement" }] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(xml).toContain('<w:pStyle w:val="ContractTitle"/>');
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ContractTitle">');
+    expect(styles).toContain('<w:name w:val="Contract Title"/>');
+    expect(styles).toContain('<w:basedOn w:val="Normal"/>');
+    expect(styles).toContain('<w:next w:val="Normal"/>');
+  });
+
+  it("writes character and table styles", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [
+          { id: "DefinedTerm", name: "Defined Term", basedOn: "DefaultParagraphFont" },
+        ],
+        table: [
+          { id: "ContractTable", name: "Contract Table", basedOn: "TableNormal" },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Term", styleId: "DefinedTerm" }],
+            },
+            {
+              type: "table" as const,
+              styleId: "ContractTable",
+              rows: [
+                {
+                  cells: [
+                    { blocks: [{ type: "paragraph" as const, runs: [{ text: "Cell" }] }] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(xml).toContain('<w:rStyle w:val="DefinedTerm"/>');
+    expect(xml).toContain('<w:tblStyle w:val="ContractTable"/>');
+    expect(styles).toContain('<w:style w:type="character" w:styleId="DefinedTerm">');
+    expect(styles).toContain('<w:name w:val="Defined Term"/>');
+    expect(styles).toContain('<w:basedOn w:val="DefaultParagraphFont"/>');
+    expect(styles).toContain('<w:style w:type="table" w:styleId="ContractTable">');
+    expect(styles).toContain('<w:name w:val="Contract Table"/>');
+    expect(styles).toContain('<w:basedOn w:val="TableNormal"/>');
+  });
+
+  it("writes theme part", async () => {
+    const document = {
+      version: "1.0" as const,
+      theme: {
+        name: "Contract Theme",
+        fonts: { major: "Aptos Display", minor: "Aptos" },
+        colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const theme = await zip.file("word/theme/theme1.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(theme).toContain('<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Contract Theme">');
+    expect(theme).toContain('<a:latin typeface="Aptos Display"/>');
+    expect(theme).toContain('<a:latin typeface="Aptos"/>');
+    expect(theme).toContain('<a:srgbClr val="4472C4"/>');
+    expect(rels).toContain('Id="rIdTheme"');
+    expect(rels).toContain('Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"');
+    expect(rels).toContain('Target="theme/theme1.xml"');
+    expect(contentTypes).toContain('/word/theme/theme1.xml');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -854,6 +963,90 @@ describe("DOCX reader", () => {
         ],
       },
     ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph style definitions", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          { id: "ContractTitle", name: "Contract Title", basedOn: "Normal", next: "Normal" },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            { type: "paragraph" as const, styleId: "ContractTitle", runs: [{ text: "Agreement" }] },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips character and table styles", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [
+          { id: "DefinedTerm", name: "Defined Term", basedOn: "DefaultParagraphFont" },
+        ],
+        table: [
+          { id: "ContractTable", name: "Contract Table", basedOn: "TableNormal" },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Term", styleId: "DefinedTerm" }],
+            },
+            {
+              type: "table" as const,
+              styleId: "ContractTable",
+              rows: [
+                {
+                  cells: [
+                    { blocks: [{ type: "paragraph" as const, runs: [{ text: "Cell" }] }] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips theme part", async () => {
+    const source = {
+      version: "1.0" as const,
+      theme: {
+        name: "Contract Theme",
+        fonts: { major: "Aptos Display", minor: "Aptos" },
+        colors: { accent1: "4472C4" },
+      },
+      sections: [
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed" }] }],
+        },
+      ],
+    };
 
     const docx = await buildDocx(source);
     const parsed = await parseDocx(docx);
