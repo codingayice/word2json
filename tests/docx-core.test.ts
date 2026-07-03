@@ -817,6 +817,31 @@ describe("DOCX writer", () => {
     expect(comments.match(/<w:comment w:id="50"/g)).toHaveLength(1);
   });
 
+  it("writes cross-paragraph comments", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        commentRangeStart: { id: 60, author: "Ada", text: "Across paragraphs." },
+        runs: [{ text: "First paragraph" }],
+      },
+      {
+        type: "paragraph",
+        commentRangeEnd: { id: 60 },
+        runs: [{ text: "Second paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const comments = await zip.file("word/comments.xml")!.async("string");
+
+    expect(xml).toContain('<w:commentRangeStart w:id="60"/><w:p><w:r><w:t>First paragraph</w:t></w:r></w:p>');
+    expect(xml).toContain('<w:p><w:r><w:t>Second paragraph</w:t></w:r></w:p><w:commentRangeEnd w:id="60"/><w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="60"/></w:r>');
+    expect(comments.match(/<w:comment w:id="60"/g)).toHaveLength(1);
+    expect(comments).toContain("<w:t>Across paragraphs.</w:t>");
+  });
+
   it("writes bookmarks and breaks", async () => {
     const document = createDocumentJson([
       {
@@ -2261,6 +2286,26 @@ describe("DOCX reader", () => {
           { text: "First ", comment },
           { text: "second", bold: true, comment },
         ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cross-paragraph comments", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        commentRangeStart: { id: 60, author: "Ada", text: "Across paragraphs." },
+        runs: [{ text: "First paragraph" }],
+      },
+      {
+        type: "paragraph",
+        commentRangeEnd: { id: 60 },
+        runs: [{ text: "Second paragraph" }],
       },
     ]);
 

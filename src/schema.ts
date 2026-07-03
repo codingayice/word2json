@@ -187,6 +187,8 @@ export type ParagraphNode = {
   borders?: ParagraphBorders;
   list?: ListSettings;
   pagination?: ParagraphPagination;
+  commentRangeStart?: Comment;
+  commentRangeEnd?: CommentRangeEnd;
   runs: TextRun[];
 };
 
@@ -258,6 +260,10 @@ export type Comment = {
   initials?: string;
   date?: string;
   text: string;
+};
+
+export type CommentRangeEnd = {
+  id: number;
 };
 
 export type Bookmark = {

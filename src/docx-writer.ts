@@ -219,13 +219,30 @@ function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string 
   const properties = paragraphPropertiesXml(paragraph);
   const runs = paragraphRunsXml(paragraph.runs, context);
   const plainParagraph = `<w:p>${properties}${runs}</w:p>`;
+  const startComment = paragraph.commentRangeStart
+    ? paragraphCommentRangeStartXml(paragraph.commentRangeStart, context)
+    : "";
+  const endComment = paragraph.commentRangeEnd
+    ? paragraphCommentRangeEndXml(paragraph.commentRangeEnd)
+    : "";
 
   if (!paragraph.revision) {
-    return plainParagraph;
+    return `${startComment}${plainParagraph}${endComment}`;
   }
 
   const wrapper = revisionElement(paragraph.revision.type);
-  return `<w:${wrapper}${revisionAttributes(paragraph.revision)}>${plainParagraph}</w:${wrapper}>`;
+  return `${startComment}<w:${wrapper}${revisionAttributes(paragraph.revision)}>${plainParagraph}</w:${wrapper}>${endComment}`;
+}
+
+function paragraphCommentRangeStartXml(comment: NonNullable<ParagraphNode["commentRangeStart"]>, context: WriterContext): string {
+  const id = comment.id ?? nextCommentId(context);
+  ensureComment(comment, id, context);
+  return `<w:commentRangeStart w:id="${id}"/>`;
+}
+
+function paragraphCommentRangeEndXml(commentRangeEnd: NonNullable<ParagraphNode["commentRangeEnd"]>): string {
+  return `<w:commentRangeEnd w:id="${commentRangeEnd.id}"/>` +
+    `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${commentRangeEnd.id}"/></w:r>`;
 }
 
 function paragraphRunsXml(runs: TextRun[], context: WriterContext): string {
@@ -505,11 +522,19 @@ function wrapCommentIfNeeded(run: TextRun, runContent: string, context: WriterCo
 }
 
 function ensureCommentEntry(run: TextRun, id: number, context: WriterContext): void {
-  if (!run.comment || context.comments.some((comment) => comment.id === id)) {
+  if (!run.comment) {
     return;
   }
 
-  context.comments.push({ id, ...run.comment });
+  ensureComment(run.comment, id, context);
+}
+
+function ensureComment(comment: TextRun["comment"], id: number, context: WriterContext): void {
+  if (!comment || context.comments.some((entry) => entry.id === id)) {
+    return;
+  }
+
+  context.comments.push({ id, ...comment });
 }
 
 function nextCommentId(context: WriterContext): number {

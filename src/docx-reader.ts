@@ -570,7 +570,14 @@ function parseBlockXml(
       return parseImageBlock(parsed.p, media);
     }
 
-    return parseParagraph(parsed.p, relationships, comments, footnotes, endnotes, numberingContext, xml);
+    const paragraph = parseParagraph(parsed.p, relationships, comments, footnotes, endnotes, numberingContext, xml);
+    const commentRangeStart = parseParagraphCommentRangeStart(xml, comments);
+    const commentRangeEnd = parseParagraphCommentRangeEnd(xml);
+    return {
+      ...paragraph,
+      ...(commentRangeStart ? { commentRangeStart } : {}),
+      ...(commentRangeEnd ? { commentRangeEnd } : {}),
+    };
   }
 
   return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes, numberingContext);
@@ -719,8 +726,10 @@ function extractBlockXmlFromContent(body: string): string[] {
       index = end + "</w:moveTo>".length;
     } else if (blockIndex === paragraphIndex) {
       const end = body.indexOf("</w:p>", blockIndex);
-      blocks.push(body.slice(blockIndex, end + "</w:p>".length));
-      index = end + "</w:p>".length;
+      const start = paragraphBlockStart(body, index, blockIndex);
+      const blockEnd = paragraphBlockEnd(body, end + "</w:p>".length);
+      blocks.push(body.slice(start, blockEnd));
+      index = blockEnd;
     } else {
       const end = body.indexOf("</w:tbl>", blockIndex);
       blocks.push(body.slice(blockIndex, end + "</w:tbl>".length));
@@ -729,6 +738,19 @@ function extractBlockXmlFromContent(body: string): string[] {
   }
 
   return blocks;
+}
+
+function paragraphBlockStart(body: string, index: number, paragraphIndex: number): number {
+  const prefix = body.slice(index, paragraphIndex);
+  return /^(\s*<w:commentRangeStart\b[^>]*\/>)*\s*$/.test(prefix) ? index : paragraphIndex;
+}
+
+function paragraphBlockEnd(body: string, paragraphEnd: number): number {
+  const suffixPattern = /^(\s*<w:commentRangeEnd\b[^>]*\/>)?(\s*<w:r\b[\s\S]*?<w:commentReference\b[^>]*\/>[\s\S]*?<\/w:r>)?/;
+  const suffix = body.slice(paragraphEnd);
+  const match = suffix.match(suffixPattern);
+
+  return paragraphEnd + (match?.[0].length ?? 0);
 }
 
 function nextBlockIndex(...indexes: number[]): number {
@@ -840,8 +862,27 @@ function parseParagraph(
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
-    runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes, paragraphXml),
+    runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes, paragraphInnerXml(paragraphXml)),
   };
+}
+
+function paragraphInnerXml(xml?: string): string | undefined {
+  return xml?.match(/<w:p\b[\s\S]*<\/w:p>/)?.[0];
+}
+
+function parseParagraphCommentRangeStart(xml: string, comments: CommentMap): ParagraphNode["commentRangeStart"] | undefined {
+  const id = xml.match(/^\s*<w:commentRangeStart\b[^>]*w:id="([^"]+)"[^>]*\/>\s*<w:p/)?.[1];
+  if (id === undefined) {
+    return undefined;
+  }
+
+  const comment = comments[id];
+  return comment ? { ...comment, id: parseNumber(id) } : { id: parseNumber(id), author: "", text: "" };
+}
+
+function parseParagraphCommentRangeEnd(xml: string): ParagraphNode["commentRangeEnd"] | undefined {
+  const id = xml.match(/<\/w:p>\s*<w:commentRangeEnd\b[^>]*w:id="([^"]+)"[^>]*\/>/)?.[1];
+  return id !== undefined ? { id: parseNumber(id) } : undefined;
 }
 
 function parsePropertyRevision(value: unknown): ParagraphNode["propertyRevision"] | undefined {
