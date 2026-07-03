@@ -217,7 +217,7 @@ function defaultPageSettings(): PageSettings {
 
 function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string {
   const properties = paragraphPropertiesXml(paragraph);
-  const runs = paragraph.runs.map((run) => runXml(run, context)).join("");
+  const runs = paragraphRunsXml(paragraph.runs, context);
   const plainParagraph = `<w:p>${properties}${runs}</w:p>`;
 
   if (!paragraph.revision) {
@@ -226,6 +226,52 @@ function paragraphXml(paragraph: ParagraphNode, context: WriterContext): string 
 
   const wrapper = revisionElement(paragraph.revision.type);
   return `<w:${wrapper}${revisionAttributes(paragraph.revision)}>${plainParagraph}</w:${wrapper}>`;
+}
+
+function paragraphRunsXml(runs: TextRun[], context: WriterContext): string {
+  const chunks: string[] = [];
+  let index = 0;
+
+  while (index < runs.length) {
+    const run = runs[index];
+    const commentId = explicitCommentId(run);
+
+    if (commentId === undefined) {
+      chunks.push(runXml(run, context));
+      index += 1;
+      continue;
+    }
+
+    let endIndex = index + 1;
+    while (endIndex < runs.length && explicitCommentId(runs[endIndex]) === commentId) {
+      endIndex += 1;
+    }
+
+    if (endIndex === index + 1) {
+      chunks.push(runXml(run, context));
+      index += 1;
+      continue;
+    }
+
+    ensureCommentEntry(run, commentId, context);
+    const groupedRuns = runs
+      .slice(index, endIndex)
+      .map((groupedRun) => runXml(groupedRun, context, { skipComment: true }))
+      .join("");
+    chunks.push(
+      `<w:commentRangeStart w:id="${commentId}"/>` +
+      groupedRuns +
+      `<w:commentRangeEnd w:id="${commentId}"/>` +
+      `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${commentId}"/></w:r>`,
+    );
+    index = endIndex;
+  }
+
+  return chunks.join("");
+}
+
+function explicitCommentId(run: TextRun): number | undefined {
+  return run.comment?.id;
 }
 
 function paragraphPropertiesXml(paragraph: ParagraphNode): string {
@@ -301,7 +347,7 @@ function paragraphIndentXml(indent: NonNullable<ParagraphNode["indent"]>): strin
     `/>`;
 }
 
-function runXml(run: TextRun, context: WriterContext): string {
+function runXml(run: TextRun, context: WriterContext, options: { skipComment?: boolean } = {}): string {
   if (run.footnote) {
     const id = context.footnotes.length + 1;
     context.footnotes.push({ id, blocks: run.footnote.blocks });
@@ -329,7 +375,7 @@ function runXml(run: TextRun, context: WriterContext): string {
   const plainRun = `<w:r>${properties}<w:t${textSpace}>${escapeXml(run.text)}</w:t></w:r>`;
   const revisedRun = wrapRevisionIfNeeded(run, plainRun);
   const bookmarkedRun = wrapBookmarkIfNeeded(run, revisedRun, context);
-  const runContent = wrapCommentIfNeeded(run, bookmarkedRun, context);
+  const runContent = options.skipComment ? bookmarkedRun : wrapCommentIfNeeded(run, bookmarkedRun, context);
 
   if (!run.link) {
     return runContent;
@@ -450,14 +496,20 @@ function wrapCommentIfNeeded(run: TextRun, runContent: string, context: WriterCo
   }
 
   const id = run.comment.id ?? nextCommentId(context);
-  if (!context.comments.some((comment) => comment.id === id)) {
-    context.comments.push({ id, ...run.comment });
-  }
+  ensureCommentEntry(run, id, context);
 
   return `<w:commentRangeStart w:id="${id}"/>` +
     runContent +
     `<w:commentRangeEnd w:id="${id}"/>` +
     `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`;
+}
+
+function ensureCommentEntry(run: TextRun, id: number, context: WriterContext): void {
+  if (!run.comment || context.comments.some((comment) => comment.id === id)) {
+    return;
+  }
+
+  context.comments.push({ id, ...run.comment });
 }
 
 function nextCommentId(context: WriterContext): number {

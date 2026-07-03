@@ -793,6 +793,30 @@ describe("DOCX writer", () => {
     expect(comments).toContain('<w:comment w:id="42" w:author="Ada" w:initials="AL" w:date="2026-07-04T13:00:00.000Z">');
   });
 
+  it("writes multi-run comments as one range", async () => {
+    const comment = { id: 50, author: "Ada", text: "One range." };
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "First ", comment },
+          { text: "second", bold: true, comment },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const comments = await zip.file("word/comments.xml")!.async("string");
+
+    expect(xml.match(/<w:commentRangeStart w:id="50"\/>/g)).toHaveLength(1);
+    expect(xml.match(/<w:commentRangeEnd w:id="50"\/>/g)).toHaveLength(1);
+    expect(xml.match(/<w:commentReference w:id="50"\/>/g)).toHaveLength(1);
+    expect(xml).toContain('<w:commentRangeStart w:id="50"/><w:r><w:t xml:space="preserve">First </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>second</w:t></w:r><w:commentRangeEnd w:id="50"/>');
+    expect(comments.match(/<w:comment w:id="50"/g)).toHaveLength(1);
+  });
+
   it("writes bookmarks and breaks", async () => {
     const document = createDocumentJson([
       {
@@ -2218,6 +2242,24 @@ describe("DOCX reader", () => {
               text: "Stable comment id.",
             },
           },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips multi-run comments", async () => {
+    const comment = { id: 50, author: "Ada", text: "One range." };
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "First ", comment },
+          { text: "second", bold: true, comment },
         ],
       },
     ]);

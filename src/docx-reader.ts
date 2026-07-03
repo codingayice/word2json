@@ -570,7 +570,7 @@ function parseBlockXml(
       return parseImageBlock(parsed.p, media);
     }
 
-    return parseParagraph(parsed.p, relationships, comments, footnotes, endnotes, numberingContext);
+    return parseParagraph(parsed.p, relationships, comments, footnotes, endnotes, numberingContext, xml);
   }
 
   return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes, numberingContext);
@@ -805,6 +805,7 @@ function parseParagraph(
   footnotes: NoteMap = {},
   endnotes: NoteMap = {},
   numberingContext: NumberingContext = { listTypes: new Map([[1, "bullet"], [2, "ordered"]]) },
+  paragraphXml?: string,
 ): ParagraphNode {
   const paragraph = asObject(value);
   const properties = asObject(paragraph.pPr);
@@ -839,7 +840,7 @@ function parseParagraph(
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
-    runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes),
+    runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes, paragraphXml),
   };
 }
 
@@ -964,8 +965,9 @@ function parseParagraphRuns(
   comments: CommentMap,
   footnotes: NoteMap,
   endnotes: NoteMap,
+  paragraphXml?: string,
 ): TextRun[] {
-  const commentRanges = commentRangesByText(paragraph);
+  const commentRanges = paragraphXml ? commentRangesByRunIndex(paragraphXml) : commentRangesByText(paragraph);
   const bookmarkRanges = bookmarkRangesByText(paragraph);
   const revisionRuns = [
     ...asArray(paragraph.ins).map((ins) => ({ ins })),
@@ -977,7 +979,7 @@ function parseParagraphRuns(
     .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined)
     .map((run) => withMatchingNotes(run, footnotes, endnotes))
     .map((run) => withMatchingBookmark(run, bookmarkRanges))
-    .map((run) => withMatchingComment(run, commentRanges, comments));
+    .map((run, index) => withMatchingComment(run, commentRanges, comments, index));
   const hyperlinkRuns = asArray(paragraph.hyperlink)
     .flatMap((hyperlink) => parseHyperlink(hyperlink, relationships, comments));
 
@@ -1124,8 +1126,44 @@ function commentRangesByText(paragraph: XmlNode): Map<string, string> {
   return ranges;
 }
 
-function withMatchingComment(run: TextRun, ranges: Map<string, string>, comments: CommentMap): TextRun {
-  const commentId = ranges.get(run.text);
+function commentRangesByRunIndex(paragraphXml: string): Map<number, string> {
+  const ranges = new Map<number, string>();
+  const activeCommentIds: string[] = [];
+  const tokenPattern = /<w:commentRangeStart\b[^>]*w:id="([^"]+)"[^>]*\/>|<w:commentRangeEnd\b[^>]*w:id="([^"]+)"[^>]*\/>|<w:r\b[\s\S]*?<\/w:r>/g;
+  let runIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenPattern.exec(paragraphXml)) !== null) {
+    if (match[1] !== undefined) {
+      activeCommentIds.push(match[1]);
+      continue;
+    }
+
+    if (match[2] !== undefined) {
+      const activeIndex = activeCommentIds.lastIndexOf(match[2]);
+      if (activeIndex !== -1) {
+        activeCommentIds.splice(activeIndex, 1);
+      }
+      continue;
+    }
+
+    const runXml = match[0];
+    if (runXml.includes("<w:commentReference")) {
+      continue;
+    }
+
+    const commentId = activeCommentIds[activeCommentIds.length - 1];
+    if (commentId !== undefined) {
+      ranges.set(runIndex, commentId);
+    }
+    runIndex += 1;
+  }
+
+  return ranges;
+}
+
+function withMatchingComment(run: TextRun, ranges: Map<string, string> | Map<number, string>, comments: CommentMap, index?: number): TextRun {
+  const commentId = index !== undefined ? ranges.get(index as never) : ranges.get(run.text as never);
   const comment = commentId ? comments[commentId] : undefined;
 
   return comment ? { ...run, comment } : run;
