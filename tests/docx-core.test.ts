@@ -518,6 +518,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:preSubSup><m:e><m:r><m:t>X</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>j</m:t></m:r></m:sup></m:preSubSup>');
   });
 
+  it("writes sub sup office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "subSup" as const,
+                  base: [{ type: "text" as const, text: "x" }],
+                  subscript: [{ type: "text" as const, text: "i" }],
+                  superscript: [{ type: "text" as const, text: "2" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:sSubSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSubSup>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -3366,6 +3395,40 @@ describe("DOCX reader", () => {
                     },
                   ],
                   superscript: [{ type: "text" as const, text: "j" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips sub sup office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "subSup" as const,
+                  base: [{ type: "text" as const, text: "x" }],
+                  subscript: [{ type: "text" as const, text: "i" }],
+                  superscript: [
+                    {
+                      type: "fraction" as const,
+                      numerator: [{ type: "text" as const, text: "m" }],
+                      denominator: [{ type: "text" as const, text: "n" }],
+                    },
+                  ],
                 },
               ],
             },
