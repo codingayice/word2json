@@ -404,6 +404,11 @@ export type TextRun = StyleRunProperties & {
   field?: FieldKind | FieldWithResult | ReferenceField | TocField;
   footnote?: NoteContent;
   endnote?: NoteContent;
+  math?: MathRun;
+};
+
+export type MathRun = {
+  text: string;
 };
 
 export type RunRevision = {

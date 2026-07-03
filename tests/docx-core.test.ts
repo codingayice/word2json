@@ -49,6 +49,27 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:t>Word</w:t>");
   });
 
+  it("writes inline office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Equation: " },
+          { text: "", math: { text: "x+1=2" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"');
+    expect(xml).toContain("<m:oMath>");
+    expect(xml).toContain("<m:r><m:t>x+1=2</m:t></m:r>");
+    expect(xml).toContain("</m:oMath>");
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2405,6 +2426,24 @@ describe("DOCX reader", () => {
         runs: [
           { text: "A", bold: true },
           { text: "B", italic: true, underline: true },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips inline office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Equation: " },
+          { text: "", math: { text: "x+1=2" } },
+          { text: " solved" },
         ],
       },
     ]);

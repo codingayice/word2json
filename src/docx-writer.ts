@@ -305,7 +305,7 @@ function documentXml(document: DocumentJson, context: WriterContext): string {
   const finalSection = sections[sections.length - 1];
 
   return xmlDeclaration(
-    `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+    `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">` +
       `<w:body>${body}${sectionPropertiesXml(finalSection, context)}</w:body>` +
       `</w:document>`,
   );
@@ -639,6 +639,10 @@ function runXml(run: TextRun, context: WriterContext, options: { skipComment?: b
     const id = context.endnotes.length + 1;
     context.endnotes.push({ id, blocks: run.endnote.blocks });
     return `<w:r><w:endnoteReference w:id="${id}"/></w:r>`;
+  }
+
+  if (run.math) {
+    return `<m:oMath><m:r><m:t>${escapeXml(run.math.text)}</m:t></m:r></m:oMath>`;
   }
 
   if (run.field) {

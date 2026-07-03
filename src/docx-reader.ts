@@ -1535,6 +1535,10 @@ function parseParagraphRuns(
   endnotes: NoteMap,
   paragraphXml?: string,
 ): TextRun[] {
+  if (paragraphXml?.includes("<m:oMath")) {
+    return parseParagraphRunsWithMath(paragraphXml, footnotes, endnotes);
+  }
+
   const commentRanges = paragraphXml ? commentRangesByRunIndex(paragraphXml) : commentRangesByText(paragraph);
   const bookmarkRanges = bookmarkRangesByText(paragraph);
   const revisionRuns = [
@@ -1553,6 +1557,45 @@ function parseParagraphRuns(
     .flatMap((hyperlink) => parseHyperlink(hyperlink, relationships, comments));
 
   return [...normalRuns, ...hyperlinkRuns];
+}
+
+function parseParagraphRunsWithMath(paragraphXml: string, footnotes: NoteMap, endnotes: NoteMap): TextRun[] {
+  const runs: TextRun[] = [];
+  const tokenPattern = /<w:r\b[\s\S]*?<\/w:r>|<m:oMath\b[\s\S]*?<\/m:oMath>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenPattern.exec(paragraphXml)) !== null) {
+    const token = match[0];
+    if (token.startsWith("<m:oMath")) {
+      const mathRun = parseMathRunXml(token);
+      if (mathRun) {
+        runs.push(mathRun);
+      }
+      continue;
+    }
+
+    const parsed = parser.parse(
+      `<root xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${token}</root>`,
+    ) as XmlNode;
+    const run = withMatchingNotes(parseRun(asObject(parsed.root).r), footnotes, endnotes);
+    if (run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined) {
+      runs.push(run);
+    }
+  }
+
+  return runs;
+}
+
+function parseMathRunXml(xml: string): TextRun | undefined {
+  const parsed = parser.parse(
+    `<root xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">${xml}</root>`,
+  ) as XmlNode;
+  const math = asObject(asObject(parsed.root).oMath);
+  const text = asArray(math.r)
+    .map((run) => parseText(asObject(run).t))
+    .join("");
+
+  return text ? { text: "", math: { text } } : undefined;
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
