@@ -716,6 +716,10 @@ function mathNodeXml(node: MathNode): string {
     return `<m:d>${delimiterProperties}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:d>`;
   }
 
+  if (node.type === "accent") {
+    return `<m:acc><m:accPr><m:chr m:val="${escapeAttribute(node.mark)}"/></m:accPr><m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:acc>`;
+  }
+
   return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
