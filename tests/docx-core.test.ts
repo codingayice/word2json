@@ -953,6 +953,33 @@ describe("DOCX writer", () => {
     expect(settings).toContain('<w:writeProtection w:recommended="1" w:cryptProviderType="rsaFull" w:cryptAlgorithmClass="hash" w:cryptAlgorithmType="typeAny" w:cryptAlgorithmSid="4" w:cryptSpinCount="100000" w:hash="FEDCBA9876543210" w:salt="0011223344556677"/>');
   });
 
+  it("writes math settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: {
+        math: {
+          mathFont: "Cambria Math",
+          breakBinary: "before" as const,
+          smallFraction: true,
+          displayDefaults: true,
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Math settings" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain('xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"');
+    expect(settings).toContain("<m:mathPr>");
+    expect(settings).toContain('<m:mathFont m:val="Cambria Math"/>');
+    expect(settings).toContain('<m:brkBin m:val="before"/>');
+    expect(settings).toContain('<m:smallFrac m:val="1"/>');
+    expect(settings).toContain("<m:dispDef/>");
+    expect(settings).toContain("</m:mathPr>");
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -3206,6 +3233,26 @@ describe("DOCX reader", () => {
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Write protected" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips math settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: {
+        math: {
+          mathFont: "Cambria Math",
+          breakBinary: "before" as const,
+          smallFraction: true,
+          displayDefaults: true,
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Math settings" }] }] }],
     };
 
     const docx = await buildDocx(source);

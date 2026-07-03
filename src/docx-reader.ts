@@ -228,6 +228,7 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const protection = parseDocumentProtection(settings);
   const mailMerge = parseMailMergeSettings(settings);
   const writeProtection = parseWriteProtection(settings);
+  const math = parseMathSettings(settings);
   const view = parseViewSettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
@@ -239,11 +240,32 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(protection ? { protection } : {}),
     ...(mailMerge ? { mailMerge } : {}),
     ...(writeProtection ? { writeProtection } : {}),
+    ...(math ? { math } : {}),
     ...(view ? { view } : {}),
     ...(web ? { web } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseMathSettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["math"] | undefined {
+  const mathPr = asObject(settings.mathPr);
+  const mathFont = asObject(mathPr.mathFont);
+  const breakBinary = asObject(mathPr.brkBin);
+  const smallFraction = asObject(mathPr.smallFrac);
+  const breakBinaryValue = parseBreakBinary(breakBinary.val);
+  const result = {
+    ...(typeof mathFont.val === "string" ? { mathFont: mathFont.val } : {}),
+    ...(breakBinaryValue ? { breakBinary: breakBinaryValue } : {}),
+    ...(smallFraction.val !== undefined ? { smallFraction: parseOnOff(smallFraction.val) } : {}),
+    ...(mathPr.dispDef !== undefined ? { displayDefaults: true } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseBreakBinary(value: unknown): NonNullable<NonNullable<DocumentJson["settings"]>["math"]>["breakBinary"] | undefined {
+  return value === "before" || value === "after" || value === "repeat" ? value : undefined;
 }
 
 function parseWriteProtection(settings: XmlNode): NonNullable<DocumentJson["settings"]>["writeProtection"] | undefined {

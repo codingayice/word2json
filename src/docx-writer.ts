@@ -125,8 +125,10 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
 }
 
 function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
+  const mathNamespace = settings.math ? ` xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"` : "";
+
   return xmlDeclaration(
-    `<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+    `<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"${mathNamespace}>` +
       (settings.defaultTabStop !== undefined ? `<w:defaultTabStop w:val="${settings.defaultTabStop}"/>` : "") +
       (settings.evenAndOddHeaders ? "<w:evenAndOddHeaders/>" : "") +
       (settings.updateFields ? "<w:updateFields/>" : "") +
@@ -136,9 +138,25 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       documentProtectionXml(settings.protection) +
       mailMergeSettingsXml(settings.mailMerge) +
       writeProtectionXml(settings.writeProtection) +
+      mathSettingsXml(settings.math) +
       viewSettingsXml(settings.view) +
       `</w:settings>`,
   );
+}
+
+function mathSettingsXml(math: NonNullable<DocumentJson["settings"]>["math"]): string {
+  if (!math) {
+    return "";
+  }
+
+  const children = [
+    math.mathFont ? `<m:mathFont m:val="${escapeAttribute(math.mathFont)}"/>` : "",
+    math.breakBinary ? `<m:brkBin m:val="${escapeAttribute(math.breakBinary)}"/>` : "",
+    math.smallFraction !== undefined ? `<m:smallFrac m:val="${math.smallFraction ? "1" : "0"}"/>` : "",
+    math.displayDefaults ? "<m:dispDef/>" : "",
+  ].join("");
+
+  return children ? `<m:mathPr>${children}</m:mathPr>` : "";
 }
 
 function writeProtectionXml(writeProtection: NonNullable<DocumentJson["settings"]>["writeProtection"]): string {

@@ -74,8 +74,16 @@ export type DocumentSettings = {
   protection?: DocumentProtectionSettings;
   mailMerge?: DocumentMailMergeSettings;
   writeProtection?: DocumentWriteProtectionSettings;
+  math?: DocumentMathSettings;
   view?: DocumentViewSettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentMathSettings = {
+  mathFont?: string;
+  breakBinary?: "before" | "after" | "repeat";
+  smallFraction?: boolean;
+  displayDefaults?: boolean;
 };
 
 export type DocumentWriteProtectionSettings = {
