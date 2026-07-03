@@ -487,6 +487,13 @@ function imageXml(image: ImageNode, context: WriterContext): string {
   const filename = `image${id}.${image.contentType === "image/png" ? "png" : "jpg"}`;
   const widthEmu = image.width * 9525;
   const heightEmu = image.height * 9525;
+  const rotation = image.rotation !== undefined ? ` rot="${image.rotation * 60000}"` : "";
+  const crop = image.crop ? `<a:srcRect` +
+    (image.crop.left !== undefined ? ` l="${image.crop.left}"` : "") +
+    (image.crop.top !== undefined ? ` t="${image.crop.top}"` : "") +
+    (image.crop.right !== undefined ? ` r="${image.crop.right}"` : "") +
+    (image.crop.bottom !== undefined ? ` b="${image.crop.bottom}"` : "") +
+    `/>` : "";
 
   context.images.push({
     id: relationshipId,
@@ -495,17 +502,25 @@ function imageXml(image: ImageNode, context: WriterContext): string {
     data: image.data,
   });
 
-  return `<w:p><w:r><w:drawing>` +
-    `<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">` +
-    `<wp:extent cx="${widthEmu}" cy="${heightEmu}"/>` +
+  const graphic = `<wp:extent cx="${widthEmu}" cy="${heightEmu}"/>` +
     `<wp:docPr id="${id}" name="Image ${id}"${image.altText ? ` descr="${escapeAttribute(image.altText)}"` : ""}/>` +
     `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
     `<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
     `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
-    `<pic:blipFill><a:blip r:embed="${relationshipId}"/></pic:blipFill>` +
-    `<pic:spPr><a:xfrm><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
-    `</pic:pic></a:graphicData></a:graphic>` +
-    `</wp:inline>` +
+    `<pic:blipFill><a:blip r:embed="${relationshipId}"/>${crop}</pic:blipFill>` +
+    `<pic:spPr><a:xfrm${rotation}><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
+    `</pic:pic></a:graphicData></a:graphic>`;
+  const drawing = image.floating
+    ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="0" relativeHeight="0" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">` +
+      `<wp:positionH relativeFrom="page"><wp:posOffset>${image.floating.horizontalOffset}</wp:posOffset></wp:positionH>` +
+      `<wp:positionV relativeFrom="page"><wp:posOffset>${image.floating.verticalOffset}</wp:posOffset></wp:positionV>` +
+      `<wp:wrapSquare/>` +
+      graphic +
+      `</wp:anchor>`
+    : `<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">${graphic}</wp:inline>`;
+
+  return `<w:p><w:r><w:drawing>` +
+    drawing +
     `</w:drawing></w:r></w:p>`;
 }
 

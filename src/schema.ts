@@ -308,6 +308,22 @@ export type ImageNode = {
   width: number;
   height: number;
   altText?: string;
+  crop?: ImageCrop;
+  rotation?: number;
+  floating?: ImageFloatingLayout;
+};
+
+export type ImageCrop = {
+  left?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+};
+
+export type ImageFloatingLayout = {
+  wrap: "square";
+  horizontalOffset: number;
+  verticalOffset: number;
 };
 
 export function createDocumentJson(blocks: DocumentBlock[]): DocumentJson {

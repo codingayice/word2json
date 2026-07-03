@@ -575,6 +575,69 @@ describe("DOCX writer", () => {
     expect(media.toString("base64")).toBe(imageData);
   });
 
+  it("writes image crop", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        crop: { left: 1000, top: 2000, right: 3000, bottom: 4000 },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<a:srcRect l="1000" t="2000" r="3000" b="4000"/>');
+  });
+
+  it("writes image rotation", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        rotation: 15,
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<a:xfrm rot="900000">');
+  });
+
+  it("writes floating image layout", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: { wrap: "square", horizontalOffset: 1440, verticalOffset: 720 },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<wp:anchor ");
+    expect(xml).toContain("<wp:wrapSquare/>");
+    expect(xml).toContain('<wp:positionH relativeFrom="page"><wp:posOffset>1440</wp:posOffset></wp:positionH>');
+    expect(xml).toContain('<wp:positionV relativeFrom="page"><wp:posOffset>720</wp:posOffset></wp:positionV>');
+  });
+
   it("writes headers and footers with section relationships", async () => {
     const document = {
       version: "1.0" as const,
@@ -1655,6 +1718,63 @@ describe("DOCX reader", () => {
         width: 120,
         height: 80,
         altText: "Logo",
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips image crop", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        crop: { left: 1000, top: 2000, right: 3000, bottom: 4000 },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips image rotation", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        rotation: 15,
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image layout", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: { wrap: "square", horizontalOffset: 1440, verticalOffset: 720 },
       },
     ]);
 

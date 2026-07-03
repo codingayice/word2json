@@ -561,10 +561,13 @@ function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
   const paragraph = asObject(value);
   const run = asObject(paragraph.r);
   const drawing = asObject(run.drawing);
-  const inline = asObject(drawing.inline);
-  const extent = asObject(inline.extent);
-  const docPr = asObject(inline.docPr);
-  const relationshipId = parseImageRelationshipId(inline);
+  const container = imageDrawingContainer(drawing);
+  const extent = asObject(container.extent);
+  const docPr = asObject(container.docPr);
+  const relationshipId = parseImageRelationshipId(container);
+  const crop = parseImageCrop(container);
+  const rotation = parseImageRotation(container);
+  const floating = parseImageFloating(drawing);
   const image = relationshipId ? media[relationshipId] : undefined;
 
   return {
@@ -574,7 +577,54 @@ function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
     width: parseNumber(extent.cx) / 9525,
     height: parseNumber(extent.cy) / 9525,
     ...(typeof docPr.descr === "string" ? { altText: docPr.descr } : {}),
+    ...(crop ? { crop } : {}),
+    ...(rotation !== undefined ? { rotation } : {}),
+    ...(floating ? { floating } : {}),
   };
+}
+
+function imageDrawingContainer(drawing: XmlNode): XmlNode {
+  return drawing.anchor !== undefined ? asObject(drawing.anchor) : asObject(drawing.inline);
+}
+
+function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined {
+  const anchor = asObject(drawing.anchor);
+
+  if (drawing.anchor === undefined) {
+    return undefined;
+  }
+
+  return {
+    wrap: "square",
+    horizontalOffset: parseNumber(asObject(anchor.positionH).posOffset),
+    verticalOffset: parseNumber(asObject(anchor.positionV).posOffset),
+  };
+}
+
+function parseImageRotation(inline: XmlNode): number | undefined {
+  const graphic = asObject(inline.graphic);
+  const graphicData = asObject(graphic.graphicData);
+  const picture = asObject(graphicData.pic);
+  const shapeProperties = asObject(picture.spPr);
+  const transform = asObject(shapeProperties.xfrm);
+
+  return transform.rot !== undefined ? parseNumber(transform.rot) / 60000 : undefined;
+}
+
+function parseImageCrop(inline: XmlNode): ImageNode["crop"] | undefined {
+  const graphic = asObject(inline.graphic);
+  const graphicData = asObject(graphic.graphicData);
+  const picture = asObject(graphicData.pic);
+  const blipFill = asObject(picture.blipFill);
+  const sourceRect = asObject(blipFill.srcRect);
+  const crop = {
+    ...(sourceRect.l !== undefined ? { left: parseNumber(sourceRect.l) } : {}),
+    ...(sourceRect.t !== undefined ? { top: parseNumber(sourceRect.t) } : {}),
+    ...(sourceRect.r !== undefined ? { right: parseNumber(sourceRect.r) } : {}),
+    ...(sourceRect.b !== undefined ? { bottom: parseNumber(sourceRect.b) } : {}),
+  };
+
+  return Object.keys(crop).length > 0 ? crop : undefined;
 }
 
 function parseImageRelationshipId(inline: XmlNode): string | undefined {
