@@ -395,6 +395,30 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:date><w:fullDate w:val="2026-07-04T00:00:00Z"/><w:dateFormat w:val="yyyy-MM-dd"/></w:date>');
   });
 
+  it("writes content control placeholders", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Click or tap here",
+            contentControl: {
+              alias: "Recipient",
+              tag: "recipient",
+              placeholder: { docPart: "DefaultPlaceholder_22610170" },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:placeholder><w:docPart w:val="DefaultPlaceholder_22610170"/></w:placeholder>');
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -2108,6 +2132,29 @@ describe("DOCX reader", () => {
               alias: "Due Date",
               tag: "dueDate",
               date: { fullDate: "2026-07-04T00:00:00Z", format: "yyyy-MM-dd" },
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips content control placeholders", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Click or tap here",
+            contentControl: {
+              alias: "Recipient",
+              tag: "recipient",
+              placeholder: { docPart: "DefaultPlaceholder_22610170" },
             },
           },
         ],

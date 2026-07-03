@@ -1175,6 +1175,7 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
   const alias = asObject(properties.alias);
   const tag = asObject(properties.tag);
   const lock = asObject(properties.lock);
+  const placeholder = parsePlaceholderContentControl(properties.placeholder);
   const checkbox = parseCheckboxContentControl(properties.checkBox);
   const dropdown = parseDropdownContentControl(properties.dropDownList);
   const date = parseDateContentControl(properties.date);
@@ -1182,12 +1183,20 @@ function parseContentControl(value: unknown): ParagraphNode["contentControl"] | 
     ...(typeof alias.val === "string" ? { alias: alias.val } : {}),
     ...(typeof tag.val === "string" ? { tag: tag.val } : {}),
     ...(typeof lock.val === "string" ? { lock: lock.val as NonNullable<ParagraphNode["contentControl"]>["lock"] } : {}),
+    ...(placeholder ? { placeholder } : {}),
     ...(checkbox ? { checkbox } : {}),
     ...(dropdown ? { dropdown } : {}),
     ...(date ? { date } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parsePlaceholderContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["placeholder"]> | undefined {
+  const placeholder = asObject(value);
+  const docPart = asObject(placeholder.docPart);
+
+  return typeof docPart.val === "string" ? { docPart: docPart.val } : undefined;
 }
 
 function parseCheckboxContentControl(value: unknown): NonNullable<NonNullable<ParagraphNode["contentControl"]>["checkbox"]> | undefined {

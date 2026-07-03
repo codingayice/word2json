@@ -242,12 +242,17 @@ function contentControlXml(contentControl: NonNullable<ParagraphNode["contentCon
     contentControl.alias ? `<w:alias w:val="${escapeAttribute(contentControl.alias)}"/>` : "",
     contentControl.tag ? `<w:tag w:val="${escapeAttribute(contentControl.tag)}"/>` : "",
     contentControl.lock ? `<w:lock w:val="${contentControl.lock}"/>` : "",
+    contentControl.placeholder ? placeholderContentControlXml(contentControl.placeholder) : "",
     contentControl.checkbox ? checkboxContentControlXml(contentControl.checkbox) : "",
     contentControl.dropdown ? dropdownContentControlXml(contentControl.dropdown) : "",
     contentControl.date ? dateContentControlXml(contentControl.date) : "",
   ].join("");
 
   return `<w:sdt><w:sdtPr>${properties}</w:sdtPr><w:sdtContent>${content}</w:sdtContent></w:sdt>`;
+}
+
+function placeholderContentControlXml(placeholder: NonNullable<NonNullable<ParagraphNode["contentControl"]>["placeholder"]>): string {
+  return `<w:placeholder><w:docPart w:val="${escapeAttribute(placeholder.docPart)}"/></w:placeholder>`;
 }
 
 function checkboxContentControlXml(checkbox: NonNullable<NonNullable<ParagraphNode["contentControl"]>["checkbox"]>): string {

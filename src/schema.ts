@@ -254,9 +254,14 @@ export type ContentControl = {
   alias?: string;
   tag?: string;
   lock?: "sdtLocked" | "contentLocked" | "sdtContentLocked" | "unlocked";
+  placeholder?: ContentControlPlaceholder;
   checkbox?: CheckboxContentControl;
   dropdown?: DropdownContentControl;
   date?: DateContentControl;
+};
+
+export type ContentControlPlaceholder = {
+  docPart: string;
 };
 
 export type CheckboxContentControl = {
