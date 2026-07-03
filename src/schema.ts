@@ -296,10 +296,12 @@ export type TableNode = {
   borders?: "single";
   alignment?: ParagraphAlignment;
   cellSpacing?: number;
+  propertyRevision?: ParagraphPropertyRevision;
   rows: TableRowNode[];
 };
 
 export type TableRowNode = {
+  revision?: RunRevision;
   height?: TableRowHeight;
   cells: TableCellNode[];
 };
@@ -318,6 +320,7 @@ export type TableCellNode = {
   borders?: ParagraphBorders;
   textDirection?: "lrTb" | "tbRl" | "btLr";
   margins?: TableCellMargins;
+  propertyRevision?: ParagraphPropertyRevision;
   blocks: ParagraphNode[];
 };
 

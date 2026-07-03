@@ -342,6 +342,77 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:t>Cell</w:t>");
   });
 
+  it("writes table property change metadata", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        width: 7200,
+        propertyRevision: { id: 20, author: "Ada", date: "2026-07-04T05:00:00.000Z" },
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Table changed" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblW w:w="7200" w:type="dxa"/>');
+    expect(xml).toContain('<w:tblPrChange w:id="20" w:author="Ada" w:date="2026-07-04T05:00:00.000Z"><w:tblPr/></w:tblPrChange>');
+  });
+
+  it("writes table row revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            revision: { type: "insert", id: 21, author: "Lin", date: "2026-07-04T06:00:00.000Z" },
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Inserted row" }] }] }],
+          },
+          {
+            revision: { type: "delete", id: 22, author: "Mira", date: "2026-07-04T07:00:00.000Z" },
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Deleted row" }] }] }],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:trPr><w:ins w:id="21" w:author="Lin" w:date="2026-07-04T06:00:00.000Z"/></w:trPr>');
+    expect(xml).toContain('<w:trPr><w:del w:id="22" w:author="Mira" w:date="2026-07-04T07:00:00.000Z"/></w:trPr>');
+  });
+
+  it("writes cell property change metadata", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                shading: { fill: "D9EAF7" },
+                propertyRevision: { id: 23, author: "Noor", date: "2026-07-04T08:00:00.000Z" },
+                blocks: [{ type: "paragraph", runs: [{ text: "Cell changed" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:shd w:fill="D9EAF7"/>');
+    expect(xml).toContain('<w:tcPrChange w:id="23" w:author="Noor" w:date="2026-07-04T08:00:00.000Z"><w:tcPr/></w:tcPrChange>');
+  });
+
   it("writes table alignment and cell spacing", async () => {
     const document = createDocumentJson([
       {
@@ -1550,6 +1621,71 @@ describe("DOCX reader", () => {
         type: "paragraph",
         runs: [
           { text: "Removed", revision: { type: "delete", id: 2, author: "Lin", date: "2026-07-04T01:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table property change metadata", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        width: 7200,
+        propertyRevision: { id: 20, author: "Ada", date: "2026-07-04T05:00:00.000Z" },
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Table changed" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table row revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            revision: { type: "insert", id: 21, author: "Lin", date: "2026-07-04T06:00:00.000Z" },
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Inserted row" }] }] }],
+          },
+          {
+            revision: { type: "delete", id: 22, author: "Mira", date: "2026-07-04T07:00:00.000Z" },
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Deleted row" }] }] }],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell property change metadata", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                shading: { fill: "D9EAF7" },
+                propertyRevision: { id: 23, author: "Noor", date: "2026-07-04T08:00:00.000Z" },
+                blocks: [{ type: "paragraph", runs: [{ text: "Cell changed" }] }],
+              },
+            ],
+          },
         ],
       },
     ]);

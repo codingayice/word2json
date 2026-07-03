@@ -253,9 +253,7 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
     ].join("")
     : "";
   const propertyRevision = paragraph.propertyRevision
-    ? `<w:pPrChange w:id="${paragraph.propertyRevision.id}" w:author="${escapeAttribute(paragraph.propertyRevision.author)}"` +
-      (paragraph.propertyRevision.date ? ` w:date="${escapeAttribute(paragraph.propertyRevision.date)}"` : "") +
-      `><w:pPr/></w:pPrChange>`
+    ? propertyRevisionXml("pPr", "pPrChange", paragraph.propertyRevision)
     : "";
   const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}${propertyRevision}`;
 
@@ -473,12 +471,17 @@ function tableXml(table: TableNode, context: WriterContext): string {
     table.borders ? tableBordersXml(table.borders) : "",
     table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",
     table.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${table.cellSpacing}" w:type="dxa"/>` : "",
+    table.propertyRevision ? propertyRevisionXml("tblPr", "tblPrChange", table.propertyRevision) : "",
   ].join("");
   const rows = table.rows
     .map((row) => {
-      const rowProperties = row.height
-        ? `<w:trPr><w:trHeight w:val="${row.height.value}"${row.height.rule ? ` w:hRule="${row.height.rule}"` : ""}/></w:trPr>`
+      const rowRevision = row.revision
+        ? `<w:${row.revision.type === "insert" ? "ins" : "del"}${revisionAttributes(row.revision)}/>`
         : "";
+      const rowHeight = row.height
+        ? `<w:trHeight w:val="${row.height.value}"${row.height.rule ? ` w:hRule="${row.height.rule}"` : ""}/>`
+        : "";
+      const rowProperties = rowRevision || rowHeight ? `<w:trPr>${rowRevision}${rowHeight}</w:trPr>` : "";
 
       return `<w:tr>${rowProperties}${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`;
     })
@@ -500,10 +503,21 @@ function tableCellXml(cell: TableCellNode, context: WriterContext): string {
     cell.borders ? tableCellBordersXml(cell.borders) : "",
     cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
     cell.margins ? tableCellMarginsXml(cell.margins) : "",
+    cell.propertyRevision ? propertyRevisionXml("tcPr", "tcPrChange", cell.propertyRevision) : "",
   ].join("");
   const blocks = cell.blocks.map((block) => paragraphXml(block, context)).join("");
 
   return `<w:tc>${properties ? `<w:tcPr>${properties}</w:tcPr>` : ""}${blocks}</w:tc>`;
+}
+
+function propertyRevisionXml(
+  propertyElement: "pPr" | "tblPr" | "tcPr",
+  changeElement: "pPrChange" | "tblPrChange" | "tcPrChange",
+  revision: NonNullable<ParagraphNode["propertyRevision"]>,
+): string {
+  return `<w:${changeElement} w:id="${revision.id}" w:author="${escapeAttribute(revision.author)}"` +
+    (revision.date ? ` w:date="${escapeAttribute(revision.date)}"` : "") +
+    `><w:${propertyElement}/></w:${changeElement}>`;
 }
 
 function tableCellBordersXml(borders: NonNullable<TableCellNode["borders"]>): string {

@@ -796,7 +796,7 @@ function parseParagraph(
   const borders = parseParagraphBorders(properties.pBdr);
   const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
-  const propertyRevision = parseParagraphPropertyRevision(properties.pPrChange);
+  const propertyRevision = parsePropertyRevision(properties.pPrChange);
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
     : undefined;
@@ -823,7 +823,7 @@ function parseParagraph(
   };
 }
 
-function parseParagraphPropertyRevision(value: unknown): ParagraphNode["propertyRevision"] | undefined {
+function parsePropertyRevision(value: unknown): ParagraphNode["propertyRevision"] | undefined {
   const revision = asObject(value);
 
   if (revision.id === undefined && revision.author === undefined) {
@@ -831,6 +831,34 @@ function parseParagraphPropertyRevision(value: unknown): ParagraphNode["property
   }
 
   return {
+    id: parseNumber(revision.id),
+    author: String(revision.author ?? ""),
+    ...(typeof revision.date === "string" ? { date: revision.date } : {}),
+  };
+}
+
+function parseTableRowRevision(properties: XmlNode): TableNode["rows"][number]["revision"] | undefined {
+  const insertedRevision = parseTableRowRevisionMarker(properties.ins, "insert");
+
+  if (insertedRevision) {
+    return insertedRevision;
+  }
+
+  return parseTableRowRevisionMarker(properties.del, "delete");
+}
+
+function parseTableRowRevisionMarker(
+  value: unknown,
+  type: NonNullable<TableNode["rows"][number]["revision"]>["type"],
+): TableNode["rows"][number]["revision"] | undefined {
+  const revision = asObject(value);
+
+  if (revision.id === undefined && revision.author === undefined) {
+    return undefined;
+  }
+
+  return {
+    type,
     id: parseNumber(revision.id),
     author: String(revision.author ?? ""),
     ...(typeof revision.date === "string" ? { date: revision.date } : {}),
@@ -1229,6 +1257,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const borders = asObject(properties.tblBorders);
   const alignment = asObject(properties.jc);
   const cellSpacing = asObject(properties.tblCellSpacing);
+  const propertyRevision = parsePropertyRevision(properties.tblPrChange);
   const grid = parseTableGrid(table.tblGrid);
 
   return {
@@ -1239,11 +1268,15 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+    ...(propertyRevision ? { propertyRevision } : {}),
     rows: asArray(table.tr).map((rowValue) => {
       const row = asObject(rowValue);
-      const height = parseTableRowHeight(row.trPr);
+      const rowProperties = asObject(row.trPr);
+      const revision = parseTableRowRevision(rowProperties);
+      const height = parseTableRowHeight(rowProperties);
 
       return {
+        ...(revision ? { revision } : {}),
         ...(height ? { height } : {}),
         cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes, numberingContext)),
       };
@@ -1286,6 +1319,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   const borders = parseParagraphBorders(properties.tcBorders);
   const textDirection = asObject(properties.textDirection);
   const margins = parseTableCellMargins(properties.tcMar);
+  const propertyRevision = parsePropertyRevision(properties.tcPrChange);
 
   return {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
@@ -1296,6 +1330,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
     ...(borders ? { borders } : {}),
     ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<TableCellNode["textDirection"]> } : {}),
     ...(margins ? { margins } : {}),
+    ...(propertyRevision ? { propertyRevision } : {}),
     blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes, numberingContext)),
   };
 }
