@@ -227,6 +227,7 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const proofing = parseProofingSettings(settings);
   const protection = parseDocumentProtection(settings);
   const mailMerge = parseMailMergeSettings(settings);
+  const writeProtection = parseWriteProtection(settings);
   const view = parseViewSettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
@@ -237,8 +238,25 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(proofing ? { proofing } : {}),
     ...(protection ? { protection } : {}),
     ...(mailMerge ? { mailMerge } : {}),
+    ...(writeProtection ? { writeProtection } : {}),
     ...(view ? { view } : {}),
     ...(web ? { web } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseWriteProtection(settings: XmlNode): NonNullable<DocumentJson["settings"]>["writeProtection"] | undefined {
+  const writeProtection = asObject(settings.writeProtection);
+  const result = {
+    ...(writeProtection.recommended !== undefined ? { recommended: parseOnOff(writeProtection.recommended) } : {}),
+    ...(typeof writeProtection.cryptProviderType === "string" ? { cryptProviderType: writeProtection.cryptProviderType } : {}),
+    ...(typeof writeProtection.cryptAlgorithmClass === "string" ? { cryptAlgorithmClass: writeProtection.cryptAlgorithmClass } : {}),
+    ...(typeof writeProtection.cryptAlgorithmType === "string" ? { cryptAlgorithmType: writeProtection.cryptAlgorithmType } : {}),
+    ...(writeProtection.cryptAlgorithmSid !== undefined ? { cryptAlgorithmSid: parseNumber(writeProtection.cryptAlgorithmSid) } : {}),
+    ...(writeProtection.cryptSpinCount !== undefined ? { cryptSpinCount: parseNumber(writeProtection.cryptSpinCount) } : {}),
+    ...(typeof writeProtection.hash === "string" ? { hash: writeProtection.hash } : {}),
+    ...(typeof writeProtection.salt === "string" ? { salt: writeProtection.salt } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;

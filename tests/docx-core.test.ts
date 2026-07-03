@@ -928,6 +928,31 @@ describe("DOCX writer", () => {
     expect(settings).toContain("</w:mailMerge>");
   });
 
+  it("writes write protection settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: {
+        writeProtection: {
+          recommended: true,
+          cryptProviderType: "rsaFull",
+          cryptAlgorithmClass: "hash",
+          cryptAlgorithmType: "typeAny",
+          cryptAlgorithmSid: 4,
+          cryptSpinCount: 100000,
+          hash: "FEDCBA9876543210",
+          salt: "0011223344556677",
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Write protected" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain('<w:writeProtection w:recommended="1" w:cryptProviderType="rsaFull" w:cryptAlgorithmClass="hash" w:cryptAlgorithmType="typeAny" w:cryptAlgorithmSid="4" w:cryptSpinCount="100000" w:hash="FEDCBA9876543210" w:salt="0011223344556677"/>');
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -3157,6 +3182,30 @@ describe("DOCX reader", () => {
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Mail merge" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips write protection settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: {
+        writeProtection: {
+          recommended: true,
+          cryptProviderType: "rsaFull",
+          cryptAlgorithmClass: "hash",
+          cryptAlgorithmType: "typeAny",
+          cryptAlgorithmSid: 4,
+          cryptSpinCount: 100000,
+          hash: "FEDCBA9876543210",
+          salt: "0011223344556677",
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Write protected" }] }] }],
     };
 
     const docx = await buildDocx(source);

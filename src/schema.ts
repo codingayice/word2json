@@ -73,8 +73,20 @@ export type DocumentSettings = {
   proofing?: DocumentProofingSettings;
   protection?: DocumentProtectionSettings;
   mailMerge?: DocumentMailMergeSettings;
+  writeProtection?: DocumentWriteProtectionSettings;
   view?: DocumentViewSettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentWriteProtectionSettings = {
+  recommended?: boolean;
+  cryptProviderType?: string;
+  cryptAlgorithmClass?: string;
+  cryptAlgorithmType?: string;
+  cryptAlgorithmSid?: number;
+  cryptSpinCount?: number;
+  hash?: string;
+  salt?: string;
 };
 
 export type DocumentMailMergeSettings = {

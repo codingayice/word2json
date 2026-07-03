@@ -135,9 +135,29 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       proofingSettingsXml(settings.proofing) +
       documentProtectionXml(settings.protection) +
       mailMergeSettingsXml(settings.mailMerge) +
+      writeProtectionXml(settings.writeProtection) +
       viewSettingsXml(settings.view) +
       `</w:settings>`,
   );
+}
+
+function writeProtectionXml(writeProtection: NonNullable<DocumentJson["settings"]>["writeProtection"]): string {
+  if (!writeProtection) {
+    return "";
+  }
+
+  const attributes = [
+    writeProtection.recommended !== undefined ? `w:recommended="${writeProtection.recommended ? "1" : "0"}"` : "",
+    writeProtection.cryptProviderType ? `w:cryptProviderType="${escapeAttribute(writeProtection.cryptProviderType)}"` : "",
+    writeProtection.cryptAlgorithmClass ? `w:cryptAlgorithmClass="${escapeAttribute(writeProtection.cryptAlgorithmClass)}"` : "",
+    writeProtection.cryptAlgorithmType ? `w:cryptAlgorithmType="${escapeAttribute(writeProtection.cryptAlgorithmType)}"` : "",
+    writeProtection.cryptAlgorithmSid !== undefined ? `w:cryptAlgorithmSid="${writeProtection.cryptAlgorithmSid}"` : "",
+    writeProtection.cryptSpinCount !== undefined ? `w:cryptSpinCount="${writeProtection.cryptSpinCount}"` : "",
+    writeProtection.hash ? `w:hash="${escapeAttribute(writeProtection.hash)}"` : "",
+    writeProtection.salt ? `w:salt="${escapeAttribute(writeProtection.salt)}"` : "",
+  ].filter(Boolean).join(" ");
+
+  return attributes ? `<w:writeProtection ${attributes}/>` : "";
 }
 
 function mailMergeSettingsXml(mailMerge: NonNullable<DocumentJson["settings"]>["mailMerge"]): string {
