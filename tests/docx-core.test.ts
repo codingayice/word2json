@@ -896,6 +896,38 @@ describe("DOCX writer", () => {
     expect(settings).toContain('<w:documentProtection w:edit="trackedChanges" w:enforcement="1" w:cryptProviderType="rsaFull" w:cryptAlgorithmClass="hash" w:cryptAlgorithmType="typeAny" w:cryptAlgorithmSid="4" w:cryptSpinCount="100000" w:hash="ABCDEF0123456789" w:salt="0123456789ABCDEF"/>');
   });
 
+  it("writes mail merge settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: {
+        mailMerge: {
+          mainDocumentType: "formLetters",
+          dataType: "native",
+          connectString: "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=contacts.xlsx;",
+          query: "SELECT * FROM `Contacts$`",
+          viewMergedData: true,
+          activeRecord: 3,
+          checkErrors: 1,
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Mail merge" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain("<w:mailMerge>");
+    expect(settings).toContain('<w:mainDocumentType w:val="formLetters"/>');
+    expect(settings).toContain('<w:dataType w:val="native"/>');
+    expect(settings).toContain('<w:connectString w:val="Provider=Microsoft.ACE.OLEDB.12.0;Data Source=contacts.xlsx;"/>');
+    expect(settings).toContain('<w:query w:val="SELECT * FROM `Contacts$`"/>');
+    expect(settings).toContain("<w:viewMergedData/>");
+    expect(settings).toContain('<w:activeRecord w:val="3"/>');
+    expect(settings).toContain('<w:checkErrors w:val="1"/>');
+    expect(settings).toContain("</w:mailMerge>");
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -3102,6 +3134,29 @@ describe("DOCX reader", () => {
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Protected" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips mail merge settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: {
+        mailMerge: {
+          mainDocumentType: "formLetters",
+          dataType: "native",
+          connectString: "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=contacts.xlsx;",
+          query: "SELECT * FROM `Contacts$`",
+          viewMergedData: true,
+          activeRecord: 3,
+          checkErrors: 1,
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Mail merge" }] }] }],
     };
 
     const docx = await buildDocx(source);

@@ -72,8 +72,19 @@ export type DocumentSettings = {
   compatibility?: DocumentCompatibilitySettings;
   proofing?: DocumentProofingSettings;
   protection?: DocumentProtectionSettings;
+  mailMerge?: DocumentMailMergeSettings;
   view?: DocumentViewSettings;
   web?: DocumentWebSettings;
+};
+
+export type DocumentMailMergeSettings = {
+  mainDocumentType?: string;
+  dataType?: string;
+  connectString?: string;
+  query?: string;
+  viewMergedData?: boolean;
+  activeRecord?: number;
+  checkErrors?: number;
 };
 
 export type DocumentProtectionSettings = {

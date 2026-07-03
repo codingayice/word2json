@@ -134,9 +134,28 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       compatibilitySettingsXml(settings.compatibility) +
       proofingSettingsXml(settings.proofing) +
       documentProtectionXml(settings.protection) +
+      mailMergeSettingsXml(settings.mailMerge) +
       viewSettingsXml(settings.view) +
       `</w:settings>`,
   );
+}
+
+function mailMergeSettingsXml(mailMerge: NonNullable<DocumentJson["settings"]>["mailMerge"]): string {
+  if (!mailMerge) {
+    return "";
+  }
+
+  const children = [
+    mailMerge.mainDocumentType ? `<w:mainDocumentType w:val="${escapeAttribute(mailMerge.mainDocumentType)}"/>` : "",
+    mailMerge.dataType ? `<w:dataType w:val="${escapeAttribute(mailMerge.dataType)}"/>` : "",
+    mailMerge.connectString ? `<w:connectString w:val="${escapeAttribute(mailMerge.connectString)}"/>` : "",
+    mailMerge.query ? `<w:query w:val="${escapeAttribute(mailMerge.query)}"/>` : "",
+    mailMerge.viewMergedData ? "<w:viewMergedData/>" : "",
+    mailMerge.activeRecord !== undefined ? `<w:activeRecord w:val="${mailMerge.activeRecord}"/>` : "",
+    mailMerge.checkErrors !== undefined ? `<w:checkErrors w:val="${mailMerge.checkErrors}"/>` : "",
+  ].join("");
+
+  return children ? `<w:mailMerge>${children}</w:mailMerge>` : "";
 }
 
 function documentProtectionXml(protection: NonNullable<DocumentJson["settings"]>["protection"]): string {

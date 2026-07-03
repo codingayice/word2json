@@ -226,6 +226,7 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
   const compatibility = parseCompatibilitySettings(settings);
   const proofing = parseProofingSettings(settings);
   const protection = parseDocumentProtection(settings);
+  const mailMerge = parseMailMergeSettings(settings);
   const view = parseViewSettings(settings);
   const result = {
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
@@ -235,8 +236,30 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(compatibility ? { compatibility } : {}),
     ...(proofing ? { proofing } : {}),
     ...(protection ? { protection } : {}),
+    ...(mailMerge ? { mailMerge } : {}),
     ...(view ? { view } : {}),
     ...(web ? { web } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseMailMergeSettings(settings: XmlNode): NonNullable<DocumentJson["settings"]>["mailMerge"] | undefined {
+  const mailMerge = asObject(settings.mailMerge);
+  const mainDocumentType = asObject(mailMerge.mainDocumentType);
+  const dataType = asObject(mailMerge.dataType);
+  const connectString = asObject(mailMerge.connectString);
+  const query = asObject(mailMerge.query);
+  const activeRecord = asObject(mailMerge.activeRecord);
+  const checkErrors = asObject(mailMerge.checkErrors);
+  const result = {
+    ...(typeof mainDocumentType.val === "string" ? { mainDocumentType: mainDocumentType.val } : {}),
+    ...(typeof dataType.val === "string" ? { dataType: dataType.val } : {}),
+    ...(typeof connectString.val === "string" ? { connectString: connectString.val } : {}),
+    ...(typeof query.val === "string" ? { query: query.val } : {}),
+    ...(mailMerge.viewMergedData !== undefined ? { viewMergedData: true } : {}),
+    ...(activeRecord.val !== undefined ? { activeRecord: parseNumber(activeRecord.val) } : {}),
+    ...(checkErrors.val !== undefined ? { checkErrors: parseNumber(checkErrors.val) } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
