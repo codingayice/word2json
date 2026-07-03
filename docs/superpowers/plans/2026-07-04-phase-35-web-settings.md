@@ -118,7 +118,7 @@ git add docs/superpowers/plans/2026-07-04-phase-35-web-settings.md src/schema.ts
 git commit -m "feat: add phase 35 web settings"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-35-web-settings
