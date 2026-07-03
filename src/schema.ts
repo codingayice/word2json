@@ -426,7 +426,8 @@ export type MathNode =
   | { type: "function"; name: MathNode[]; argument: MathNode[] }
   | { type: "limitLower"; base: MathNode[]; limit: MathNode[] }
   | { type: "limitUpper"; base: MathNode[]; limit: MathNode[] }
-  | { type: "equationArray"; rows: MathNode[][] };
+  | { type: "equationArray"; rows: MathNode[][] }
+  | { type: "box"; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";

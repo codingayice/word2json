@@ -372,6 +372,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<m:eqArr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:f><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:e></m:eqArr>");
   });
 
+  it("writes box office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "box" as const,
+                  hideTop: true,
+                  hideBottom: true,
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:box><m:boxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/></m:boxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:box>');
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -3047,6 +3076,40 @@ describe("DOCX reader", () => {
                         superscript: [{ type: "text" as const, text: "2" }],
                       },
                     ],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips box office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "box" as const,
+                  hideLeft: true,
+                  hideRight: true,
+                  content: [
+                    {
+                      type: "superscript" as const,
+                      base: [{ type: "text" as const, text: "x" }],
+                      superscript: [{ type: "text" as const, text: "2" }],
+                    },
                   ],
                 },
               ],

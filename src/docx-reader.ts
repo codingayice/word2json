@@ -1739,7 +1739,35 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           rows: asArray(equationArrayNode.e).map((row) => parseMathNodes(asObject(row))),
         };
       }),
+    ...asArray(container.box)
+      .map((box) => {
+        const boxNode = asObject(box);
+        const boxProperties = asObject(boxNode.boxPr);
+        return {
+          type: "box" as const,
+          ...mathBooleanProperty(boxProperties.hideTop, "hideTop"),
+          ...mathBooleanProperty(boxProperties.hideBot, "hideBottom"),
+          ...mathBooleanProperty(boxProperties.hideLeft, "hideLeft"),
+          ...mathBooleanProperty(boxProperties.hideRight, "hideRight"),
+          content: parseMathNodes(asObject(boxNode.e)),
+        };
+      }),
   ];
+}
+
+function mathBooleanProperty<K extends string>(node: unknown, key: K): Partial<Record<K, true>> {
+  if (mathBooleanValue(node)) {
+    return { [key]: true } as Partial<Record<K, true>>;
+  }
+  return {};
+}
+
+function mathBooleanValue(node: unknown): boolean {
+  if (node === undefined) {
+    return false;
+  }
+  const value = asObject(node).val;
+  return value === undefined || value === "1" || value === true;
 }
 
 function barPositionValue(value: unknown): "top" | "bottom" {
