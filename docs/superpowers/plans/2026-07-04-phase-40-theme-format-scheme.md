@@ -149,7 +149,7 @@ git add docs/superpowers/plans/2026-07-04-phase-40-theme-format-scheme.md src/sc
 git commit -m "feat: add phase 40 theme format scheme"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-40-theme-format-scheme
