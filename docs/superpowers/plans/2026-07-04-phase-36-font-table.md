@@ -116,7 +116,7 @@ git add docs/superpowers/plans/2026-07-04-phase-36-font-table.md src/schema.ts s
 git commit -m "feat: add phase 36 font table"
 ```
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 git push -u origin phase-36-font-table
