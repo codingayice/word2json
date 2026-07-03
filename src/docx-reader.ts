@@ -39,18 +39,78 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
-  const page = parsePageSettings(body.sectPr);
-  const headerFooter = await parseHeaderFooterContent(zip, body.sectPr, relationships, comments);
-  const section = {
-    ...(page ? { page } : {}),
-    ...headerFooter,
-    blocks: extractBlockXml(xml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media)),
-  };
 
   return {
     version: "1.0",
-    sections: [section],
+    sections: await parseSections(zip, xml, body, relationships, comments, media),
   };
+}
+
+async function parseSections(
+  zip: JSZip,
+  documentXml: string,
+  body: XmlNode,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+  media: MediaMap,
+): Promise<DocumentJson["sections"]> {
+  const bodyContent = documentXml.match(/<w:body>([\s\S]*?)<\/w:body>/)?.[1] ?? "";
+  const breakPattern = /<w:p><w:pPr>(<w:sectPr>[\s\S]*?<\/w:sectPr>)<\/w:pPr><\/w:p>/g;
+  const sectionParts: Array<{ content: string; sectPrXml: string; preserveDefaultPage: boolean }> = [];
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = breakPattern.exec(bodyContent)) !== null) {
+    sectionParts.push({
+      content: bodyContent.slice(cursor, match.index),
+      sectPrXml: match[1],
+      preserveDefaultPage: true,
+    });
+    cursor = match.index + match[0].length;
+  }
+
+  const remainingBody = bodyContent.slice(cursor);
+  const finalSectionXml = remainingBody.match(/(<w:sectPr>[\s\S]*?<\/w:sectPr>)\s*$/)?.[1];
+
+  if (finalSectionXml) {
+    sectionParts.push({
+      content: remainingBody.slice(0, remainingBody.lastIndexOf(finalSectionXml)),
+      sectPrXml: finalSectionXml,
+      preserveDefaultPage: sectionParts.length > 0,
+    });
+  }
+
+  if (sectionParts.length === 0) {
+    const page = parsePageSettings(body.sectPr, false);
+    const headerFooter = await parseHeaderFooterContent(zip, body.sectPr, relationships, comments);
+    return [{
+      ...(page ? { page } : {}),
+      ...headerFooter,
+      blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media)),
+    }];
+  }
+
+  return Promise.all(sectionParts.map(async (part) => {
+    const sectPr = parseSectPrXml(part.sectPrXml);
+    const page = parsePageSettings(sectPr, part.preserveDefaultPage);
+    const headerFooter = await parseHeaderFooterContent(zip, sectPr, relationships, comments);
+    const breakType = parseSectionBreakType(sectPr);
+    const columns = parseColumns(sectPr);
+
+    return {
+      ...(breakType ? { breakType } : {}),
+      ...(page ? { page } : {}),
+      ...headerFooter,
+      ...(columns ? { columns } : {}),
+      blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media)),
+    };
+  }));
+}
+
+function parseSectPrXml(xml: string): XmlNode {
+  const namespacedXml = xml.replace("<w:sectPr>", '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">');
+  const parsed = parser.parse(namespacedXml) as XmlNode;
+  return asObject(parsed.sectPr);
 }
 
 async function parseHeaderFooterContent(
@@ -204,7 +264,10 @@ function parseImageRelationshipId(inline: XmlNode): string | undefined {
 
 function extractBlockXml(xml: string): string[] {
   const bodyMatch = xml.match(/<w:body>([\s\S]*?)<w:sectPr>/);
-  const body = bodyMatch?.[1] ?? "";
+  return extractBlockXmlFromContent(bodyMatch?.[1] ?? "");
+}
+
+function extractBlockXmlFromContent(body: string): string[] {
   const blocks: string[] = [];
   let index = 0;
 
@@ -243,7 +306,7 @@ function nextBlockIndex(paragraphIndex: number, tableIndex: number): number {
   return Math.min(paragraphIndex, tableIndex);
 }
 
-function parsePageSettings(value: unknown): PageSettings | undefined {
+function parsePageSettings(value: unknown, preserveDefault: boolean): PageSettings | undefined {
   const sectionProperties = asObject(value);
   const size = asObject(sectionProperties.pgSz);
   const margins = asObject(sectionProperties.pgMar);
@@ -267,7 +330,42 @@ function parsePageSettings(value: unknown): PageSettings | undefined {
     },
   };
 
-  return isDefaultPageSettings(page) ? undefined : page;
+  return !preserveDefault && isDefaultPageSettings(page) ? undefined : page;
+}
+
+function parseSectionBreakType(sectionPropertiesValue: unknown): import("./schema.js").SectionBreakType | undefined {
+  const type = asObject(asObject(sectionPropertiesValue).type);
+
+  if (type.val === "continuous") {
+    return "continuous";
+  }
+
+  if (type.val === "evenPage") {
+    return "evenPage";
+  }
+
+  if (type.val === "oddPage") {
+    return "oddPage";
+  }
+
+  if (type.val === "nextPage") {
+    return "nextPage";
+  }
+
+  return undefined;
+}
+
+function parseColumns(sectionPropertiesValue: unknown): import("./schema.js").ColumnSettings | undefined {
+  const columns = asObject(asObject(sectionPropertiesValue).cols);
+
+  if (columns.num === undefined) {
+    return undefined;
+  }
+
+  return {
+    count: parseNumber(columns.num),
+    ...(columns.space !== undefined ? { space: parseNumber(columns.space) } : {}),
+  };
 }
 
 function parseParagraph(value: unknown, relationships: RelationshipMap = {}, comments: CommentMap = {}): ParagraphNode {
@@ -276,6 +374,7 @@ function parseParagraph(value: unknown, relationships: RelationshipMap = {}, com
   const styleNode = asObject(properties.pStyle);
   const alignmentNode = asObject(properties.jc);
   const numbering = parseListSettings(properties.numPr);
+  const pagination = parsePagination(properties);
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
     : undefined;
@@ -288,8 +387,19 @@ function parseParagraph(value: unknown, relationships: RelationshipMap = {}, com
     ...(style ? { style } : {}),
     ...(alignment ? { alignment } : {}),
     ...(numbering ? { list: numbering } : {}),
+    ...(pagination ? { pagination } : {}),
     runs: parseParagraphRuns(paragraph, relationships, comments),
   };
+}
+
+function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | undefined {
+  const pagination = {
+    ...(properties.keepNext !== undefined ? { keepNext: true } : {}),
+    ...(properties.keepLines !== undefined ? { keepLines: true } : {}),
+    ...(properties.pageBreakBefore !== undefined ? { pageBreakBefore: true } : {}),
+  };
+
+  return Object.keys(pagination).length > 0 ? pagination : undefined;
 }
 
 function parseParagraphRuns(

@@ -4,10 +4,19 @@ export type DocumentJson = {
 };
 
 export type SectionNode = {
+  breakType?: SectionBreakType;
   page?: PageSettings;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
+  columns?: ColumnSettings;
   blocks: DocumentBlock[];
+};
+
+export type SectionBreakType = "nextPage" | "continuous" | "evenPage" | "oddPage";
+
+export type ColumnSettings = {
+  count: number;
+  space?: number;
 };
 
 export type HeaderFooterContent = {
@@ -38,7 +47,14 @@ export type ParagraphNode = {
   style?: ParagraphStyle;
   alignment?: ParagraphAlignment;
   list?: ListSettings;
+  pagination?: ParagraphPagination;
   runs: TextRun[];
+};
+
+export type ParagraphPagination = {
+  keepNext?: boolean;
+  keepLines?: boolean;
+  pageBreakBefore?: boolean;
 };
 
 export type ListSettings = {

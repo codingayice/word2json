@@ -73,15 +73,22 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
 }
 
 function documentXml(document: DocumentJson, context: WriterContext): string {
-  const section = document.sections[0] ?? { blocks: [] };
-  const body = document.sections
-    .flatMap((currentSection) => currentSection.blocks)
-    .map((block) => blockXml(block, context))
+  const sections = document.sections.length > 0 ? document.sections : [{ blocks: [] }];
+  const body = sections
+    .map((section, index) => {
+      const blocks = section.blocks.map((block) => blockXml(block, context)).join("");
+      const isLast = index === sections.length - 1;
+
+      return isLast
+        ? blocks
+        : `${blocks}<w:p><w:pPr>${sectionPropertiesXml(section, context)}</w:pPr></w:p>`;
+    })
     .join("");
+  const finalSection = sections[sections.length - 1];
 
   return xmlDeclaration(
     `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-      `<w:body>${body}${sectionPropertiesXml(section, context)}</w:body>` +
+      `<w:body>${body}${sectionPropertiesXml(finalSection, context)}</w:body>` +
       `</w:document>`,
   );
 }
@@ -109,13 +116,37 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const footerReference = section.footers?.default
     ? createFooterReference(section.footers.default, context)
     : "";
+  const breakType = section.breakType
+    ? `<w:type w:val="${sectionBreakValue(section.breakType)}"/>`
+    : "";
+  const columns = section.columns
+    ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
+    : "";
 
   return `<w:sectPr>` +
     headerReference +
     footerReference +
+    breakType +
     `<w:pgSz w:w="${page.width}" w:h="${page.height}"${orientation}/>` +
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
+    columns +
     `</w:sectPr>`;
+}
+
+function sectionBreakValue(value: SectionNode["breakType"]): string {
+  if (value === "evenPage") {
+    return "evenPage";
+  }
+
+  if (value === "oddPage") {
+    return "oddPage";
+  }
+
+  if (value === "continuous") {
+    return "continuous";
+  }
+
+  return "nextPage";
 }
 
 function createHeaderReference(blocks: ParagraphNode[], context: WriterContext): string {
@@ -165,7 +196,14 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   const list = paragraph.list
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.type === "bullet" ? 1 : 2}"/></w:numPr>`
     : "";
-  const properties = `${style}${alignment}${list}`;
+  const pagination = paragraph.pagination
+    ? [
+      paragraph.pagination.keepNext ? "<w:keepNext/>" : "",
+      paragraph.pagination.keepLines ? "<w:keepLines/>" : "",
+      paragraph.pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
+    ].join("")
+    : "";
+  const properties = `${style}${alignment}${list}${pagination}`;
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }

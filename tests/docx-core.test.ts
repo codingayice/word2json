@@ -344,6 +344,78 @@ describe("DOCX writer", () => {
     expect(footer).toContain('<w:instrText xml:space="preserve">PAGE</w:instrText>');
     expect(footer).toContain('<w:instrText xml:space="preserve">NUMPAGES</w:instrText>');
   });
+
+  it("writes multiple sections with section break types", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          breakType: "nextPage" as const,
+          page: {
+            width: 12240,
+            height: 15840,
+            margins: { top: 1440, right: 1440, bottom: 1440, left: 1440, header: 720, footer: 720, gutter: 0 },
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Section one" }] }],
+        },
+        {
+          page: {
+            width: 16840,
+            height: 11900,
+            orientation: "landscape" as const,
+            margins: { top: 720, right: 900, bottom: 720, left: 900, header: 360, footer: 360, gutter: 0 },
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Section two" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml.match(/<w:sectPr>/g)).toHaveLength(2);
+    expect(xml).toContain('<w:type w:val="nextPage"/>');
+    expect(xml).toContain("<w:t>Section one</w:t>");
+    expect(xml).toContain("<w:t>Section two</w:t>");
+    expect(xml).toContain('<w:pgSz w:w="16840" w:h="11900" w:orient="landscape"/>');
+  });
+
+  it("writes section columns", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          columns: { count: 2, space: 720 },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Columns" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:cols w:num="2" w:space="720"/>');
+  });
+
+  it("writes paragraph pagination controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        pagination: { keepNext: true, keepLines: true, pageBreakBefore: true },
+        runs: [{ text: "Controlled paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:keepNext/>");
+    expect(xml).toContain("<w:keepLines/>");
+    expect(xml).toContain("<w:pageBreakBefore/>");
+  });
 });
 
 describe("DOCX reader", () => {
@@ -595,6 +667,69 @@ describe("DOCX reader", () => {
         },
       ],
     };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips multiple sections", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          breakType: "nextPage" as const,
+          page: {
+            width: 12240,
+            height: 15840,
+            margins: { top: 1440, right: 1440, bottom: 1440, left: 1440, header: 720, footer: 720, gutter: 0 },
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Section one" }] }],
+        },
+        {
+          page: {
+            width: 16840,
+            height: 11900,
+            orientation: "landscape" as const,
+            margins: { top: 720, right: 900, bottom: 720, left: 900, header: 360, footer: 360, gutter: 0 },
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Section two" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips columns", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          columns: { count: 2, space: 720 },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Columns" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips pagination controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        pagination: { keepNext: true, keepLines: true, pageBreakBefore: true },
+        runs: [{ text: "Controlled paragraph" }],
+      },
+    ]);
 
     const docx = await buildDocx(source);
     const parsed = await parseDocx(docx);
