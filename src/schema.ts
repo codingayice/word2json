@@ -11,6 +11,7 @@ export type DocumentSettings = {
   defaultTabStop?: number;
   evenAndOddHeaders?: boolean;
   updateFields?: boolean;
+  trackRevisions?: boolean;
 };
 
 export type DocumentNumbering = {
@@ -220,6 +221,7 @@ export type ParagraphAlignment = "left" | "center" | "right" | "both";
 export type TextRun = StyleRunProperties & {
   text: string;
   styleId?: string;
+  revision?: RunRevision;
   link?: Hyperlink;
   comment?: Comment;
   bookmark?: Bookmark;
@@ -227,6 +229,13 @@ export type TextRun = StyleRunProperties & {
   field?: FieldKind | FieldWithResult | ReferenceField | TocField;
   footnote?: NoteContent;
   endnote?: NoteContent;
+};
+
+export type RunRevision = {
+  type: "insert" | "delete";
+  id: number;
+  author: string;
+  date?: string;
 };
 
 export type Hyperlink = {

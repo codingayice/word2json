@@ -150,6 +150,42 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:bdr w:val="single" w:sz="6" w:space="1" w:color="C00000"/>');
   });
 
+  it("writes inserted run revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Added", revision: { type: "insert", id: 1, author: "Ada", date: "2026-07-04T00:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:ins w:id="1" w:author="Ada" w:date="2026-07-04T00:00:00.000Z">');
+    expect(xml).toContain("<w:t>Added</w:t>");
+  });
+
+  it("writes deleted run revisions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Removed", revision: { type: "delete", id: 2, author: "Lin", date: "2026-07-04T01:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:del w:id="2" w:author="Lin" w:date="2026-07-04T01:00:00.000Z">');
+    expect(xml).toContain("<w:delText>Removed</w:delText>");
+  });
+
   it("writes page settings into section properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -202,6 +238,20 @@ describe("DOCX writer", () => {
     expect(settings).toContain("<w:updateFields/>");
     expect(contentTypes).toContain("/word/settings.xml");
     expect(rels).toContain('Target="settings.xml"');
+  });
+
+  it("writes track revisions setting", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: { trackRevisions: true },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Tracked" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+
+    expect(settings).toContain("<w:trackRevisions/>");
   });
 
   it("writes tables with widths borders and grid spans", async () => {
@@ -1426,6 +1476,38 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips inserted run revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Added", revision: { type: "insert", id: 1, author: "Ada", date: "2026-07-04T00:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips deleted run revisions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Removed", revision: { type: "delete", id: 2, author: "Lin", date: "2026-07-04T01:00:00.000Z" } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips page settings", async () => {
     const source = {
       version: "1.0" as const,
@@ -1463,6 +1545,19 @@ describe("DOCX reader", () => {
       version: "1.0" as const,
       settings: { defaultTabStop: 720, evenAndOddHeaders: true, updateFields: true },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Settings" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips track revisions setting", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: { trackRevisions: true },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Tracked" }] }] }],
     };
 
     const docx = await buildDocx(source);

@@ -102,6 +102,7 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
       (settings.defaultTabStop !== undefined ? `<w:defaultTabStop w:val="${settings.defaultTabStop}"/>` : "") +
       (settings.evenAndOddHeaders ? "<w:evenAndOddHeaders/>" : "") +
       (settings.updateFields ? "<w:updateFields/>" : "") +
+      (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       `</w:settings>`,
   );
 }
@@ -316,7 +317,8 @@ function runXml(run: TextRun, context: WriterContext): string {
   const properties = runPropertiesXml(run);
   const textSpace = /^\s|\s$/.test(run.text) ? ' xml:space="preserve"' : "";
   const plainRun = `<w:r>${properties}<w:t${textSpace}>${escapeXml(run.text)}</w:t></w:r>`;
-  const bookmarkedRun = wrapBookmarkIfNeeded(run, plainRun, context);
+  const revisedRun = wrapRevisionIfNeeded(run, plainRun);
+  const bookmarkedRun = wrapBookmarkIfNeeded(run, revisedRun, context);
   const runContent = wrapCommentIfNeeded(run, bookmarkedRun, context);
 
   if (!run.link) {
@@ -330,6 +332,24 @@ function runXml(run: TextRun, context: WriterContext): string {
   const relationshipId = `rIdHyperlink${context.hyperlinks.length + 1}`;
   context.hyperlinks.push({ id: relationshipId, url: run.link.url });
   return `<w:hyperlink r:id="${relationshipId}">${runContent}</w:hyperlink>`;
+}
+
+function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
+  if (!run.revision) {
+    return runContent;
+  }
+
+  if (run.revision.type === "insert") {
+    return `<w:ins${revisionAttributes(run.revision)}>${runContent}</w:ins>`;
+  }
+
+  const textSpace = /^\s|\s$/.test(run.text) ? ' xml:space="preserve"' : "";
+  return `<w:del${revisionAttributes(run.revision)}><w:r>${runPropertiesXml(run)}<w:delText${textSpace}>${escapeXml(run.text)}</w:delText></w:r></w:del>`;
+}
+
+function revisionAttributes(revision: NonNullable<TextRun["revision"]>): string {
+  return ` w:id="${revision.id}" w:author="${escapeAttribute(revision.author)}"` +
+    (revision.date ? ` w:date="${escapeAttribute(revision.date)}"` : "");
 }
 
 function fieldRunXml(field: TextRun["field"]): string {

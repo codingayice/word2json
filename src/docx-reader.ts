@@ -84,6 +84,7 @@ async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | und
     ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
     ...(settings.evenAndOddHeaders !== undefined ? { evenAndOddHeaders: true } : {}),
     ...(settings.updateFields !== undefined ? { updateFields: true } : {}),
+    ...(settings.trackRevisions !== undefined ? { trackRevisions: true } : {}),
   };
 
   return Object.keys(result).length > 0 ? result : undefined;
@@ -868,7 +869,11 @@ function parseParagraphRuns(
 ): TextRun[] {
   const commentRanges = commentRangesByText(paragraph);
   const bookmarkRanges = bookmarkRangesByText(paragraph);
-  const normalRuns = parseComplexFieldRuns(asArray(paragraph.r))
+  const revisionRuns = [
+    ...asArray(paragraph.ins).map((ins) => ({ ins })),
+    ...asArray(paragraph.del).map((del) => ({ del })),
+  ];
+  const normalRuns = parseComplexFieldRuns([...asArray(paragraph.r), ...revisionRuns])
     .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined)
     .map((run) => withMatchingNotes(run, footnotes, endnotes))
     .map((run) => withMatchingBookmark(run, bookmarkRanges))
@@ -884,6 +889,16 @@ function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
 
   for (let index = 0; index < runValues.length; index += 1) {
     const run = asObject(runValues[index]);
+    if (run.ins !== undefined) {
+      runs.push(parseInsertedRevision(run.ins));
+      continue;
+    }
+
+    if (run.del !== undefined) {
+      runs.push(parseDeletedRevision(run.del));
+      continue;
+    }
+
     const fieldChar = asObject(run.fldChar);
 
     if (fieldChar.fldCharType !== "begin") {
@@ -915,6 +930,32 @@ function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
   }
 
   return runs;
+}
+
+function parseInsertedRevision(value: unknown): TextRun {
+  const revision = asObject(value);
+  return {
+    ...parseRun(revision.r),
+    revision: {
+      type: "insert",
+      id: parseNumber(revision.id),
+      author: String(revision.author ?? ""),
+      ...(typeof revision.date === "string" ? { date: revision.date } : {}),
+    },
+  };
+}
+
+function parseDeletedRevision(value: unknown): TextRun {
+  const revision = asObject(value);
+  return {
+    ...parseRun(revision.r),
+    revision: {
+      type: "delete",
+      id: parseNumber(revision.id),
+      author: String(revision.author ?? ""),
+      ...(typeof revision.date === "string" ? { date: revision.date } : {}),
+    },
+  };
 }
 
 function fieldWithResult(field: TextRun["field"], result: string): TextRun["field"] {
@@ -1057,7 +1098,7 @@ function parseRun(value: unknown): TextRun {
   }
 
   return {
-    text: parseText(run.t),
+    text: parseText(run.t ?? run.delText),
     ...parseRunStyle(properties),
     ...(properties.b !== undefined ? { bold: true } : {}),
     ...(properties.i !== undefined ? { italic: true } : {}),
