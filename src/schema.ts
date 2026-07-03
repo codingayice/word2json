@@ -1,9 +1,16 @@
 export type DocumentJson = {
   version: "1.0";
+  settings?: DocumentSettings;
   theme?: DocumentTheme;
   styles?: DocumentStyles;
   numbering?: DocumentNumbering;
   sections: SectionNode[];
+};
+
+export type DocumentSettings = {
+  defaultTabStop?: number;
+  evenAndOddHeaders?: boolean;
+  updateFields?: boolean;
 };
 
 export type DocumentNumbering = {
@@ -48,9 +55,15 @@ export type ThemeColors = {
 };
 
 export type DocumentStyles = {
+  defaults?: DocumentStyleDefaults;
   paragraph?: ParagraphStyleDefinition[];
   character?: StyleDefinition[];
   table?: TableStyleDefinition[];
+};
+
+export type DocumentStyleDefaults = {
+  run?: StyleRunProperties;
+  paragraph?: StyleParagraphProperties;
 };
 
 export type StyleDefinition = {

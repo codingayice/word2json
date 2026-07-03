@@ -184,6 +184,26 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:pgMar w:top="720" w:right="900" w:bottom="720" w:left="900" w:header="360" w:footer="360" w:gutter="0"/>');
   });
 
+  it("writes document settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      settings: { defaultTabStop: 720, evenAndOddHeaders: true, updateFields: true },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Settings" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const settings = await zip.file("word/settings.xml")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+
+    expect(settings).toContain('<w:defaultTabStop w:val="720"/>');
+    expect(settings).toContain("<w:evenAndOddHeaders/>");
+    expect(settings).toContain("<w:updateFields/>");
+    expect(contentTypes).toContain("/word/settings.xml");
+    expect(rels).toContain('Target="settings.xml"');
+  });
+
   it("writes tables with widths borders and grid spans", async () => {
     const document = createDocumentJson([
       {
@@ -789,6 +809,46 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:next w:val="Normal"/>');
   });
 
+  it("writes run document defaults", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        defaults: {
+          run: { fontFamily: "Aptos", fontSize: 11, color: "1F1F1F" },
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Defaults" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain("<w:docDefaults>");
+    expect(styles).toContain('<w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:color w:val="1F1F1F"/></w:rPr></w:rPrDefault>');
+  });
+
+  it("writes paragraph document defaults", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        defaults: {
+          paragraph: {
+            spacing: { after: 160, line: 276, lineRule: "auto" as const },
+            indent: { firstLine: 420 },
+          },
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Paragraph defaults" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/><w:ind w:firstLine="420"/></w:pPr></w:pPrDefault>');
+  });
+
   it("writes paragraph style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -1198,6 +1258,19 @@ describe("DOCX reader", () => {
           ],
         },
       ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips document settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      settings: { defaultTabStop: 720, evenAndOddHeaders: true, updateFields: true },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Settings" }] }] }],
     };
 
     const docx = await buildDocx(source);
@@ -1698,6 +1771,43 @@ describe("DOCX reader", () => {
           ],
         },
       ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run document defaults", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        defaults: {
+          run: { fontFamily: "Aptos", fontSize: 11, color: "1F1F1F" },
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Defaults" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph document defaults", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        defaults: {
+          paragraph: {
+            spacing: { after: 160, line: 276, lineRule: "auto" as const },
+            indent: { firstLine: 420 },
+          },
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Paragraph defaults" }] }] }],
     };
 
     const docx = await buildDocx(source);

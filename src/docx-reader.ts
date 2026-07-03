@@ -54,17 +54,39 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const numberingContext = await parseNumbering(zip);
   const styles = await parseStyles(zip);
   const theme = await parseTheme(zip);
+  const settings = await parseSettings(zip);
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
 
   return {
     version: "1.0",
+    ...(settings ? { settings } : {}),
     ...(theme ? { theme } : {}),
     ...(styles ? { styles } : {}),
     ...(numberingContext.numbering ? { numbering: numberingContext.numbering } : {}),
     sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes, numberingContext),
   };
+}
+
+async function parseSettings(zip: JSZip): Promise<DocumentJson["settings"] | undefined> {
+  const settingsFile = zip.file("word/settings.xml");
+
+  if (!settingsFile) {
+    return undefined;
+  }
+
+  const xml = await settingsFile.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const settings = asObject(parsed.settings);
+  const defaultTabStop = asObject(settings.defaultTabStop);
+  const result = {
+    ...(defaultTabStop.val !== undefined ? { defaultTabStop: parseNumber(defaultTabStop.val) } : {}),
+    ...(settings.evenAndOddHeaders !== undefined ? { evenAndOddHeaders: true } : {}),
+    ...(settings.updateFields !== undefined ? { updateFields: true } : {}),
+  };
+
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 async function parseNumbering(zip: JSZip): Promise<NumberingContext> {
@@ -187,6 +209,7 @@ async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
   const parsed = parser.parse(xml) as XmlNode;
   const stylesRoot = asObject(parsed.styles);
   const styleNodes = asArray(stylesRoot.style).map((styleValue) => asObject(styleValue));
+  const defaults = parseDocDefaults(stylesRoot.docDefaults);
   const paragraph = styleNodes
     .filter((style) => style.type === "paragraph" && typeof style.styleId === "string" && !isBuiltInParagraphStyleId(style.styleId))
     .map((style) => {
@@ -208,12 +231,25 @@ async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
   const character = parseStyleDefinitions(styleNodes, "character");
   const table = parseTableStyleDefinitions(styleNodes);
   const styles: DocumentStyles = {
+    ...(defaults ? { defaults } : {}),
     ...(paragraph.length > 0 ? { paragraph } : {}),
     ...(character.length > 0 ? { character } : {}),
     ...(table.length > 0 ? { table } : {}),
   };
 
   return Object.keys(styles).length > 0 ? styles : undefined;
+}
+
+function parseDocDefaults(value: unknown): DocumentStyles["defaults"] | undefined {
+  const defaults = asObject(value);
+  const run = parseStyleRunProperties(asObject(defaults.rPrDefault).rPr);
+  const paragraph = parseStyleParagraphProperties(asObject(defaults.pPrDefault).pPr);
+  const parsed = {
+    ...(run ? { run } : {}),
+    ...(paragraph ? { paragraph } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parseStyleDefinitions(styleNodes: XmlNode[], type: "character" | "table"): NonNullable<DocumentStyles["character"]> {

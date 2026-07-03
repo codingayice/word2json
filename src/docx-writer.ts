@@ -23,6 +23,7 @@ type WriterContext = {
   footnotes: NoteEntry[];
   endnotes: NoteEntry[];
   theme: DocumentJson["theme"];
+  settings: DocumentJson["settings"];
   bookmarkId: number;
 };
 
@@ -59,7 +60,7 @@ type NoteEntry = {
 
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], theme: document.theme, settings: document.settings, bookmarkId: 0 };
 
   zip.folder("_rels")!.file(".rels", packageRelsXml());
   zip.folder("word")!.file("document.xml", documentXml(document, context));
@@ -77,6 +78,9 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   if (document.theme) {
     zip.folder("word")!.folder("theme")!.file("theme1.xml", themeXml(document.theme));
   }
+  if (document.settings) {
+    zip.folder("word")!.file("settings.xml", settingsXml(document.settings));
+  }
   if (context.comments.length > 0) {
     zip.folder("word")!.file("comments.xml", commentsXml(context));
   }
@@ -90,6 +94,16 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   zip.folder("word")!.folder("_rels")!.file("document.xml.rels", documentRelsXml(context));
 
   return zip.generateAsync({ type: "nodebuffer" });
+}
+
+function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
+  return xmlDeclaration(
+    `<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      (settings.defaultTabStop !== undefined ? `<w:defaultTabStop w:val="${settings.defaultTabStop}"/>` : "") +
+      (settings.evenAndOddHeaders ? "<w:evenAndOddHeaders/>" : "") +
+      (settings.updateFields ? "<w:updateFields/>" : "") +
+      `</w:settings>`,
+  );
 }
 
 function documentXml(document: DocumentJson, context: WriterContext): string {
@@ -493,6 +507,9 @@ function contentTypesXml(context: WriterContext): string {
   const themeOverride = context.theme
     ? `<Override PartName="/word/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>`
     : "";
+  const settingsOverride = context.settings
+    ? `<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>`
+    : "";
 
   const imageDefaults = [
     context.images.some((image) => image.contentType === "image/png")
@@ -523,6 +540,7 @@ function contentTypesXml(context: WriterContext): string {
       footnotesOverride +
       endnotesOverride +
       themeOverride +
+      settingsOverride +
       `</Types>`,
   );
 }
@@ -556,6 +574,7 @@ function documentRelsXml(context: WriterContext): string {
       (context.footnotes.length > 0 ? `<Relationship Id="rIdFootnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>` : "") +
       (context.endnotes.length > 0 ? `<Relationship Id="rIdEndnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : "") +
       (context.theme ? `<Relationship Id="rIdTheme" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>` : "") +
+      (context.settings ? `<Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>` : "") +
       headerRelationships +
       footerRelationships +
       imageRelationships +
@@ -581,6 +600,7 @@ function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
 }
 
 function stylesXml(document: DocumentJson): string {
+  const defaults = document.styles?.defaults ? docDefaultsXml(document.styles.defaults) : "";
   const paragraphStyles = (document.styles?.paragraph ?? [])
     .map((style) => `<w:style w:type="paragraph" w:styleId="${escapeAttribute(style.id)}">` +
       `<w:name w:val="${escapeAttribute(style.name)}"/>` +
@@ -603,11 +623,23 @@ function stylesXml(document: DocumentJson): string {
       `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
       `<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
       `<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
+      defaults +
       paragraphStyles +
       characterStyles +
       tableStyles +
       `</w:styles>`,
   );
+}
+
+function docDefaultsXml(defaults: NonNullable<NonNullable<DocumentJson["styles"]>["defaults"]>): string {
+  const runDefaults = defaults.run
+    ? `<w:rPrDefault>${styleRunPropertiesXml(defaults.run)}</w:rPrDefault>`
+    : "";
+  const paragraphDefaults = defaults.paragraph
+    ? `<w:pPrDefault>${paragraphStylePropertiesXml(defaults.paragraph)}</w:pPrDefault>`
+    : "";
+
+  return runDefaults || paragraphDefaults ? `<w:docDefaults>${runDefaults}${paragraphDefaults}</w:docDefaults>` : "";
 }
 
 function styleXml(type: "character" | "table", id: string, name: string, basedOn?: string, run?: StyleRunProperties, properties = ""): string {
