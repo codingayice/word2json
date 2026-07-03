@@ -16,6 +16,7 @@ type XmlNode = Record<string, unknown>;
 type RelationshipMap = Record<string, string>;
 type CommentMap = Record<string, TextRun["comment"]>;
 type MediaMap = Record<string, Pick<ImageNode, "data" | "contentType">>;
+type NoteMap = Record<string, NonNullable<TextRun["footnote"]>>;
 
 const parser = new XMLParser({
   attributeNamePrefix: "",
@@ -36,13 +37,15 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const relationships = await parseDocumentRelationships(zip);
   const media = await parseMedia(zip, relationships);
   const comments = await parseComments(zip);
+  const footnotes = await parseNotes(zip, "footnotes", "footnote");
+  const endnotes = await parseNotes(zip, "endnotes", "endnote");
   const parsed = parser.parse(xml) as XmlNode;
   const documentNode = asObject(parsed.document);
   const body = asObject(documentNode.body);
 
   return {
     version: "1.0",
-    sections: await parseSections(zip, xml, body, relationships, comments, media),
+    sections: await parseSections(zip, xml, body, relationships, comments, media, footnotes, endnotes),
   };
 }
 
@@ -53,6 +56,8 @@ async function parseSections(
   relationships: RelationshipMap,
   comments: CommentMap,
   media: MediaMap,
+  footnotes: NoteMap,
+  endnotes: NoteMap,
 ): Promise<DocumentJson["sections"]> {
   const bodyContent = documentXml.match(/<w:body>([\s\S]*?)<\/w:body>/)?.[1] ?? "";
   const breakPattern = /<w:p><w:pPr>(<w:sectPr>[\s\S]*?<\/w:sectPr>)<\/w:pPr><\/w:p>/g;
@@ -86,7 +91,7 @@ async function parseSections(
     return [{
       ...(page ? { page } : {}),
       ...headerFooter,
-      blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media)),
+      blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes)),
     }];
   }
 
@@ -102,7 +107,7 @@ async function parseSections(
       ...(page ? { page } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
-      blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media)),
+      blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes)),
     };
   }));
 }
@@ -213,11 +218,33 @@ async function parseComments(zip: JSZip): Promise<CommentMap> {
   }));
 }
 
+async function parseNotes(zip: JSZip, rootName: "footnotes" | "endnotes", itemName: "footnote" | "endnote"): Promise<NoteMap> {
+  const file = zip.file(`word/${rootName}.xml`);
+
+  if (!file) {
+    return {};
+  }
+
+  const xml = await file.async("string");
+  const parsed = parser.parse(xml) as XmlNode;
+  const root = asObject(parsed[rootName]);
+  const notes = asArray(root[itemName]);
+
+  return Object.fromEntries(notes
+    .map((noteValue) => asObject(noteValue))
+    .filter((note) => note.id !== undefined && Number.parseInt(String(note.id), 10) > 0)
+    .map((note) => [String(note.id), {
+      blocks: asArray(note.p).map((paragraph) => parseParagraph(paragraph)),
+    }]));
+}
+
 function parseBlockXml(
   xml: string,
   relationships: RelationshipMap,
   comments: CommentMap,
   media: MediaMap,
+  footnotes: NoteMap,
+  endnotes: NoteMap,
 ): ParagraphNode | TableNode | ImageNode {
   const parsed = parser.parse(xml) as XmlNode;
 
@@ -226,10 +253,10 @@ function parseBlockXml(
       return parseImageBlock(parsed.p, media);
     }
 
-    return parseParagraph(parsed.p, relationships, comments);
+    return parseParagraph(parsed.p, relationships, comments, footnotes, endnotes);
   }
 
-  return parseTable(parsed.tbl, relationships, comments);
+  return parseTable(parsed.tbl, relationships, comments, footnotes, endnotes);
 }
 
 function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
@@ -368,7 +395,13 @@ function parseColumns(sectionPropertiesValue: unknown): import("./schema.js").Co
   };
 }
 
-function parseParagraph(value: unknown, relationships: RelationshipMap = {}, comments: CommentMap = {}): ParagraphNode {
+function parseParagraph(
+  value: unknown,
+  relationships: RelationshipMap = {},
+  comments: CommentMap = {},
+  footnotes: NoteMap = {},
+  endnotes: NoteMap = {},
+): ParagraphNode {
   const paragraph = asObject(value);
   const properties = asObject(paragraph.pPr);
   const styleNode = asObject(properties.pStyle);
@@ -388,7 +421,7 @@ function parseParagraph(value: unknown, relationships: RelationshipMap = {}, com
     ...(alignment ? { alignment } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
-    runs: parseParagraphRuns(paragraph, relationships, comments),
+    runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes),
   };
 }
 
@@ -406,18 +439,35 @@ function parseParagraphRuns(
   paragraph: XmlNode,
   relationships: RelationshipMap,
   comments: CommentMap,
+  footnotes: NoteMap,
+  endnotes: NoteMap,
 ): TextRun[] {
   const commentRanges = commentRangesByText(paragraph);
   const bookmarkRanges = bookmarkRangesByText(paragraph);
   const normalRuns = asArray(paragraph.r)
     .map((run) => parseRun(run))
-    .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined)
+    .filter((run) => run.text !== "" || run.break !== undefined || run.field !== undefined || run.footnote !== undefined || run.endnote !== undefined)
+    .map((run) => withMatchingNotes(run, footnotes, endnotes))
     .map((run) => withMatchingBookmark(run, bookmarkRanges))
     .map((run) => withMatchingComment(run, commentRanges, comments));
   const hyperlinkRuns = asArray(paragraph.hyperlink)
     .flatMap((hyperlink) => parseHyperlink(hyperlink, relationships, comments));
 
   return [...normalRuns, ...hyperlinkRuns];
+}
+
+function withMatchingNotes(run: TextRun, footnotes: NoteMap, endnotes: NoteMap): TextRun {
+  if (run.footnote && "id" in run.footnote) {
+    const note = footnotes[String(run.footnote.id)];
+    return note ? { text: "", footnote: note } : { text: "" };
+  }
+
+  if (run.endnote && "id" in run.endnote) {
+    const note = endnotes[String(run.endnote.id)];
+    return note ? { text: "", endnote: note } : { text: "" };
+  }
+
+  return run;
 }
 
 function commentRangesByText(paragraph: XmlNode): Map<string, string> {
@@ -512,6 +562,22 @@ function parseRun(value: unknown): TextRun {
     };
   }
 
+  const footnoteReference = asObject(run.footnoteReference);
+  if (run.footnoteReference !== undefined) {
+    return {
+      text: "",
+      footnote: { id: String(footnoteReference.id), blocks: [] } as unknown as TextRun["footnote"],
+    };
+  }
+
+  const endnoteReference = asObject(run.endnoteReference);
+  if (run.endnoteReference !== undefined) {
+    return {
+      text: "",
+      endnote: { id: String(endnoteReference.id), blocks: [] } as unknown as TextRun["endnote"],
+    };
+  }
+
   return {
     text: parseText(run.t),
     ...(properties.b !== undefined ? { bold: true } : {}),
@@ -523,6 +589,15 @@ function parseRun(value: unknown): TextRun {
 
 function parseField(value: unknown): TextRun["field"] {
   const instruction = parseText(value).trim();
+
+  if (instruction.startsWith("PAGEREF ")) {
+    return { type: "pageRef", target: instruction.slice("PAGEREF ".length) };
+  }
+
+  if (instruction.startsWith("REF ")) {
+    return { type: "ref", target: instruction.slice("REF ".length) };
+  }
+
   return instruction === "NUMPAGES" ? "numPages" : "page";
 }
 
@@ -539,7 +614,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   };
 }
 
-function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap): TableNode {
+function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap): TableNode {
   const table = asObject(value);
   const properties = asObject(table.tblPr);
   const width = asObject(properties.tblW);
@@ -553,13 +628,13 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       const row = asObject(rowValue);
 
       return {
-        cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments)),
+        cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes)),
       };
     }),
   };
 }
 
-function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap): TableCellNode {
+function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap): TableCellNode {
   const cell = asObject(value);
   const properties = asObject(cell.tcPr);
   const width = asObject(properties.tcW);
@@ -568,7 +643,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   return {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(gridSpan.val !== undefined ? { colSpan: parseNumber(gridSpan.val) } : {}),
-    blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments)),
+    blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes)),
   };
 }
 

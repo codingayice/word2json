@@ -17,6 +17,8 @@ type WriterContext = {
   images: ImageRelationship[];
   headers: HeaderFooterRelationship[];
   footers: HeaderFooterRelationship[];
+  footnotes: NoteEntry[];
+  endnotes: NoteEntry[];
   bookmarkId: number;
 };
 
@@ -46,9 +48,14 @@ type HeaderFooterRelationship = {
   blocks: ParagraphNode[];
 };
 
+type NoteEntry = {
+  id: number;
+  blocks: ParagraphNode[];
+};
+
 export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   const zip = new JSZip();
-  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], bookmarkId: 0 };
+  const context: WriterContext = { hyperlinks: [], comments: [], images: [], headers: [], footers: [], footnotes: [], endnotes: [], bookmarkId: 0 };
 
   zip.folder("_rels")!.file(".rels", packageRelsXml());
   zip.folder("word")!.file("document.xml", documentXml(document, context));
@@ -65,6 +72,12 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
   zip.folder("word")!.file("numbering.xml", numberingXml());
   if (context.comments.length > 0) {
     zip.folder("word")!.file("comments.xml", commentsXml(context));
+  }
+  if (context.footnotes.length > 0) {
+    zip.folder("word")!.file("footnotes.xml", notesXml("footnotes", "footnote", context.footnotes, context));
+  }
+  if (context.endnotes.length > 0) {
+    zip.folder("word")!.file("endnotes.xml", notesXml("endnotes", "endnote", context.endnotes, context));
   }
   zip.file("[Content_Types].xml", contentTypesXml(context));
   zip.folder("word")!.folder("_rels")!.file("document.xml.rels", documentRelsXml(context));
@@ -209,6 +222,18 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
 }
 
 function runXml(run: TextRun, context: WriterContext): string {
+  if (run.footnote) {
+    const id = context.footnotes.length + 1;
+    context.footnotes.push({ id, blocks: run.footnote.blocks });
+    return `<w:r><w:footnoteReference w:id="${id}"/></w:r>`;
+  }
+
+  if (run.endnote) {
+    const id = context.endnotes.length + 1;
+    context.endnotes.push({ id, blocks: run.endnote.blocks });
+    return `<w:r><w:endnoteReference w:id="${id}"/></w:r>`;
+  }
+
   if (run.field) {
     return fieldRunXml(run.field);
   }
@@ -235,13 +260,33 @@ function runXml(run: TextRun, context: WriterContext): string {
 }
 
 function fieldRunXml(field: TextRun["field"]): string {
-  const instruction = field === "page" ? "PAGE" : "NUMPAGES";
+  const instruction = fieldInstruction(field);
 
   return `<w:r><w:fldChar w:fldCharType="begin"/></w:r>` +
     `<w:r><w:instrText xml:space="preserve">${instruction}</w:instrText></w:r>` +
     `<w:r><w:fldChar w:fldCharType="separate"/></w:r>` +
     `<w:r><w:t></w:t></w:r>` +
     `<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+}
+
+function fieldInstruction(field: TextRun["field"]): string {
+  if (field === "page") {
+    return "PAGE";
+  }
+
+  if (field === "numPages") {
+    return "NUMPAGES";
+  }
+
+  if (field?.type === "ref") {
+    return `REF ${field.target}`;
+  }
+
+  if (field?.type === "pageRef") {
+    return `PAGEREF ${field.target}`;
+  }
+
+  return "PAGE";
 }
 
 function wrapBookmarkIfNeeded(run: TextRun, runContent: string, context: WriterContext): string {
@@ -349,6 +394,12 @@ function contentTypesXml(context: WriterContext): string {
   const commentsOverride = context.comments.length > 0
     ? `<Override PartName="/word/comments.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml"/>`
     : "";
+  const footnotesOverride = context.footnotes.length > 0
+    ? `<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>`
+    : "";
+  const endnotesOverride = context.endnotes.length > 0
+    ? `<Override PartName="/word/endnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>`
+    : "";
 
   const imageDefaults = [
     context.images.some((image) => image.contentType === "image/png")
@@ -376,6 +427,8 @@ function contentTypesXml(context: WriterContext): string {
       headerOverrides +
       footerOverrides +
       commentsOverride +
+      footnotesOverride +
+      endnotesOverride +
       `</Types>`,
   );
 }
@@ -406,6 +459,8 @@ function documentRelsXml(context: WriterContext): string {
     `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
       `<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>` +
       (context.comments.length > 0 ? `<Relationship Id="rIdComments" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments" Target="comments.xml"/>` : "") +
+      (context.footnotes.length > 0 ? `<Relationship Id="rIdFootnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>` : "") +
+      (context.endnotes.length > 0 ? `<Relationship Id="rIdEndnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes" Target="endnotes.xml"/>` : "") +
       headerRelationships +
       footerRelationships +
       imageRelationships +
@@ -451,6 +506,19 @@ function headerFooterXml(root: "hdr" | "ftr", blocks: ParagraphNode[], context: 
     `<w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
       blocks.map((block) => paragraphXml(block, context)).join("") +
       `</w:${root}>`,
+  );
+}
+
+function notesXml(root: "footnotes" | "endnotes", item: "footnote" | "endnote", notes: NoteEntry[], context: WriterContext): string {
+  const separatorType = item === "footnote" ? "footnote" : "endnote";
+  const entries = [
+    `<w:${item} w:id="-1" w:type="separator"><w:p><w:r><w:separator/></w:r></w:p></w:${item}>`,
+    `<w:${item} w:id="0" w:type="continuationSeparator"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:${item}>`,
+    ...notes.map((note) => `<w:${item} w:id="${note.id}">${note.blocks.map((block) => paragraphXml(block, context)).join("")}</w:${item}>`),
+  ].join("");
+
+  return xmlDeclaration(
+    `<w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${entries}</w:${root}>`,
   );
 }
 

@@ -78,7 +78,9 @@ export type TextRun = {
   comment?: Comment;
   bookmark?: Bookmark;
   break?: BreakKind;
-  field?: FieldKind;
+  field?: FieldKind | ReferenceField;
+  footnote?: NoteContent;
+  endnote?: NoteContent;
 };
 
 export type Hyperlink = {
@@ -99,6 +101,15 @@ export type Bookmark = {
 export type BreakKind = "line" | "page";
 
 export type FieldKind = "page" | "numPages";
+
+export type ReferenceField = {
+  type: "ref" | "pageRef";
+  target: string;
+};
+
+export type NoteContent = {
+  blocks: ParagraphNode[];
+};
 
 export type TableNode = {
   type: "table";

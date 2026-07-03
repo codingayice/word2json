@@ -416,6 +416,77 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:keepLines/>");
     expect(xml).toContain("<w:pageBreakBefore/>");
   });
+
+  it("writes footnotes with references relationships and notes part", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Body" },
+          { text: "", footnote: { blocks: [{ type: "paragraph", runs: [{ text: "Footnote text" }] }] } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const footnotes = await zip.file("word/footnotes.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(xml).toContain('<w:footnoteReference w:id="1"/>');
+    expect(footnotes).toContain('<w:footnote w:id="1">');
+    expect(footnotes).toContain("<w:t>Footnote text</w:t>");
+    expect(rels).toContain('Target="footnotes.xml"');
+    expect(contentTypes).toContain('/word/footnotes.xml');
+  });
+
+  it("writes endnotes with references relationships and notes part", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Body" },
+          { text: "", endnote: { blocks: [{ type: "paragraph", runs: [{ text: "Endnote text" }] }] } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const endnotes = await zip.file("word/endnotes.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const contentTypes = await zip.file("[Content_Types].xml")!.async("string");
+
+    expect(xml).toContain('<w:endnoteReference w:id="1"/>');
+    expect(endnotes).toContain('<w:endnote w:id="1">');
+    expect(endnotes).toContain("<w:t>Endnote text</w:t>");
+    expect(rels).toContain('Target="endnotes.xml"');
+    expect(contentTypes).toContain('/word/endnotes.xml');
+  });
+
+  it("writes reference fields", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "See " },
+          { text: "", field: { type: "ref", target: "Clause1" } },
+          { text: " on page " },
+          { text: "", field: { type: "pageRef", target: "Clause1" } },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:instrText xml:space="preserve">REF Clause1</w:instrText>');
+    expect(xml).toContain('<w:instrText xml:space="preserve">PAGEREF Clause1</w:instrText>');
+  });
 });
 
 describe("DOCX reader", () => {
@@ -728,6 +799,59 @@ describe("DOCX reader", () => {
         type: "paragraph",
         pagination: { keepNext: true, keepLines: true, pageBreakBefore: true },
         runs: [{ text: "Controlled paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips footnotes", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Body" },
+          { text: "", footnote: { blocks: [{ type: "paragraph", runs: [{ text: "Footnote text" }] }] } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips endnotes", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "Body" },
+          { text: "", endnote: { blocks: [{ type: "paragraph", runs: [{ text: "Endnote text" }] }] } },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips reference fields", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          { text: "See " },
+          { text: "", field: { type: "ref", target: "Clause1" } },
+          { text: " on page " },
+          { text: "", field: { type: "pageRef", target: "Clause1" } },
+        ],
       },
     ]);
 
