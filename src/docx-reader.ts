@@ -1662,6 +1662,16 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           body: parseMathNodes(asObject(naryNode.e)),
         };
       }),
+    ...asArray(container.m)
+      .map((matrix) => {
+        const matrixNode = asObject(matrix);
+        return {
+          type: "matrix" as const,
+          rows: asArray(matrixNode.mr).map((row) =>
+            asArray(asObject(row).e).map((cell) => parseMathNodes(asObject(cell))),
+          ),
+        };
+      }),
   ];
 }
 

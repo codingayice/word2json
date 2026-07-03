@@ -146,6 +146,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
   });
 
+  it("writes matrix office math runs", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "matrix" as const,
+                  rows: [
+                    [[{ type: "text" as const, text: "a" }], [{ type: "text" as const, text: "b" }]],
+                    [[{ type: "text" as const, text: "c" }], [{ type: "text" as const, text: "d" }]],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<m:m><m:mr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:mr><m:mr><m:e><m:r><m:t>c</m:t></m:r></m:e><m:e><m:r><m:t>d</m:t></m:r></m:e></m:mr></m:m>");
+  });
+
   it("writes text styles and headings into document.xml", async () => {
     const document = createDocumentJson([
       {
@@ -2587,6 +2617,35 @@ describe("DOCX reader", () => {
                   lowerLimit: [{ type: "text" as const, text: "i=1" }],
                   upperLimit: [{ type: "text" as const, text: "n" }],
                   body: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips matrix office math runs", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "matrix" as const,
+                  rows: [
+                    [[{ type: "text" as const, text: "a" }], [{ type: "text" as const, text: "b" }]],
+                    [[{ type: "text" as const, text: "c" }], [{ type: "text" as const, text: "d" }]],
+                  ],
                 },
               ],
             },

@@ -418,7 +418,8 @@ export type MathNode =
   | { type: "superscript"; base: MathNode[]; superscript: MathNode[] }
   | { type: "subscript"; base: MathNode[]; subscript: MathNode[] }
   | { type: "radical"; degree?: MathNode[]; content: MathNode[] }
-  | { type: "nary"; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] };
+  | { type: "nary"; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
+  | { type: "matrix"; rows: MathNode[][][] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";
