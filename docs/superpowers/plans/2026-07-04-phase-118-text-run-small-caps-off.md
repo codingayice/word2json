@@ -1,0 +1,182 @@
+# Phase 118 Text Run Small Caps Off Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Preserve explicit `smallCaps: false` on normal text runs so a run can deliberately disable inherited small-caps formatting.
+
+**Architecture:** Keep the existing `smallCaps?: boolean` field on `TextRun`. Writer emits `<w:smallCaps/>` for true, `<w:smallCaps w:val="0"/>` for false, and omits small caps when undefined; reader maps explicit off values back to `smallCaps: false` using the existing on/off run property helper.
+
+**Tech Stack:** TypeScript, Vitest, JSZip, existing DOCX reader/writer utilities.
+
+---
+
+### File Structure
+
+- Modify `src/docx-writer.ts`: make `runPropertiesXml` write small caps false as `w:smallCaps w:val="0"`.
+- Modify `src/docx-reader.ts`: parse normal run small caps values with optional boolean semantics instead of true-only presence.
+- Modify `tests/docx-core.test.ts`: add one writer XML test and one round-trip test for `TextRun.smallCaps: false`.
+
+### Task 1: Writer Support
+
+**Files:**
+- Modify: `tests/docx-core.test.ts`
+- Modify: `src/docx-writer.ts`
+
+- [x] **Step 1: Write the failing writer test**
+
+Add a writer-side test named `writes text run small caps off` that builds a normal text run with `smallCaps: false`, then expects `<w:smallCaps w:val="0"/>` in `word/document.xml`.
+
+- [x] **Step 2: Run writer test to verify RED**
+
+Run:
+
+```bash
+npm test -- tests/docx-core.test.ts -t "writes text run small caps off"
+```
+
+Expected: FAIL because `runPropertiesXml` currently omits small caps when the value is false.
+
+- [x] **Step 3: Implement writer support**
+
+Update `runPropertiesXml`:
+
+```ts
+run.smallCaps !== undefined ? (run.smallCaps ? "<w:smallCaps/>" : '<w:smallCaps w:val="0"/>') : "",
+```
+
+- [x] **Step 4: Run writer test to verify GREEN**
+
+Run:
+
+```bash
+npm test -- tests/docx-core.test.ts -t "writes text run small caps off"
+```
+
+Expected: PASS with `<w:smallCaps w:val="0"/>` present.
+
+### Task 2: Reader Round-Trip Support
+
+**Files:**
+- Modify: `tests/docx-core.test.ts`
+- Modify: `src/docx-reader.ts`
+
+- [x] **Step 1: Write the failing round-trip test**
+
+Add a reader-side test named `round-trips text run small caps off` that builds, parses, and compares a text run with `smallCaps: false`.
+
+- [x] **Step 2: Run round-trip test to verify RED**
+
+Run:
+
+```bash
+npm test -- tests/docx-core.test.ts -t "round-trips text run small caps off"
+```
+
+Expected: FAIL because the writer omits false and the reader currently parses any `w:smallCaps` as `smallCaps: true`.
+
+- [x] **Step 3: Implement reader support**
+
+Use the existing on/off run property helper in normal run property parsing:
+
+```ts
+...parseOnOffRunProperty(properties.smallCaps, "smallCaps"),
+```
+
+- [x] **Step 4: Run round-trip test to verify GREEN**
+
+Run:
+
+```bash
+npm test -- tests/docx-core.test.ts -t "round-trips text run small caps off"
+```
+
+Expected: PASS and parsed JSON equals the source JSON.
+
+### Task 3: Full Verification, Commit, and Push
+
+**Files:**
+- Modify: `docs/superpowers/plans/2026-07-04-phase-118-text-run-small-caps-off.md`
+
+- [x] **Step 1: Run targeted tests**
+
+Run:
+
+```bash
+npm test -- tests/docx-core.test.ts -t "text run small caps off"
+```
+
+Expected: PASS for both Phase 118 tests.
+
+- [x] **Step 2: Run full test suite**
+
+Run:
+
+```bash
+npm test
+```
+
+Expected: all tests pass.
+
+- [x] **Step 3: Run build**
+
+Run:
+
+```bash
+npm run build
+```
+
+Expected: build exits with code 0.
+
+- [x] **Step 4: Run whitespace check**
+
+Run:
+
+```bash
+git diff --check
+```
+
+Expected: exit code 0.
+
+- [ ] **Step 5: Commit implementation**
+
+Run:
+
+```bash
+git add src/docx-writer.ts src/docx-reader.ts tests/docx-core.test.ts docs/superpowers/plans/2026-07-04-phase-118-text-run-small-caps-off.md
+git commit -m "feat: add phase 118 text run small caps off"
+```
+
+- [ ] **Step 6: Push implementation branch**
+
+Run:
+
+```bash
+git push -u origin phase-118-text-run-small-caps-off
+```
+
+- [ ] **Step 7: Mark this plan pushed and commit docs**
+
+Update this plan with the pushed branch name and implementation commit hash, then run:
+
+```bash
+git add docs/superpowers/plans/2026-07-04-phase-118-text-run-small-caps-off.md
+git commit -m "docs: mark phase 118 pushed"
+git push
+```
+
+### Self-Review
+
+- Spec coverage: Phase 118 covers writer and reader round-trip preservation for explicit false small caps on normal text runs.
+- Placeholder scan: No placeholder text or deferred implementation notes.
+- Type consistency: Existing `smallCaps?: boolean` remains the JSON API and maps to WordprocessingML `w:smallCaps`.
+
+### Verification Evidence
+
+- RED writer: `npm test -- tests/docx-core.test.ts -t "writes text run small caps off"` failed because the writer omitted `<w:smallCaps>` for `smallCaps: false`.
+- RED reader: `npm test -- tests/docx-core.test.ts -t "round-trips text run small caps off"` failed because parsed JSON dropped `smallCaps: false`.
+- GREEN writer: `npm test -- tests/docx-core.test.ts -t "writes text run small caps off"` passed after writer emitted `<w:smallCaps w:val="0"/>`.
+- GREEN reader: `npm test -- tests/docx-core.test.ts -t "round-trips text run small caps off"` passed after reader parsed `w:smallCaps w:val="0"` as `smallCaps: false`.
+- Targeted verification: `npm test -- tests/docx-core.test.ts -t "text run small caps off"` passed 2 tests with 326 skipped.
+- Full suite: `npm test` passed 328 tests.
+- Build: `npm run build` exited 0.
+- Whitespace: `git diff --check` exited 0 with LF/CRLF warnings only.

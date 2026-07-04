@@ -124,6 +124,21 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:dstrike w:val="0"/></w:rPr><w:t>Plain</w:t>');
   });
 
+  it("writes text run small caps off", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", smallCaps: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:smallCaps w:val="0"/></w:rPr><w:t>Plain</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4712,6 +4727,20 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Plain", doubleStrike: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run small caps off", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", smallCaps: false }],
       },
     ]);
 

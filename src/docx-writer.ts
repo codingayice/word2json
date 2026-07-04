@@ -1074,7 +1074,7 @@ function runPropertiesXml(run: TextRun): string {
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
     run.strike !== undefined ? (run.strike ? "<w:strike/>" : '<w:strike w:val="0"/>') : "",
     run.doubleStrike !== undefined ? (run.doubleStrike ? "<w:dstrike/>" : '<w:dstrike w:val="0"/>') : "",
-    run.smallCaps ? "<w:smallCaps/>" : "",
+    run.smallCaps !== undefined ? (run.smallCaps ? "<w:smallCaps/>" : '<w:smallCaps w:val="0"/>') : "",
     run.allCaps ? "<w:caps/>" : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",

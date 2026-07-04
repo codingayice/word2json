@@ -2554,7 +2554,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<TextRun["highlight"]> } : {}),
     ...parseOnOffRunProperty(properties.strike, "strike"),
     ...parseOnOffRunProperty(properties.dstrike, "doubleStrike"),
-    ...(properties.smallCaps !== undefined ? { smallCaps: true } : {}),
+    ...parseOnOffRunProperty(properties.smallCaps, "smallCaps"),
     ...(properties.caps !== undefined ? { allCaps: true } : {}),
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
