@@ -261,6 +261,7 @@ export type StyleRunProperties = {
   smallCaps?: boolean;
   allCaps?: boolean;
   shadow?: boolean;
+  outline?: boolean;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;

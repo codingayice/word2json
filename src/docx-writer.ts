@@ -1077,6 +1077,7 @@ function runPropertiesXml(run: TextRun): string {
     run.smallCaps !== undefined ? (run.smallCaps ? "<w:smallCaps/>" : '<w:smallCaps w:val="0"/>') : "",
     run.allCaps !== undefined ? (run.allCaps ? "<w:caps/>" : '<w:caps w:val="0"/>') : "",
     run.shadow !== undefined ? (run.shadow ? "<w:shadow/>" : '<w:shadow w:val="0"/>') : "",
+    run.outline !== undefined ? (run.outline ? "<w:outline/>" : '<w:outline w:val="0"/>') : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
