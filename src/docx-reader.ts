@@ -1871,10 +1871,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const controlProperties = parseMathControlProperties(asObject(borderBoxProperties.ctrlPr).rPr);
         return {
           type: "borderBox" as const,
-          ...mathBooleanProperty(borderBoxProperties.hideTop, "hideTop"),
-          ...mathBooleanProperty(borderBoxProperties.hideBot, "hideBottom"),
-          ...mathBooleanProperty(borderBoxProperties.hideLeft, "hideLeft"),
-          ...mathBooleanProperty(borderBoxProperties.hideRight, "hideRight"),
+          ...mathOptionalBooleanProperty(borderBoxProperties.hideTop, "hideTop"),
+          ...mathOptionalBooleanProperty(borderBoxProperties.hideBot, "hideBottom"),
+          ...mathOptionalBooleanProperty(borderBoxProperties.hideLeft, "hideLeft"),
+          ...mathOptionalBooleanProperty(borderBoxProperties.hideRight, "hideRight"),
           ...(controlProperties ? { controlProperties } : {}),
           content: parseMathNodes(asObject(borderBoxNode.e)),
         };
