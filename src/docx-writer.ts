@@ -702,7 +702,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "subSup") {
-    return `<m:sSubSup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:sSubSup>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:sSubSup>${properties ? `<m:sSubSupPr><m:ctrlPr>${properties}</m:ctrlPr></m:sSubSupPr>` : ""}<m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:sSubSup>`;
   }
 
   if (node.type === "sPre") {

@@ -547,6 +547,44 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:sSubSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSubSup>');
   });
 
+  it("writes sub sup control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "subSup" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 13,
+                    color: "0070C0",
+                    underline: true,
+                    highlight: "cyan",
+                  },
+                  base: [{ type: "text" as const, text: "x" }],
+                  subscript: [{ type: "text" as const, text: "i" }],
+                  superscript: [{ type: "text" as const, text: "2" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:sSubSup><m:sSubSupPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="26"/><w:color w:val="0070C0"/><w:highlight w:val="cyan"/></w:rPr></m:ctrlPr></m:sSubSupPr><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSubSup>');
+  });
+
   it("writes s pre office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -3496,6 +3534,43 @@ describe("DOCX reader", () => {
                       denominator: [{ type: "text" as const, text: "n" }],
                     },
                   ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips sub sup control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "subSup" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 13,
+                    color: "0070C0",
+                    underline: true,
+                    highlight: "cyan",
+                  },
+                  base: [{ type: "text" as const, text: "x" }],
+                  subscript: [{ type: "text" as const, text: "i" }],
+                  superscript: [{ type: "text" as const, text: "2" }],
                 },
               ],
             },
