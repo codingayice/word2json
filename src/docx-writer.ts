@@ -823,7 +823,14 @@ function mathNodeXml(node: MathNode): string {
   }
 
   const properties = mathControlPropertiesXml(node.controlProperties);
-  return `<m:nary><m:naryPr>${naryOperatorXml(node.operator)}${naryLimitLocationXml(node.limitLocation)}${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:naryPr>` +
+  const naryProperties = [
+    naryOperatorXml(node.operator),
+    naryLimitLocationXml(node.limitLocation),
+    node.hideLowerLimit ? '<m:subHide m:val="1"/>' : "",
+    node.hideUpperLimit ? '<m:supHide m:val="1"/>' : "",
+    properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
+  ].join("");
+  return `<m:nary><m:naryPr>${naryProperties}</m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
     `<m:e>${node.body.map((child) => mathNodeXml(child)).join("")}</m:e></m:nary>`;

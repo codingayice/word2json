@@ -1711,6 +1711,8 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           operator: naryOperatorValue(asObject(naryProperties.chr).val),
           ...(controlProperties ? { controlProperties } : {}),
           ...(limitLocation ? { limitLocation } : {}),
+          ...mathBooleanProperty(naryProperties.subHide, "hideLowerLimit"),
+          ...mathBooleanProperty(naryProperties.supHide, "hideUpperLimit"),
           ...(lowerLimit.length > 0 ? { lowerLimit } : {}),
           ...(upperLimit.length > 0 ? { upperLimit } : {}),
           body: parseMathNodes(asObject(naryNode.e)),
