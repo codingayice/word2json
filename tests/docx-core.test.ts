@@ -5044,6 +5044,43 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:i/><w:u w:val="single"/><w:color w:val="C00000"/></w:rPr>');
   });
 
+  it("writes style run fonts with direct theme and hint attributes", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "DefinedTerm",
+          name: "Defined Term",
+          run: {
+            fontFamily: "Aptos",
+            eastAsiaFontFamily: "SimSun",
+            complexScriptFontFamily: "Arial",
+            fontTheme: "majorHAnsi",
+            eastAsiaFontTheme: "majorEastAsia",
+            complexScriptFontTheme: "majorBidi",
+            fontHint: "eastAsia",
+          },
+        }],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Term", styleId: "DefinedTerm" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="character" w:styleId="DefinedTerm"><w:name w:val="Defined Term"/><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="SimSun" w:cs="Arial" w:asciiTheme="majorHAnsi" w:hAnsiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:cstheme="majorBidi" w:hint="eastAsia"/></w:rPr></w:style>');
+  });
+
   it("writes character style underline none", async () => {
     const document = {
       version: "1.0" as const,
@@ -10005,6 +10042,42 @@ describe("DOCX reader", () => {
             {
               type: "paragraph" as const,
               runs: [{ text: "Term", styleId: "PlainTerm" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run fonts with direct theme and hint attributes", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "DefinedTerm",
+          name: "Defined Term",
+          run: {
+            fontFamily: "Aptos",
+            eastAsiaFontFamily: "SimSun",
+            complexScriptFontFamily: "Arial",
+            fontTheme: "majorHAnsi",
+            eastAsiaFontTheme: "majorEastAsia",
+            complexScriptFontTheme: "majorBidi",
+            fontHint: "eastAsia",
+          },
+        }],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Term", styleId: "DefinedTerm" }],
             },
           ],
         },

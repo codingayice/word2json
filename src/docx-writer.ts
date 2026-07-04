@@ -1624,7 +1624,7 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
     run.bold ? "<w:b/>" : "",
     run.italic ? "<w:i/>" : "",
     run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
-    run.fontFamily ? `<w:rFonts w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"/>` : "",
+    styleRunFontsXml(run),
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
@@ -1639,6 +1639,20 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
+}
+
+function styleRunFontsXml(run: StyleRunProperties): string {
+  const attributes = [
+    run.fontFamily ? ` w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"` : "",
+    run.eastAsiaFontFamily ? ` w:eastAsia="${escapeAttribute(run.eastAsiaFontFamily)}"` : "",
+    run.complexScriptFontFamily ? ` w:cs="${escapeAttribute(run.complexScriptFontFamily)}"` : "",
+    run.fontTheme ? ` w:asciiTheme="${escapeAttribute(run.fontTheme)}" w:hAnsiTheme="${escapeAttribute(run.fontTheme)}"` : "",
+    run.eastAsiaFontTheme ? ` w:eastAsiaTheme="${escapeAttribute(run.eastAsiaFontTheme)}"` : "",
+    run.complexScriptFontTheme ? ` w:cstheme="${escapeAttribute(run.complexScriptFontTheme)}"` : "",
+    run.fontHint ? ` w:hint="${run.fontHint}"` : "",
+  ].join("");
+
+  return attributes ? `<w:rFonts${attributes}/>` : "";
 }
 
 function tableStylePropertiesXml(properties: NonNullable<NonNullable<DocumentJson["styles"]>["table"]>[number]["table"]): string {
