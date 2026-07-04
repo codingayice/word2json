@@ -1724,6 +1724,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const matrixProperties = asObject(matrixNode.mPr);
         const baseJustification = matrixBaseJustificationValue(asObject(matrixProperties.baseJc).val);
         const rowSpacing = asObject(matrixProperties.rSp).val;
+        const columnSpacing = asObject(matrixProperties.cSp).val;
         const columnJustifications = matrixColumnJustificationValues(matrixProperties.mcs);
         const columnCounts = matrixColumnCountValues(matrixProperties.mcs);
         const controlProperties = parseMathControlProperties(asObject(matrixProperties.ctrlPr).rPr);
@@ -1731,6 +1732,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           type: "matrix" as const,
           ...(baseJustification ? { baseJustification } : {}),
           ...(rowSpacing !== undefined ? { rowSpacing: parseNumber(rowSpacing) } : {}),
+          ...(columnSpacing !== undefined ? { columnSpacing: parseNumber(columnSpacing) } : {}),
           ...(columnJustifications.length > 0 ? { columnJustifications } : {}),
           ...(columnCounts.length > 0 ? { columnCounts } : {}),
           ...(controlProperties ? { controlProperties } : {}),
