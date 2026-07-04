@@ -4285,6 +4285,39 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:i/><w:u w:val="single"/><w:color w:val="C00000"/></w:rPr>');
   });
 
+  it("writes character style underline none", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [
+          {
+            id: "PlainTerm",
+            name: "Plain Term",
+            basedOn: "DefaultParagraphFont",
+            run: { underline: false },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Term", styleId: "PlainTerm" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="character" w:styleId="PlainTerm">');
+    expect(styles).toContain('<w:rPr><w:u w:val="none"/></w:rPr>');
+  });
+
   it("writes style run advanced formatting", async () => {
     const document = {
       version: "1.0" as const,
@@ -8473,6 +8506,37 @@ describe("DOCX reader", () => {
             {
               type: "paragraph" as const,
               runs: [{ text: "Term", styleId: "DefinedTerm" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips character style underline none", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [
+          {
+            id: "PlainTerm",
+            name: "Plain Term",
+            basedOn: "DefaultParagraphFont",
+            run: { underline: false },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              runs: [{ text: "Term", styleId: "PlainTerm" }],
             },
           ],
         },

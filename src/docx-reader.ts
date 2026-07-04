@@ -758,7 +758,7 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const parsed = {
     ...(properties.b !== undefined ? { bold: true } : {}),
     ...(properties.i !== undefined ? { italic: true } : {}),
-    ...(properties.u !== undefined ? { underline: true } : {}),
+    ...parseUnderline(properties.u),
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
     ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),

@@ -1580,7 +1580,7 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
   const properties = [
     run.bold ? "<w:b/>" : "",
     run.italic ? "<w:i/>" : "",
-    run.underline ? '<w:u w:val="single"/>' : "",
+    run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
     run.fontFamily ? `<w:rFonts w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"/>` : "",
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
