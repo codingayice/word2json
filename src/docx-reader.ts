@@ -1725,10 +1725,12 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const delimiterProperties = asObject(delimiterNode.dPr);
         const begin = asObject(delimiterProperties.begChr).val;
         const end = asObject(delimiterProperties.endChr).val;
+        const controlProperties = parseMathControlProperties(asObject(delimiterProperties.ctrlPr).rPr);
         return {
           type: "delimiter" as const,
           ...(typeof begin === "string" ? { begin } : {}),
           ...(typeof end === "string" ? { end } : {}),
+          ...(controlProperties ? { controlProperties } : {}),
           content: parseMathNodes(asObject(delimiterNode.e)),
         };
       }),

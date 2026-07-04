@@ -730,10 +730,13 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "delimiter") {
-    const delimiterProperties = node.begin !== undefined || node.end !== undefined
-      ? `<m:dPr>${node.begin !== undefined ? `<m:begChr m:val="${escapeAttribute(node.begin)}"/>` : ""}${node.end !== undefined ? `<m:endChr m:val="${escapeAttribute(node.end)}"/>` : ""}</m:dPr>`
-      : "";
-    return `<m:d>${delimiterProperties}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:d>`;
+    const controlProperties = mathControlPropertiesXml(node.controlProperties);
+    const delimiterProperties = [
+      node.begin !== undefined ? `<m:begChr m:val="${escapeAttribute(node.begin)}"/>` : "",
+      node.end !== undefined ? `<m:endChr m:val="${escapeAttribute(node.end)}"/>` : "",
+      controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
+    ].join("");
+    return `<m:d>${delimiterProperties ? `<m:dPr>${delimiterProperties}</m:dPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:d>`;
   }
 
   if (node.type === "accent") {

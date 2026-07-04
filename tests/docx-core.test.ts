@@ -436,6 +436,44 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="("/><m:endChr m:val=")"/></m:dPr><m:e><m:f><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:e></m:d>');
   });
 
+  it("writes delimiter control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "delimiter" as const,
+                  begin: "[",
+                  end: "]",
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="["/><m:endChr m:val="]"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d>');
+  });
+
   it("writes accent office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -3492,6 +3530,43 @@ describe("DOCX reader", () => {
                       superscript: [{ type: "text" as const, text: "2" }],
                     },
                   ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips delimiter control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "delimiter" as const,
+                  begin: "[",
+                  end: "]",
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x" }],
                 },
               ],
             },
