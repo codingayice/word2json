@@ -704,6 +704,10 @@ function mathNodeXml(node: MathNode): string {
     return `<m:sSubSup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:sSubSup>`;
   }
 
+  if (node.type === "sPre") {
+    return `<m:sPre><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e></m:sPre>`;
+  }
+
   if (node.type === "preSubSup") {
     return `<m:preSubSup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:preSubSup>`;
   }

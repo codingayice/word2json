@@ -418,6 +418,7 @@ export type MathNode =
   | { type: "superscript"; base: MathNode[]; superscript: MathNode[] }
   | { type: "subscript"; base: MathNode[]; subscript: MathNode[] }
   | { type: "subSup"; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
+  | { type: "sPre"; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "preSubSup"; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "radical"; degree?: MathNode[]; content: MathNode[] }
   | { type: "nary"; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
