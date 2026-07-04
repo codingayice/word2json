@@ -1534,7 +1534,7 @@ function imageXml(image: ImageNode, context: WriterContext): string {
     `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
     `<pic:nvPicPr><pic:cNvPr id="${id}" name="Image ${id}"${image.altText ? ` descr="${escapeAttribute(image.altText)}"` : ""}/><pic:cNvPicPr/></pic:nvPicPr>` +
     `<pic:blipFill><a:blip r:embed="${relationshipId}"/>${crop}</pic:blipFill>` +
-    `<pic:spPr><a:xfrm${rotation}><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
+    `<pic:spPr><a:xfrm${rotation}><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm>${imageEffectsXml(image.effects)}</pic:spPr>` +
     `</pic:pic></a:graphicData></a:graphic>`;
   const drawing = image.floating
     ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="${image.floating.simplePosition ? "1" : "0"}" relativeHeight="${image.floating.relativeHeight ?? 0}"` +
@@ -1555,6 +1555,48 @@ function imageXml(image: ImageNode, context: WriterContext): string {
   return `<w:p><w:r><w:drawing>` +
     drawing +
     `</w:drawing></w:r></w:p>`;
+}
+
+function imageEffectsXml(effects: ImageNode["effects"]): string {
+  if (!effects?.outerShadow && !effects?.glow) {
+    return "";
+  }
+
+  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageGlowXml(effects.glow)}</a:effectLst>`;
+}
+
+function imageOuterShadowXml(shadow: NonNullable<ImageNode["effects"]>["outerShadow"]): string {
+  if (!shadow) {
+    return "";
+  }
+
+  const attributes = [
+    shadow.blurRadius !== undefined ? ` blurRad="${shadow.blurRadius}"` : "",
+    shadow.distance !== undefined ? ` dist="${shadow.distance}"` : "",
+    shadow.direction !== undefined ? ` dir="${shadow.direction}"` : "",
+    shadow.alignment ? ` algn="${shadow.alignment}"` : "",
+    shadow.rotateWithShape !== undefined ? ` rotWithShape="${shadow.rotateWithShape ? "1" : "0"}"` : "",
+  ].join("");
+
+  return `<a:outerShdw${attributes}>${imageEffectColorXml(shadow.color, shadow.alpha)}</a:outerShdw>`;
+}
+
+function imageGlowXml(glow: NonNullable<ImageNode["effects"]>["glow"]): string {
+  if (!glow) {
+    return "";
+  }
+
+  const radius = glow.radius !== undefined ? ` rad="${glow.radius}"` : "";
+  return `<a:glow${radius}>${imageEffectColorXml(glow.color, glow.alpha)}</a:glow>`;
+}
+
+function imageEffectColorXml(color: string | undefined, alpha: number | undefined): string {
+  if (!color) {
+    return "";
+  }
+
+  const alphaXml = alpha !== undefined ? `<a:alpha val="${alpha}"/>` : "";
+  return `<a:srgbClr val="${escapeAttribute(color)}">${alphaXml}</a:srgbClr>`;
 }
 
 function imageEffectExtentXml(floating: NonNullable<ImageNode["floating"]>): string {

@@ -4996,6 +4996,41 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<a:xfrm rot="900000">');
   });
 
+  it("writes image shadow and glow effects", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          outerShadow: {
+            blurRadius: 40000,
+            distance: 20000,
+            direction: 5400000,
+            alignment: "ctr",
+            rotateWithShape: false,
+            color: "000000",
+            alpha: 45000,
+          },
+          glow: {
+            radius: 63500,
+            color: "4F81BD",
+            alpha: 60000,
+          },
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<a:effectLst><a:outerShdw blurRad="40000" dist="20000" dir="5400000" algn="ctr" rotWithShape="0"><a:srgbClr val="000000"><a:alpha val="45000"/></a:srgbClr></a:outerShdw><a:glow rad="63500"><a:srgbClr val="4F81BD"><a:alpha val="60000"/></a:srgbClr></a:glow></a:effectLst>');
+  });
+
   it("writes floating image layout", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11485,6 +11520,40 @@ describe("DOCX reader", () => {
         width: 120,
         height: 80,
         rotation: 15,
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips image shadow and glow effects", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          outerShadow: {
+            blurRadius: 40000,
+            distance: 20000,
+            direction: 5400000,
+            alignment: "ctr",
+            rotateWithShape: false,
+            color: "000000",
+            alpha: 45000,
+          },
+          glow: {
+            radius: 63500,
+            color: "4F81BD",
+            alpha: 60000,
+          },
+        },
       },
     ]);
 

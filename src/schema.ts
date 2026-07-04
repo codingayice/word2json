@@ -845,7 +845,29 @@ export type ImageNode = {
   altText?: string;
   crop?: ImageCrop;
   rotation?: number;
+  effects?: ImageEffects;
   floating?: ImageFloatingLayout;
+};
+
+export type ImageEffects = {
+  outerShadow?: ImageOuterShadowEffect;
+  glow?: ImageGlowEffect;
+};
+
+export type ImageOuterShadowEffect = {
+  blurRadius?: number;
+  distance?: number;
+  direction?: number;
+  alignment?: "tl" | "t" | "tr" | "l" | "ctr" | "r" | "bl" | "b" | "br";
+  rotateWithShape?: boolean;
+  color?: string;
+  alpha?: number;
+};
+
+export type ImageGlowEffect = {
+  radius?: number;
+  color?: string;
+  alpha?: number;
 };
 
 export type ImageCrop = {

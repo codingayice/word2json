@@ -1460,6 +1460,7 @@ function parseImageBlock(value: unknown, media: MediaMap, xml?: string): ImageNo
   const relationshipId = parseImageRelationshipId(container);
   const crop = parseImageCrop(container);
   const rotation = parseImageRotation(container);
+  const effects = parseImageEffects(container);
   const simplePosition = parseImageSimplePositionXml(xml);
   const floating = parseImageFloating(drawing, simplePosition);
   const image = relationshipId ? media[relationshipId] : undefined;
@@ -1473,6 +1474,7 @@ function parseImageBlock(value: unknown, media: MediaMap, xml?: string): ImageNo
     ...(typeof docPr.descr === "string" ? { altText: docPr.descr } : {}),
     ...(crop ? { crop } : {}),
     ...(rotation !== undefined ? { rotation } : {}),
+    ...(effects ? { effects } : {}),
     ...(floating ? { floating } : {}),
   };
 }
@@ -1627,6 +1629,68 @@ function parseImageRotation(inline: XmlNode): number | undefined {
   const transform = asObject(shapeProperties.xfrm);
 
   return transform.rot !== undefined ? parseNumber(transform.rot) / 60000 : undefined;
+}
+
+function parseImageEffects(inline: XmlNode): ImageNode["effects"] | undefined {
+  const graphic = asObject(inline.graphic);
+  const graphicData = asObject(graphic.graphicData);
+  const picture = asObject(graphicData.pic);
+  const shapeProperties = asObject(picture.spPr);
+  const effects = asObject(shapeProperties.effectLst);
+  const parsed = {
+    ...parseImageOuterShadow(effects.outerShdw),
+    ...parseImageGlow(effects.glow),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseImageOuterShadow(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "outerShadow"> | {} {
+  const shadow = asObject(value);
+  if (Object.keys(shadow).length === 0) {
+    return {};
+  }
+
+  return {
+    outerShadow: {
+      ...(shadow.blurRad !== undefined ? { blurRadius: parseNumber(shadow.blurRad) } : {}),
+      ...(shadow.dist !== undefined ? { distance: parseNumber(shadow.dist) } : {}),
+      ...(shadow.dir !== undefined ? { direction: parseNumber(shadow.dir) } : {}),
+      ...(parseImageEffectAlignment(shadow.algn) ? { alignment: parseImageEffectAlignment(shadow.algn) } : {}),
+      ...(shadow.rotWithShape !== undefined ? { rotateWithShape: parseOnOff(shadow.rotWithShape) } : {}),
+      ...parseImageEffectColor(shadow.srgbClr),
+    },
+  };
+}
+
+function parseImageGlow(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "glow"> | {} {
+  const glow = asObject(value);
+  if (Object.keys(glow).length === 0) {
+    return {};
+  }
+
+  return {
+    glow: {
+      ...(glow.rad !== undefined ? { radius: parseNumber(glow.rad) } : {}),
+      ...parseImageEffectColor(glow.srgbClr),
+    },
+  };
+}
+
+function parseImageEffectColor(value: unknown): Pick<NonNullable<NonNullable<ImageNode["effects"]>["glow"]>, "color" | "alpha"> {
+  const color = asObject(value);
+  const alpha = asObject(color.alpha);
+
+  return {
+    ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...(alpha.val !== undefined ? { alpha: parseNumber(alpha.val) } : {}),
+  };
+}
+
+function parseImageEffectAlignment(value: unknown): NonNullable<NonNullable<NonNullable<ImageNode["effects"]>["outerShadow"]>["alignment"]> | undefined {
+  return value === "tl" || value === "t" || value === "tr" || value === "l" || value === "ctr" || value === "r" || value === "bl" || value === "b" || value === "br"
+    ? value
+    : undefined;
 }
 
 function parseImageCrop(inline: XmlNode): ImageNode["crop"] | undefined {
