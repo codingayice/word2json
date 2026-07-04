@@ -374,6 +374,7 @@ export type SectionNode = {
   endnoteProperties?: SectionNoteProperties;
   documentGrid?: SectionDocumentGrid;
   verticalAlignment?: SectionVerticalAlignment;
+  mirrorMargins?: boolean;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;

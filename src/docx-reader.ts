@@ -1024,6 +1024,7 @@ async function parseSections(
     const endnoteProperties = parseNoteProperties(body.sectPr, "endnotePr");
     const documentGrid = parseDocumentGrid(body.sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(body.sectPr);
+    const mirrorMargins = parseMirrorMargins(body.sectPr);
     return [{
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
@@ -1032,6 +1033,7 @@ async function parseSections(
       ...(endnoteProperties ? { endnoteProperties } : {}),
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
+      ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
@@ -1049,6 +1051,7 @@ async function parseSections(
     const endnoteProperties = parseNoteProperties(sectPr, "endnotePr");
     const documentGrid = parseDocumentGrid(sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(sectPr);
+    const mirrorMargins = parseMirrorMargins(sectPr);
 
     return {
       ...(breakType ? { breakType } : {}),
@@ -1059,6 +1062,7 @@ async function parseSections(
       ...(endnoteProperties ? { endnoteProperties } : {}),
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
+      ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
       blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1641,6 +1645,10 @@ function parseSectionVerticalAlignment(sectionPropertiesValue: unknown): Section
   return typeof verticalAlignment.val === "string"
     ? verticalAlignment.val as NonNullable<SectionNode["verticalAlignment"]>
     : undefined;
+}
+
+function parseMirrorMargins(sectionPropertiesValue: unknown): boolean | undefined {
+  return asObject(sectionPropertiesValue).mirrorMargins !== undefined ? true : undefined;
 }
 
 function parseColumns(sectionPropertiesValue: unknown): import("./schema.js").ColumnSettings | undefined {

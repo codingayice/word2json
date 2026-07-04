@@ -345,6 +345,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const verticalAlignment = section.verticalAlignment
     ? `<w:vAlign w:val="${section.verticalAlignment}"/>`
     : "";
+  const mirrorMargins = section.mirrorMargins ? "<w:mirrorMargins/>" : "";
   const columns = section.columns
     ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
     : "";
@@ -363,6 +364,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     columns +
     documentGrid +
     verticalAlignment +
+    mirrorMargins +
     `</w:sectPr>`;
 }
 
