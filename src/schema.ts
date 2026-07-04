@@ -397,9 +397,13 @@ export type TableConditionalStyle = {
 };
 
 export type TableConditionalCellStyle = {
+  width?: number;
+  widthType?: "auto" | "dxa" | "nil" | "pct";
   shading?: TableCellShading;
   borders?: TableCellBorders;
   margins?: TableCellMargins;
+  verticalAlignment?: "top" | "center" | "bottom";
+  textDirection?: "lrTb" | "tbRl" | "btLr";
 };
 
 export type TableConditionalStyleType =

@@ -1018,13 +1018,21 @@ function parseTableConditionalStyle(value: unknown): NonNullable<NonNullable<Tab
 
 function parseTableConditionalCellStyle(value: unknown): NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]> | undefined {
   const properties = asObject(value);
+  const width = asObject(properties.tcW);
+  const widthType = parseTableWidthType(width.type);
+  const verticalAlignment = asObject(properties.vAlign);
   const borders = parseTableCellBorders(properties.tcBorders);
   const shading = parseShading(properties.shd);
   const margins = parseTableCellMargins(properties.tcMar);
+  const textDirection = asObject(properties.textDirection);
   const parsed = {
+    ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
+    ...(widthType && widthType !== "dxa" ? { widthType } : {}),
     ...(borders ? { borders } : {}),
     ...(shading ? { shading } : {}),
     ...(margins ? { margins } : {}),
+    ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]>["textDirection"] } : {}),
+    ...(typeof verticalAlignment.val === "string" ? { verticalAlignment: verticalAlignment.val as NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]>["verticalAlignment"] } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;

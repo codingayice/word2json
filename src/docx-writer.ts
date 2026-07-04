@@ -2256,9 +2256,12 @@ function tableConditionalCellStyleXml(cell: TableConditionalStyle["cell"]): stri
   }
 
   const properties = [
+    cell.width !== undefined ? `<w:tcW w:w="${cell.width}" w:type="${cell.widthType ?? "dxa"}"/>` : "",
     cell.borders ? tableCellBordersXml(cell.borders) : "",
     cell.shading ? shadingXml(cell.shading) : "",
     cell.margins ? tableCellMarginsXml(cell.margins) : "",
+    cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
+    cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
   ].join("");
 
   return properties ? `<w:tcPr>${properties}</w:tcPr>` : "";

@@ -6992,6 +6992,40 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:tblStylePr w:type="band1Horz"><w:pPr><w:jc w:val="center"/><w:spacing w:after="80"/></w:pPr><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="8" w:color="70AD47"/><w:bottom w:val="dashed" w:sz="6" w:space="1" w:color="C00000"/></w:tcBorders><w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="240" w:type="pct"/><w:bottom w:w="0" w:type="nil"/><w:left w:w="180" w:type="dxa"/></w:tcMar></w:tcPr></w:tblStylePr>');
   });
 
+  it("writes table conditional cell layout properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "VerticalBandTable",
+            name: "Vertical Band Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "lastCol" as const,
+                  cell: {
+                    width: 1800,
+                    widthType: "dxa" as const,
+                    verticalAlignment: "bottom" as const,
+                    textDirection: "tbRl" as const,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:tblStylePr w:type="lastCol"><w:tcPr><w:tcW w:w="1800" w:type="dxa"/><w:textDirection w:val="tbRl"/><w:vAlign w:val="bottom"/></w:tcPr></w:tblStylePr>');
+  });
+
   it("writes theme part", async () => {
     const document = {
       version: "1.0" as const,
@@ -13772,6 +13806,39 @@ describe("DOCX reader", () => {
                       bottom: { width: 0, type: "nil" as const },
                       left: 180,
                     },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table conditional cell layout properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "VerticalBandTable",
+            name: "Vertical Band Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "lastCol" as const,
+                  cell: {
+                    width: 1800,
+                    widthType: "pct" as const,
+                    verticalAlignment: "bottom" as const,
+                    textDirection: "tbRl" as const,
                   },
                 },
               ],
