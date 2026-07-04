@@ -752,10 +752,16 @@ function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNod
   const keepNext = parsePaginationToggle(properties.keepNext);
   const keepLines = parsePaginationToggle(properties.keepLines);
   const pageBreakBefore = parsePaginationToggle(properties.pageBreakBefore);
+  const widowControl = parsePaginationToggle(properties.widowControl);
+  const suppressLineNumbers = parsePaginationToggle(properties.suppressLineNumbers);
+  const suppressAutoHyphens = parsePaginationToggle(properties.suppressAutoHyphens);
   const pagination = {
     ...(keepNext !== undefined ? { keepNext } : {}),
     ...(keepLines !== undefined ? { keepLines } : {}),
     ...(pageBreakBefore !== undefined ? { pageBreakBefore } : {}),
+    ...(widowControl !== undefined ? { widowControl } : {}),
+    ...(suppressLineNumbers !== undefined ? { suppressLineNumbers } : {}),
+    ...(suppressAutoHyphens !== undefined ? { suppressAutoHyphens } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;
@@ -1587,10 +1593,16 @@ function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | und
   const keepNext = parsePaginationToggle(properties.keepNext);
   const keepLines = parsePaginationToggle(properties.keepLines);
   const pageBreakBefore = parsePaginationToggle(properties.pageBreakBefore);
+  const widowControl = parsePaginationToggle(properties.widowControl);
+  const suppressLineNumbers = parsePaginationToggle(properties.suppressLineNumbers);
+  const suppressAutoHyphens = parsePaginationToggle(properties.suppressAutoHyphens);
   const pagination = {
     ...(keepNext !== undefined ? { keepNext } : {}),
     ...(keepLines !== undefined ? { keepLines } : {}),
     ...(pageBreakBefore !== undefined ? { pageBreakBefore } : {}),
+    ...(widowControl !== undefined ? { widowControl } : {}),
+    ...(suppressLineNumbers !== undefined ? { suppressLineNumbers } : {}),
+    ...(suppressAutoHyphens !== undefined ? { suppressAutoHyphens } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;

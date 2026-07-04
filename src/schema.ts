@@ -420,6 +420,9 @@ export type ParagraphPagination = {
   keepNext?: boolean;
   keepLines?: boolean;
   pageBreakBefore?: boolean;
+  widowControl?: boolean;
+  suppressLineNumbers?: boolean;
+  suppressAutoHyphens?: boolean;
 };
 
 export type ListSettings = {

@@ -4642,6 +4642,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:pageBreakBefore w:val="0"/>');
   });
 
+  it("writes extra paragraph pagination toggles", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        pagination: { widowControl: true, suppressLineNumbers: true, suppressAutoHyphens: false },
+        runs: [{ text: "Controlled typography" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:widowControl/>");
+    expect(xml).toContain("<w:suppressLineNumbers/>");
+    expect(xml).toContain('<w:suppressAutoHyphens w:val="0"/>');
+  });
+
   it("writes paragraph spacing", async () => {
     const document = createDocumentJson([
       {
@@ -4992,6 +5010,28 @@ describe("DOCX writer", () => {
     const styles = await zip.file("word/styles.xml")!.async("string");
 
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="LooseHeading"><w:name w:val="Loose Heading"/><w:pPr><w:keepNext w:val="0"/><w:keepLines w:val="0"/><w:pageBreakBefore w:val="0"/></w:pPr></w:style>');
+  });
+
+  it("writes extra paragraph style pagination toggles", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "ControlledBody",
+          name: "Controlled Body",
+          paragraph: {
+            pagination: { widowControl: false, suppressLineNumbers: true, suppressAutoHyphens: true },
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "ControlledBody", runs: [{ text: "Body" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ControlledBody"><w:name w:val="Controlled Body"/><w:pPr><w:widowControl w:val="0"/><w:suppressLineNumbers/><w:suppressAutoHyphens/></w:pPr></w:style>');
   });
 
   it("writes paragraph style borders and shading", async () => {
@@ -9856,6 +9896,34 @@ describe("DOCX reader", () => {
           styleId: "LooseHeading",
           pagination: { keepNext: false, keepLines: false, pageBreakBefore: false },
           runs: [{ text: "Loose paragraph" }],
+        }],
+      }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips extra paragraph pagination toggles", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "ControlledBody",
+          name: "Controlled Body",
+          paragraph: {
+            pagination: { widowControl: false, suppressLineNumbers: true, suppressAutoHyphens: true },
+          },
+        }],
+      },
+      sections: [{
+        blocks: [{
+          type: "paragraph" as const,
+          styleId: "ControlledBody",
+          pagination: { widowControl: true, suppressLineNumbers: true, suppressAutoHyphens: false },
+          runs: [{ text: "Controlled typography" }],
         }],
       }],
     };

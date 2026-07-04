@@ -636,6 +636,9 @@ function paragraphPaginationXml(pagination?: ParagraphNode["pagination"]): strin
       paragraphPaginationToggleXml("keepNext", pagination.keepNext),
       paragraphPaginationToggleXml("keepLines", pagination.keepLines),
       paragraphPaginationToggleXml("pageBreakBefore", pagination.pageBreakBefore),
+      paragraphPaginationToggleXml("widowControl", pagination.widowControl),
+      paragraphPaginationToggleXml("suppressLineNumbers", pagination.suppressLineNumbers),
+      paragraphPaginationToggleXml("suppressAutoHyphens", pagination.suppressAutoHyphens),
     ].join("")
     : "";
 }
