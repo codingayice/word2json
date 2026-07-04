@@ -1085,6 +1085,7 @@ function runPropertiesXml(run: TextRun): string {
     run.specVanish !== undefined ? (run.specVanish ? "<w:specVanish/>" : '<w:specVanish w:val="0"/>') : "",
     run.hidden !== undefined ? (run.hidden ? "<w:vanish/>" : '<w:vanish w:val="0"/>') : "",
     run.webHidden !== undefined ? (run.webHidden ? "<w:webHidden/>" : '<w:webHidden w:val="0"/>') : "",
+    run.snapToGrid !== undefined ? (run.snapToGrid ? "<w:snapToGrid/>" : '<w:snapToGrid w:val="0"/>') : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",

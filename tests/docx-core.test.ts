@@ -484,6 +484,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:em w:val="none"/></w:rPr><w:t>Plain</w:t>');
   });
 
+  it("writes text run snap to grid on", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Grid", snapToGrid: true }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:rPr><w:snapToGrid/></w:rPr><w:t>Grid</w:t>");
+  });
+
+  it("writes text run snap to grid off", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Free", snapToGrid: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:snapToGrid w:val="0"/></w:rPr><w:t>Free</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5408,6 +5438,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Plain", emphasis: "none" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run snap to grid on", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Grid", snapToGrid: true }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run snap to grid off", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Free", snapToGrid: false }],
       },
     ]);
 
