@@ -787,6 +787,7 @@ function mathNodeXml(node: MathNode): string {
       node.rowSpacing !== undefined ? `<m:rSp m:val="${node.rowSpacing}"/>` : "",
       node.rowSpacingRule !== undefined ? `<m:rSpRule m:val="${node.rowSpacingRule}"/>` : "",
       node.objectDistribution !== undefined ? `<m:objDist m:val="${node.objectDistribution ? "1" : "0"}"/>` : "",
+      node.maxDistribution !== undefined ? `<m:maxDist m:val="${node.maxDistribution ? "1" : "0"}"/>` : "",
       properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:eqArr>${equationArrayProperties ? `<m:eqArrPr>${equationArrayProperties}</m:eqArrPr>` : ""}${node.rows.map((row) => `<m:e>${row.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:eqArr>`;
