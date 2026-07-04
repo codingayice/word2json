@@ -424,6 +424,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:webHidden w:val="0"/></w:rPr><w:t>Visible</w:t>');
   });
 
+  it("writes text run fit text with id", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Fit", fitText: { width: 1440, id: 7 } }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:fitText w:val="1440" w:id="7"/></w:rPr><w:t>Fit</w:t>');
+  });
+
+  it("writes text run fit text without id", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Fit", fitText: { width: 720 } }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:fitText w:val="720"/></w:rPr><w:t>Fit</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5292,6 +5322,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Visible", webHidden: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run fit text with id", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Fit", fitText: { width: 1440, id: 7 } }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run fit text without id", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Fit", fitText: { width: 720 } }],
       },
     ]);
 

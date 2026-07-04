@@ -1088,6 +1088,7 @@ function runPropertiesXml(run: TextRun): string {
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
+    run.fitText ? `<w:fitText w:val="${run.fitText.width}"${run.fitText.id !== undefined ? ` w:id="${run.fitText.id}"` : ""}/>` : "",
     run.border ? borderSideXml("bdr", run.border) : "",
   ].join("");
 

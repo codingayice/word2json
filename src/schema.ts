@@ -272,12 +272,18 @@ export type StyleRunProperties = {
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
+  fitText?: RunFitText;
   border?: BorderDefinition;
 };
 
 export type HighlightColor = "yellow" | "green" | "cyan" | "magenta" | "blue" | "red" | "darkBlue" | "darkCyan" | "darkGreen" | "darkMagenta" | "darkRed" | "darkYellow" | "darkGray" | "lightGray" | "black";
 
 export type RunVerticalAlign = "superscript" | "subscript" | "baseline";
+
+export type RunFitText = {
+  width: number;
+  id?: number;
+};
 
 export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
