@@ -1109,6 +1109,9 @@ function runFontsXml(run: TextRun): string {
     run.fontFamily ? ` w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"` : "",
     run.eastAsiaFontFamily ? ` w:eastAsia="${escapeAttribute(run.eastAsiaFontFamily)}"` : "",
     run.complexScriptFontFamily ? ` w:cs="${escapeAttribute(run.complexScriptFontFamily)}"` : "",
+    run.fontTheme ? ` w:asciiTheme="${escapeAttribute(run.fontTheme)}" w:hAnsiTheme="${escapeAttribute(run.fontTheme)}"` : "",
+    run.eastAsiaFontTheme ? ` w:eastAsiaTheme="${escapeAttribute(run.eastAsiaFontTheme)}"` : "",
+    run.complexScriptFontTheme ? ` w:cstheme="${escapeAttribute(run.complexScriptFontTheme)}"` : "",
     run.fontHint ? ` w:hint="${run.fontHint}"` : "",
   ].join("");
 

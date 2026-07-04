@@ -255,6 +255,9 @@ export type StyleRunProperties = {
   fontFamily?: string;
   eastAsiaFontFamily?: string;
   complexScriptFontFamily?: string;
+  fontTheme?: string;
+  eastAsiaFontTheme?: string;
+  complexScriptFontTheme?: string;
   fontHint?: RunFontHint;
   fontSize?: number;
   complexScriptFontSize?: number;

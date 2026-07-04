@@ -784,6 +784,45 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="SimSun" w:cs="Arial" w:hint="cs"/></w:rPr><w:t>Mixed</w:t>');
   });
 
+  it("writes text run theme fonts", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Theme", fontTheme: "minorHAnsi", eastAsiaFontTheme: "minorEastAsia", complexScriptFontTheme: "minorBidi" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:rFonts w:asciiTheme="minorHAnsi" w:hAnsiTheme="minorHAnsi" w:eastAsiaTheme="minorEastAsia" w:cstheme="minorBidi"/></w:rPr><w:t>Theme</w:t>');
+  });
+
+  it("writes text run theme fonts with direct fonts and hint", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{
+          text: "Mixed",
+          fontFamily: "Aptos",
+          eastAsiaFontFamily: "SimSun",
+          complexScriptFontFamily: "Arial",
+          fontTheme: "majorHAnsi",
+          eastAsiaFontTheme: "majorEastAsia",
+          complexScriptFontTheme: "majorBidi",
+          fontHint: "eastAsia",
+        }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="SimSun" w:cs="Arial" w:asciiTheme="majorHAnsi" w:hAnsiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:cstheme="majorBidi" w:hint="eastAsia"/></w:rPr><w:t>Mixed</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5988,6 +6027,43 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Mixed", fontFamily: "Aptos", eastAsiaFontFamily: "SimSun", complexScriptFontFamily: "Arial", fontHint: "cs" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run theme fonts", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Theme", fontTheme: "minorHAnsi", eastAsiaFontTheme: "minorEastAsia", complexScriptFontTheme: "minorBidi" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run theme fonts with direct fonts and hint", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{
+          text: "Mixed",
+          fontFamily: "Aptos",
+          eastAsiaFontFamily: "SimSun",
+          complexScriptFontFamily: "Arial",
+          fontTheme: "majorHAnsi",
+          eastAsiaFontTheme: "majorEastAsia",
+          complexScriptFontTheme: "majorBidi",
+          fontHint: "eastAsia",
+        }],
       },
     ]);
 
