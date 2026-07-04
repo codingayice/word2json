@@ -339,6 +339,8 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     : "";
   const pageNumbering = pageNumberingXml(section.pageNumbering);
   const lineNumbering = lineNumberingXml(section.lineNumbering);
+  const footnoteProperties = notePropertiesXml("footnotePr", section.footnoteProperties);
+  const endnoteProperties = notePropertiesXml("endnotePr", section.endnoteProperties);
   const columns = section.columns
     ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
     : "";
@@ -352,6 +354,8 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
     pageNumbering +
     lineNumbering +
+    footnoteProperties +
+    endnoteProperties +
     columns +
     `</w:sectPr>`;
 }
@@ -384,6 +388,21 @@ function lineNumberingXml(lineNumbering?: SectionNode["lineNumbering"]): string 
   ].join("");
 
   return attributes ? `<w:lnNumType${attributes}/>` : "";
+}
+
+function notePropertiesXml(root: "footnotePr" | "endnotePr", properties?: SectionNode["footnoteProperties"]): string {
+  if (!properties) {
+    return "";
+  }
+
+  const children = [
+    properties.position ? `<w:pos w:val="${properties.position}"/>` : "",
+    properties.numbering?.format ? `<w:numFmt w:val="${properties.numbering.format}"/>` : "",
+    properties.numbering?.start !== undefined ? `<w:numStart w:val="${properties.numbering.start}"/>` : "",
+    properties.numbering?.restart ? `<w:numRestart w:val="${properties.numbering.restart}"/>` : "",
+  ].join("");
+
+  return children ? `<w:${root}>${children}</w:${root}>` : "";
 }
 
 function sectionBreakValue(value: SectionNode["breakType"]): string {

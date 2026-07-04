@@ -4830,6 +4830,32 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:lnNumType w:start="5" w:countBy="2" w:distance="360" w:restart="newPage"/>');
   });
 
+  it("writes section footnote and endnote properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          footnoteProperties: {
+            position: "beneathText" as const,
+            numbering: { format: "lowerRoman" as const, start: 2, restart: "eachSect" as const },
+          },
+          endnoteProperties: {
+            position: "sectEnd" as const,
+            numbering: { format: "upperRoman" as const, start: 4, restart: "continuous" as const },
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Notes" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:footnotePr><w:pos w:val="beneathText"/><w:numFmt w:val="lowerRoman"/><w:numStart w:val="2"/><w:numRestart w:val="eachSect"/></w:footnotePr>');
+    expect(xml).toContain('<w:endnotePr><w:pos w:val="sectEnd"/><w:numFmt w:val="upperRoman"/><w:numStart w:val="4"/><w:numRestart w:val="continuous"/></w:endnotePr>');
+  });
+
   it("writes section columns", async () => {
     const document = {
       version: "1.0" as const,
@@ -10498,6 +10524,30 @@ describe("DOCX reader", () => {
             restart: "newPage" as const,
           },
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Draft" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section footnote and endnote properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          footnoteProperties: {
+            position: "beneathText" as const,
+            numbering: { format: "lowerRoman" as const, start: 2, restart: "eachSect" as const },
+          },
+          endnoteProperties: {
+            position: "sectEnd" as const,
+            numbering: { format: "upperRoman" as const, start: 4, restart: "continuous" as const },
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Notes" }] }],
         },
       ],
     };

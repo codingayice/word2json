@@ -370,6 +370,8 @@ export type SectionNode = {
   page?: PageSettings;
   pageNumbering?: SectionPageNumbering;
   lineNumbering?: SectionLineNumbering;
+  footnoteProperties?: SectionNoteProperties;
+  endnoteProperties?: SectionNoteProperties;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;
@@ -381,6 +383,15 @@ export type SectionBreakType = "nextPage" | "continuous" | "evenPage" | "oddPage
 export type ColumnSettings = {
   count: number;
   space?: number;
+};
+
+export type SectionNoteProperties = {
+  position?: "pageBottom" | "beneathText" | "sectEnd" | "docEnd";
+  numbering?: {
+    format?: NumberingFormat;
+    start?: number;
+    restart?: "continuous" | "eachSect" | "eachPage";
+  };
 };
 
 export type HeaderFooterContent = {

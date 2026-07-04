@@ -1020,10 +1020,14 @@ async function parseSections(
     const headerFooter = await parseHeaderFooterContent(zip, body.sectPr, relationships, comments);
     const pageNumbering = parsePageNumbering(body.sectPr);
     const lineNumbering = parseLineNumbering(body.sectPr);
+    const footnoteProperties = parseNoteProperties(body.sectPr, "footnotePr");
+    const endnoteProperties = parseNoteProperties(body.sectPr, "endnotePr");
     return [{
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
       ...(lineNumbering ? { lineNumbering } : {}),
+      ...(footnoteProperties ? { footnoteProperties } : {}),
+      ...(endnoteProperties ? { endnoteProperties } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
@@ -1037,12 +1041,16 @@ async function parseSections(
     const columns = parseColumns(sectPr);
     const pageNumbering = parsePageNumbering(sectPr);
     const lineNumbering = parseLineNumbering(sectPr);
+    const footnoteProperties = parseNoteProperties(sectPr, "footnotePr");
+    const endnoteProperties = parseNoteProperties(sectPr, "endnotePr");
 
     return {
       ...(breakType ? { breakType } : {}),
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
       ...(lineNumbering ? { lineNumbering } : {}),
+      ...(footnoteProperties ? { footnoteProperties } : {}),
+      ...(endnoteProperties ? { endnoteProperties } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
       blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1584,6 +1592,25 @@ function parseLineNumbering(sectionPropertiesValue: unknown): SectionNode["lineN
     ...(lineNumbering.countBy !== undefined ? { countBy: parseNumber(lineNumbering.countBy) } : {}),
     ...(lineNumbering.distance !== undefined ? { distance: parseNumber(lineNumbering.distance) } : {}),
     ...(typeof lineNumbering.restart === "string" ? { restart: lineNumbering.restart as NonNullable<SectionNode["lineNumbering"]>["restart"] } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseNoteProperties(sectionPropertiesValue: unknown, key: "footnotePr" | "endnotePr"): SectionNode["footnoteProperties"] | undefined {
+  const properties = asObject(asObject(sectionPropertiesValue)[key]);
+  const position = asObject(properties.pos);
+  const format = asObject(properties.numFmt);
+  const start = asObject(properties.numStart);
+  const restart = asObject(properties.numRestart);
+  const numbering = {
+    ...(typeof format.val === "string" ? { format: format.val as NonNullable<NonNullable<SectionNode["footnoteProperties"]>["numbering"]>["format"] } : {}),
+    ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
+    ...(typeof restart.val === "string" ? { restart: restart.val as NonNullable<NonNullable<SectionNode["footnoteProperties"]>["numbering"]>["restart"] } : {}),
+  };
+  const parsed = {
+    ...(typeof position.val === "string" ? { position: position.val as NonNullable<SectionNode["footnoteProperties"]>["position"] } : {}),
+    ...(Object.keys(numbering).length > 0 ? { numbering } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
