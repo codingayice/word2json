@@ -263,7 +263,7 @@ git diff --check
 
 Expected: exit code 0.
 
-- [ ] **Step 5: Commit implementation**
+- [x] **Step 5: Commit implementation**
 
 Run:
 
@@ -272,7 +272,7 @@ git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test
 git commit -m "feat: add phase 65 s pre control properties"
 ```
 
-- [ ] **Step 6: Push implementation branch**
+- [x] **Step 6: Push implementation branch**
 
 Run:
 
@@ -280,7 +280,7 @@ Run:
 git push -u origin phase-65-s-pre-control-properties
 ```
 
-- [ ] **Step 7: Mark this plan pushed and commit docs**
+- [x] **Step 7: Mark this plan pushed and commit docs**
 
 Update this plan with the pushed branch name and implementation commit hash, then run:
 
@@ -306,3 +306,9 @@ git push
 - Full suite: `npm test` passed 222 tests.
 - Build: `npm run build` exited 0.
 - Diff check: `git diff --check` exited 0 with LF-to-CRLF warnings only.
+
+### Push Record
+
+- Branch: `phase-65-s-pre-control-properties`
+- Implementation commit: `0c131d3 feat: add phase 65 s pre control properties`
+- Remote: `origin/phase-65-s-pre-control-properties`
