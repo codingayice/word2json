@@ -255,6 +255,7 @@ export type StyleRunProperties = {
   fontFamily?: string;
   eastAsiaFontFamily?: string;
   complexScriptFontFamily?: string;
+  fontHint?: RunFontHint;
   fontSize?: number;
   complexScriptFontSize?: number;
   color?: string;
@@ -289,6 +290,8 @@ export type StyleRunProperties = {
 export type HighlightColor = "yellow" | "green" | "cyan" | "magenta" | "blue" | "red" | "darkBlue" | "darkCyan" | "darkGreen" | "darkMagenta" | "darkRed" | "darkYellow" | "darkGray" | "lightGray" | "black";
 
 export type RunVerticalAlign = "superscript" | "subscript" | "baseline";
+
+export type RunFontHint = "default" | "eastAsia" | "cs";
 
 export type RunFitText = {
   width: number;

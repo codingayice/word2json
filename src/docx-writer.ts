@@ -1109,6 +1109,7 @@ function runFontsXml(run: TextRun): string {
     run.fontFamily ? ` w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"` : "",
     run.eastAsiaFontFamily ? ` w:eastAsia="${escapeAttribute(run.eastAsiaFontFamily)}"` : "",
     run.complexScriptFontFamily ? ` w:cs="${escapeAttribute(run.complexScriptFontFamily)}"` : "",
+    run.fontHint ? ` w:hint="${run.fontHint}"` : "",
   ].join("");
 
   return attributes ? `<w:rFonts${attributes}/>` : "";
