@@ -1784,8 +1784,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.limUpp)
       .map((limitUpper) => {
         const limitNode = asObject(limitUpper);
+        const controlProperties = parseMathControlProperties(asObject(asObject(limitNode.limUppPr).ctrlPr).rPr);
         return {
           type: "limitUpper" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           base: parseMathNodes(asObject(limitNode.e)),
           limit: parseMathNodes(asObject(limitNode.lim)),
         };

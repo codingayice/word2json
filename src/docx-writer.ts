@@ -760,7 +760,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "limitUpper") {
-    return `<m:limUpp><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:lim>${node.limit.map((child) => mathNodeXml(child)).join("")}</m:lim></m:limUpp>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:limUpp>${properties ? `<m:limUppPr><m:ctrlPr>${properties}</m:ctrlPr></m:limUppPr>` : ""}<m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:lim>${node.limit.map((child) => mathNodeXml(child)).join("")}</m:lim></m:limUpp>`;
   }
 
   if (node.type === "equationArray") {

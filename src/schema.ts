@@ -432,7 +432,7 @@ export type MathNode =
   | { type: "bar"; controlProperties?: MathControlProperties; position: "top" | "bottom"; content: MathNode[] }
   | { type: "function"; controlProperties?: MathControlProperties; name: MathNode[]; argument: MathNode[] }
   | { type: "limitLower"; controlProperties?: MathControlProperties; base: MathNode[]; limit: MathNode[] }
-  | { type: "limitUpper"; base: MathNode[]; limit: MathNode[] }
+  | { type: "limitUpper"; controlProperties?: MathControlProperties; base: MathNode[]; limit: MathNode[] }
   | { type: "equationArray"; rows: MathNode[][] }
   | { type: "box"; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
   | { type: "borderBox"; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
