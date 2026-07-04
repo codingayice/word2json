@@ -718,8 +718,14 @@ export type TableNode = {
   borders?: "single";
   alignment?: ParagraphAlignment;
   cellSpacing?: number;
+  indent?: TableIndent;
   propertyRevision?: ParagraphPropertyRevision;
   rows: TableRowNode[];
+};
+
+export type TableIndent = {
+  width: number;
+  type?: "dxa" | "nil" | "pct";
 };
 
 export type TableLook = {

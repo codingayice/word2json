@@ -3052,6 +3052,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const borders = asObject(properties.tblBorders);
   const alignment = asObject(properties.jc);
   const cellSpacing = asObject(properties.tblCellSpacing);
+  const indent = parseTableIndent(properties.tblInd);
   const layout = parseTableLayout(properties.tblLayout);
   const look = parseTableLook(properties.tblLook);
   const widthType = parseTableWidthType(width.type);
@@ -3067,6 +3068,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+    ...(indent ? { indent } : {}),
     ...(layout ? { layout } : {}),
     ...(look ? { look } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
@@ -3086,6 +3088,19 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
         cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes, numberingContext)),
       };
     }),
+  };
+}
+
+function parseTableIndent(value: unknown): TableNode["indent"] | undefined {
+  const indent = asObject(value);
+  if (indent.w === undefined) {
+    return undefined;
+  }
+
+  const type = indent.type === "dxa" || indent.type === "nil" || indent.type === "pct" ? indent.type : undefined;
+  return {
+    width: parseNumber(indent.w),
+    ...(type && type !== "dxa" ? { type } : {}),
   };
 }
 
