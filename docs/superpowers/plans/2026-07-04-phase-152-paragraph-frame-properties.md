@@ -259,20 +259,20 @@ git diff --check
 
 Expected: Targeted tests, full tests, and build pass. `git diff --check` may print LF/CRLF warnings but must exit 0.
 
-- [ ] **Step 2: Commit implementation**
+- [x] **Step 2: Commit implementation**
 
 ```bash
 git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test.ts docs/superpowers/plans/2026-07-04-phase-152-paragraph-frame-properties.md
 git commit -m "feat: add phase 152 paragraph frame properties"
 ```
 
-- [ ] **Step 3: Push branch**
+- [x] **Step 3: Push branch**
 
 ```bash
 git push -u origin phase-152-paragraph-frame-properties
 ```
 
-- [ ] **Step 4: Record push metadata**
+- [x] **Step 4: Record push metadata**
 
 Append the pushed commit hash and remote branch to this plan, then commit the plan update:
 
@@ -284,4 +284,8 @@ git push
 
 ## Push Record
 
-- Pending.
+- Branch: `phase-152-paragraph-frame-properties`
+- Remote: `origin`
+- Repository: `https://github.com/codingayice/word2json.git`
+- Implementation commit: `9176ba3e0e60bc27d0dda918f98c1721ec2b0878`
+- Pull request URL: `https://github.com/codingayice/word2json/pull/new/phase-152-paragraph-frame-properties`
