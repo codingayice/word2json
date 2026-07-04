@@ -266,6 +266,7 @@ export type StyleRunProperties = {
   imprint?: boolean;
   rtl?: boolean;
   complexScript?: boolean;
+  specVanish?: boolean;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
