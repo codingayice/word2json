@@ -2038,14 +2038,28 @@ function parseMirrorMargins(sectionPropertiesValue: unknown): boolean | undefine
 
 function parseColumns(sectionPropertiesValue: unknown): import("./schema.js").ColumnSettings | undefined {
   const columns = asObject(asObject(sectionPropertiesValue).cols);
+  const definitions = asArray(columns.col)
+    .map((value) => {
+      const column = asObject(value);
+      const parsed = {
+        ...(column.w !== undefined ? { width: parseNumber(column.w) } : {}),
+        ...(column.space !== undefined ? { space: parseNumber(column.space) } : {}),
+      };
 
-  if (columns.num === undefined) {
+      return Object.keys(parsed).length > 0 ? parsed : undefined;
+    })
+    .filter((value): value is NonNullable<NonNullable<SectionNode["columns"]>["definitions"]>[number] => value !== undefined);
+
+  if (columns.num === undefined && definitions.length === 0) {
     return undefined;
   }
 
   return {
-    count: parseNumber(columns.num),
+    count: columns.num !== undefined ? parseNumber(columns.num) : definitions.length,
     ...(columns.space !== undefined ? { space: parseNumber(columns.space) } : {}),
+    ...(columns.sep !== undefined ? { separator: parseOnOff(columns.sep) } : {}),
+    ...(columns.equalWidth !== undefined ? { equalWidth: parseOnOff(columns.equalWidth) } : {}),
+    ...(definitions.length > 0 ? { definitions } : {}),
   };
 }
 

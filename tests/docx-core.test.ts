@@ -5823,6 +5823,32 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:cols w:num="2" w:space="720"/>');
   });
 
+  it("writes section custom column layout", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          columns: {
+            count: 2,
+            separator: true,
+            equalWidth: false,
+            definitions: [
+              { width: 3200, space: 360 },
+              { width: 4200 },
+            ],
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Custom columns" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:cols w:num="2" w:sep="1" w:equalWidth="0"><w:col w:w="3200" w:space="360"/><w:col w:w="4200"/></w:cols>');
+  });
+
   it("writes paragraph pagination controls", async () => {
     const document = createDocumentJson([
       {
@@ -12411,6 +12437,31 @@ describe("DOCX reader", () => {
         {
           columns: { count: 2, space: 720 },
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Columns" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section custom column layout", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          columns: {
+            count: 2,
+            separator: true,
+            equalWidth: false,
+            definitions: [
+              { width: 3200, space: 360 },
+              { width: 4200 },
+            ],
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Custom columns" }] }],
         },
       ],
     };

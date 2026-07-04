@@ -353,9 +353,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const bidi = section.bidi ? "<w:bidi/>" : "";
   const rtlGutter = section.rtlGutter ? "<w:rtlGutter/>" : "";
   const mirrorMargins = section.mirrorMargins ? "<w:mirrorMargins/>" : "";
-  const columns = section.columns
-    ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
-    : "";
+  const columns = columnsXml(section.columns);
 
   return `<w:sectPr>` +
     headerReference +
@@ -407,6 +405,29 @@ function lineNumberingXml(lineNumbering?: SectionNode["lineNumbering"]): string 
   ].join("");
 
   return attributes ? `<w:lnNumType${attributes}/>` : "";
+}
+
+function columnsXml(columns?: SectionNode["columns"]): string {
+  if (!columns) {
+    return "";
+  }
+
+  const attributes = [
+    ` w:num="${columns.count}"`,
+    columns.space !== undefined ? ` w:space="${columns.space}"` : "",
+    columns.separator !== undefined ? ` w:sep="${columns.separator ? "1" : "0"}"` : "",
+    columns.equalWidth !== undefined ? ` w:equalWidth="${columns.equalWidth ? "1" : "0"}"` : "",
+  ].join("");
+  const definitions = (columns.definitions ?? [])
+    .map((column) => `<w:col` +
+      (column.width !== undefined ? ` w:w="${column.width}"` : "") +
+      (column.space !== undefined ? ` w:space="${column.space}"` : "") +
+      `/>`)
+    .join("");
+
+  return definitions
+    ? `<w:cols${attributes}>${definitions}</w:cols>`
+    : `<w:cols${attributes}/>`;
 }
 
 function notePropertiesXml(root: "footnotePr" | "endnotePr", properties?: SectionNode["footnoteProperties"]): string {

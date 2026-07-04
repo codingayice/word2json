@@ -419,6 +419,14 @@ export type SectionBreakType = "nextPage" | "continuous" | "evenPage" | "oddPage
 export type ColumnSettings = {
   count: number;
   space?: number;
+  separator?: boolean;
+  equalWidth?: boolean;
+  definitions?: ColumnDefinition[];
+};
+
+export type ColumnDefinition = {
+  width?: number;
+  space?: number;
 };
 
 export type SectionNoteProperties = {
