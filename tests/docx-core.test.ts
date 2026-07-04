@@ -5118,6 +5118,34 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<a:effectLst><a:innerShdw blurRad="30000" dist="12000" dir="2700000"><a:srgbClr val="404040"><a:alpha val="35000"/></a:srgbClr></a:innerShdw></a:effectLst>');
   });
 
+  it("writes image preset shadow effect", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          presetShadow: {
+            preset: "shdw18",
+            distance: 20000,
+            direction: 5400000,
+            color: "808080",
+            alpha: 50000,
+          },
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<a:effectLst><a:prstShdw prst="shdw18" dist="20000" dir="5400000"><a:srgbClr val="808080"><a:alpha val="50000"/></a:srgbClr></a:prstShdw></a:effectLst>');
+  });
+
   it("writes floating image layout", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11723,6 +11751,33 @@ describe("DOCX reader", () => {
             direction: 2700000,
             color: "404040",
             alpha: 35000,
+          },
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips image preset shadow effect", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          presetShadow: {
+            preset: "shdw18",
+            distance: 20000,
+            direction: 5400000,
+            color: "808080",
+            alpha: 50000,
           },
         },
       },

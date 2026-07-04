@@ -852,6 +852,7 @@ export type ImageNode = {
 export type ImageEffects = {
   outerShadow?: ImageOuterShadowEffect;
   innerShadow?: ImageInnerShadowEffect;
+  presetShadow?: ImagePresetShadowEffect;
   glow?: ImageGlowEffect;
   softEdge?: ImageSoftEdgeEffect;
   reflection?: ImageReflectionEffect;
@@ -869,6 +870,14 @@ export type ImageOuterShadowEffect = {
 
 export type ImageInnerShadowEffect = {
   blurRadius?: number;
+  distance?: number;
+  direction?: number;
+  color?: string;
+  alpha?: number;
+};
+
+export type ImagePresetShadowEffect = {
+  preset: string;
   distance?: number;
   direction?: number;
   color?: string;

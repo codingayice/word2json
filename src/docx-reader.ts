@@ -1640,6 +1640,7 @@ function parseImageEffects(inline: XmlNode): ImageNode["effects"] | undefined {
   const parsed = {
     ...parseImageOuterShadow(effects.outerShdw),
     ...parseImageInnerShadow(effects.innerShdw),
+    ...parseImagePresetShadow(effects.prstShdw),
     ...parseImageGlow(effects.glow),
     ...parseImageSoftEdge(effects.softEdge),
     ...parseImageReflection(effects.reflection),
@@ -1675,6 +1676,22 @@ function parseImageInnerShadow(value: unknown): Pick<NonNullable<ImageNode["effe
   return {
     innerShadow: {
       ...(shadow.blurRad !== undefined ? { blurRadius: parseNumber(shadow.blurRad) } : {}),
+      ...(shadow.dist !== undefined ? { distance: parseNumber(shadow.dist) } : {}),
+      ...(shadow.dir !== undefined ? { direction: parseNumber(shadow.dir) } : {}),
+      ...parseImageEffectColor(shadow.srgbClr),
+    },
+  };
+}
+
+function parseImagePresetShadow(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "presetShadow"> | {} {
+  const shadow = asObject(value);
+  if (typeof shadow.prst !== "string") {
+    return {};
+  }
+
+  return {
+    presetShadow: {
+      preset: shadow.prst,
       ...(shadow.dist !== undefined ? { distance: parseNumber(shadow.dist) } : {}),
       ...(shadow.dir !== undefined ? { direction: parseNumber(shadow.dir) } : {}),
       ...parseImageEffectColor(shadow.srgbClr),
