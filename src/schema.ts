@@ -856,6 +856,7 @@ export type ImageEffects = {
   glow?: ImageGlowEffect;
   softEdge?: ImageSoftEdgeEffect;
   reflection?: ImageReflectionEffect;
+  shape3d?: ImageShape3dEffect;
 };
 
 export type ImageOuterShadowEffect = {
@@ -909,6 +910,21 @@ export type ImageReflectionEffect = {
   skewY?: number;
   alignment?: "tl" | "t" | "tr" | "l" | "ctr" | "r" | "bl" | "b" | "br";
   rotateWithShape?: boolean;
+};
+
+export type ImageShape3dEffect = {
+  bevelTop?: ImageShape3dBevel;
+  bevelBottom?: ImageShape3dBevel;
+  contourWidth?: number;
+  contourColor?: string;
+  extrusionHeight?: number;
+  extrusionColor?: string;
+};
+
+export type ImageShape3dBevel = {
+  width?: number;
+  height?: number;
+  preset?: string;
 };
 
 export type ImageCrop = {

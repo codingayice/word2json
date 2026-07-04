@@ -5146,6 +5146,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<a:effectLst><a:prstShdw prst="shdw18" dist="20000" dir="5400000"><a:srgbClr val="808080"><a:alpha val="50000"/></a:srgbClr></a:prstShdw></a:effectLst>');
   });
 
+  it("writes image 3d shape effect", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          shape3d: {
+            bevelTop: { width: 50800, height: 25400, preset: "circle" },
+            bevelBottom: { width: 12700, height: 12700, preset: "relaxedInset" },
+            contourWidth: 6350,
+            contourColor: "1F4E79",
+            extrusionHeight: 38100,
+            extrusionColor: "C0504D",
+          },
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<a:sp3d contourW="6350" extrusionH="38100"><a:bevelT w="50800" h="25400" prst="circle"/><a:bevelB w="12700" h="12700" prst="relaxedInset"/><a:contourClr><a:srgbClr val="1F4E79"/></a:contourClr><a:extrusionClr><a:srgbClr val="C0504D"/></a:extrusionClr></a:sp3d>');
+  });
+
   it("writes floating image layout", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11778,6 +11807,34 @@ describe("DOCX reader", () => {
             direction: 5400000,
             color: "808080",
             alpha: 50000,
+          },
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips image 3d shape effect", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          shape3d: {
+            bevelTop: { width: 50800, height: 25400, preset: "circle" },
+            bevelBottom: { width: 12700, height: 12700, preset: "relaxedInset" },
+            contourWidth: 6350,
+            contourColor: "1F4E79",
+            extrusionHeight: 38100,
+            extrusionColor: "C0504D",
           },
         },
       },

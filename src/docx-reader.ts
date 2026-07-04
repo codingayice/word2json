@@ -1644,6 +1644,7 @@ function parseImageEffects(inline: XmlNode): ImageNode["effects"] | undefined {
     ...parseImageGlow(effects.glow),
     ...parseImageSoftEdge(effects.softEdge),
     ...parseImageReflection(effects.reflection),
+    ...parseImageShape3d(shapeProperties.sp3d),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -1744,6 +1745,41 @@ function parseImageReflection(value: unknown): Pick<NonNullable<ImageNode["effec
       ...(reflection.rotWithShape !== undefined ? { rotateWithShape: parseOnOff(reflection.rotWithShape) } : {}),
     },
   };
+}
+
+function parseImageShape3d(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "shape3d"> | {} {
+  const shape3d = asObject(value);
+  if (Object.keys(shape3d).length === 0) {
+    return {};
+  }
+
+  const parsed = {
+    ...(parseImageShape3dBevel(shape3d.bevelT) ? { bevelTop: parseImageShape3dBevel(shape3d.bevelT) } : {}),
+    ...(parseImageShape3dBevel(shape3d.bevelB) ? { bevelBottom: parseImageShape3dBevel(shape3d.bevelB) } : {}),
+    ...(shape3d.contourW !== undefined ? { contourWidth: parseNumber(shape3d.contourW) } : {}),
+    ...(parseImageShape3dColor(shape3d.contourClr) ? { contourColor: parseImageShape3dColor(shape3d.contourClr) } : {}),
+    ...(shape3d.extrusionH !== undefined ? { extrusionHeight: parseNumber(shape3d.extrusionH) } : {}),
+    ...(parseImageShape3dColor(shape3d.extrusionClr) ? { extrusionColor: parseImageShape3dColor(shape3d.extrusionClr) } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? { shape3d: parsed } : {};
+}
+
+function parseImageShape3dBevel(value: unknown): NonNullable<NonNullable<ImageNode["effects"]>["shape3d"]>["bevelTop"] | undefined {
+  const bevel = asObject(value);
+  const parsed = {
+    ...(bevel.w !== undefined ? { width: parseNumber(bevel.w) } : {}),
+    ...(bevel.h !== undefined ? { height: parseNumber(bevel.h) } : {}),
+    ...(typeof bevel.prst === "string" ? { preset: bevel.prst } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseImageShape3dColor(value: unknown): string | undefined {
+  const color = asObject(value);
+  const srgbColor = asObject(color.srgbClr);
+  return typeof srgbColor.val === "string" ? srgbColor.val : undefined;
 }
 
 function parseImageEffectColor(value: unknown): Pick<NonNullable<NonNullable<ImageNode["effects"]>["glow"]>, "color" | "alpha"> {

@@ -1558,11 +1558,15 @@ function imageXml(image: ImageNode, context: WriterContext): string {
 }
 
 function imageEffectsXml(effects: ImageNode["effects"]): string {
-  if (!effects?.outerShadow && !effects?.innerShadow && !effects?.presetShadow && !effects?.glow && !effects?.softEdge && !effects?.reflection) {
+  if (!effects?.outerShadow && !effects?.innerShadow && !effects?.presetShadow && !effects?.glow && !effects?.softEdge && !effects?.reflection && !effects?.shape3d) {
     return "";
   }
 
-  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageInnerShadowXml(effects.innerShadow)}${imagePresetShadowXml(effects.presetShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}${imageReflectionXml(effects.reflection)}</a:effectLst>`;
+  const effectList = effects.outerShadow || effects.innerShadow || effects.presetShadow || effects.glow || effects.softEdge || effects.reflection
+    ? `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageInnerShadowXml(effects.innerShadow)}${imagePresetShadowXml(effects.presetShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}${imageReflectionXml(effects.reflection)}</a:effectLst>`
+    : "";
+
+  return `${effectList}${imageShape3dXml(effects.shape3d)}`;
 }
 
 function imageOuterShadowXml(shadow: NonNullable<ImageNode["effects"]>["outerShadow"]): string {
@@ -1645,6 +1649,42 @@ function imageReflectionXml(reflection: NonNullable<ImageNode["effects"]>["refle
   ].join("");
 
   return `<a:reflection${attributes}/>`;
+}
+
+function imageShape3dXml(shape3d: NonNullable<ImageNode["effects"]>["shape3d"]): string {
+  if (!shape3d) {
+    return "";
+  }
+
+  const attributes = [
+    shape3d.contourWidth !== undefined ? ` contourW="${shape3d.contourWidth}"` : "",
+    shape3d.extrusionHeight !== undefined ? ` extrusionH="${shape3d.extrusionHeight}"` : "",
+  ].join("");
+
+  return `<a:sp3d${attributes}>` +
+    imageShape3dBevelXml("bevelT", shape3d.bevelTop) +
+    imageShape3dBevelXml("bevelB", shape3d.bevelBottom) +
+    imageShape3dColorXml("contourClr", shape3d.contourColor) +
+    imageShape3dColorXml("extrusionClr", shape3d.extrusionColor) +
+    `</a:sp3d>`;
+}
+
+function imageShape3dBevelXml(tagName: "bevelT" | "bevelB", bevel: NonNullable<NonNullable<ImageNode["effects"]>["shape3d"]>["bevelTop"]): string {
+  if (!bevel) {
+    return "";
+  }
+
+  const attributes = [
+    bevel.width !== undefined ? ` w="${bevel.width}"` : "",
+    bevel.height !== undefined ? ` h="${bevel.height}"` : "",
+    bevel.preset ? ` prst="${escapeAttribute(bevel.preset)}"` : "",
+  ].join("");
+
+  return `<a:${tagName}${attributes}/>`;
+}
+
+function imageShape3dColorXml(tagName: "contourClr" | "extrusionClr", color: string | undefined): string {
+  return color ? `<a:${tagName}><a:srgbClr val="${escapeAttribute(color)}"/></a:${tagName}>` : "";
 }
 
 function imageEffectColorXml(color: string | undefined, alpha: number | undefined): string {
