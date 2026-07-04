@@ -11953,6 +11953,52 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips border theme color attributes", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        borders: {
+          top: { style: "single", size: 8, color: "4472C4", themeColor: "accent1", themeTint: "66", themeShade: "33" },
+        },
+        runs: [
+          {
+            text: "Themed run border",
+            border: { style: "double", size: 6, color: "70AD47", themeColor: "accent2", themeTint: "99" },
+          },
+        ],
+      },
+      {
+        type: "table",
+        borders: {
+          top: { style: "single", size: 4, color: "7030A0", themeColor: "accent4", themeShade: "80" },
+        },
+        rows: [
+          {
+            cells: [
+              {
+                borders: {
+                  bottom: { style: "dashed", size: 8, color: "C00000", themeColor: "accent6", themeTint: "40" },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Themed cell border" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const zip = await JSZip.loadAsync(docx);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const parsed = await parseDocx(docx);
+
+    expect(xml).toContain('w:themeColor="accent1" w:themeTint="66" w:themeShade="33"');
+    expect(xml).toContain('w:themeColor="accent2" w:themeTint="99"');
+    expect(xml).toContain('w:themeColor="accent4" w:themeShade="80"');
+    expect(xml).toContain('w:themeColor="accent6" w:themeTint="40"');
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips paragraph indentation", async () => {
     const source = createDocumentJson([
       {

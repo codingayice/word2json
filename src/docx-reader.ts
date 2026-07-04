@@ -1959,6 +1959,9 @@ function parseBorder(value: unknown): NonNullable<TextRun["border"]> | undefined
     style,
     ...(border.sz !== undefined ? { size: parseNumber(border.sz) } : {}),
     ...(typeof border.color === "string" ? { color: border.color } : {}),
+    ...(typeof border.themeColor === "string" ? { themeColor: border.themeColor } : {}),
+    ...(typeof border.themeTint === "string" ? { themeTint: border.themeTint } : {}),
+    ...(typeof border.themeShade === "string" ? { themeShade: border.themeShade } : {}),
     ...(border.space !== undefined ? { space: parseNumber(border.space) } : {}),
   };
 }

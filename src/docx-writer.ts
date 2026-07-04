@@ -748,6 +748,9 @@ function borderSideXml(side: "top" | "left" | "bottom" | "right" | "between" | "
     (border.size !== undefined ? ` w:sz="${border.size}"` : "") +
     (border.space !== undefined ? ` w:space="${border.space}"` : "") +
     (border.color ? ` w:color="${escapeAttribute(border.color)}"` : "") +
+    (border.themeColor ? ` w:themeColor="${escapeAttribute(border.themeColor)}"` : "") +
+    (border.themeTint ? ` w:themeTint="${escapeAttribute(border.themeTint)}"` : "") +
+    (border.themeShade ? ` w:themeShade="${escapeAttribute(border.themeShade)}"` : "") +
     `/>`;
 }
 

@@ -348,6 +348,9 @@ export type BorderDefinition = {
   style: BorderStyle;
   size?: number;
   color?: string;
+  themeColor?: string;
+  themeTint?: string;
+  themeShade?: string;
   space?: number;
 };
 
