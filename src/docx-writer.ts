@@ -8,6 +8,7 @@ import type {
   MathNode,
   PageSettings,
   ParagraphNode,
+  RunLanguage,
   RunRevision,
   SectionNode,
   StyleParagraphProperties,
@@ -1088,6 +1089,7 @@ function runPropertiesXml(run: TextRun): string {
     run.snapToGrid !== undefined ? (run.snapToGrid ? "<w:snapToGrid/>" : '<w:snapToGrid w:val="0"/>') : "",
     run.noProof !== undefined ? (run.noProof ? "<w:noProof/>" : '<w:noProof w:val="0"/>') : "",
     run.officeMath !== undefined ? (run.officeMath ? "<w:oMath/>" : '<w:oMath w:val="0"/>') : "",
+    run.language ? runLanguageXml(run.language) : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
@@ -1097,6 +1099,16 @@ function runPropertiesXml(run: TextRun): string {
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
+}
+
+function runLanguageXml(language: RunLanguage): string {
+  const attributes = [
+    language.value ? ` w:val="${escapeAttribute(language.value)}"` : "",
+    language.eastAsia ? ` w:eastAsia="${escapeAttribute(language.eastAsia)}"` : "",
+    language.bidi ? ` w:bidi="${escapeAttribute(language.bidi)}"` : "",
+  ].join("");
+
+  return attributes ? `<w:lang${attributes}/>` : "";
 }
 
 function tableXml(table: TableNode, context: WriterContext): string {

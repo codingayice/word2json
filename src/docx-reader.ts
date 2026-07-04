@@ -20,6 +20,7 @@ import type {
   TextRun,
   MathNode,
   MathControlProperties,
+  RunLanguage,
 } from "./schema.js";
 
 type XmlNode = Record<string, unknown>;
@@ -2546,6 +2547,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   const scale = asObject(properties.w);
   const fitText = asObject(properties.fitText);
   const emphasis = asObject(properties.em);
+  const language = parseRunLanguage(properties.lang);
   const border = parseBorder(properties.bdr);
 
   return {
@@ -2570,6 +2572,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...parseOnOffRunProperty(properties.snapToGrid, "snapToGrid"),
     ...parseOnOffRunProperty(properties.noProof, "noProof"),
     ...parseOnOffRunProperty(properties.oMath, "officeMath"),
+    ...(language ? { language } : {}),
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
@@ -2579,6 +2582,17 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(typeof emphasis.val === "string" ? { emphasis: emphasis.val as NonNullable<TextRun["emphasis"]> } : {}),
     ...(border ? { border } : {}),
   };
+}
+
+function parseRunLanguage(value: unknown): RunLanguage | undefined {
+  const language = asObject(value);
+  const parsed = {
+    ...(typeof language.val === "string" ? { value: language.val } : {}),
+    ...(typeof language.eastAsia === "string" ? { eastAsia: language.eastAsia } : {}),
+    ...(typeof language.bidi === "string" ? { bidi: language.bidi } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parseTable(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap, numberingContext: NumberingContext): TableNode {

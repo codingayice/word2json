@@ -272,6 +272,7 @@ export type StyleRunProperties = {
   snapToGrid?: boolean;
   noProof?: boolean;
   officeMath?: boolean;
+  language?: RunLanguage;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
@@ -290,6 +291,12 @@ export type RunFitText = {
 };
 
 export type RunEmphasis = "dot" | "comma" | "circle" | "underDot" | "none";
+
+export type RunLanguage = {
+  value?: string;
+  eastAsia?: string;
+  bidi?: string;
+};
 
 export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;

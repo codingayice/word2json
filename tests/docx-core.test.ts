@@ -574,6 +574,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:oMath w:val="0"/></w:rPr><w:t>Plain</w:t>');
   });
 
+  it("writes text run language value", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Hello", language: { value: "en-US" } }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:lang w:val="en-US"/></w:rPr><w:t>Hello</w:t>');
+  });
+
+  it("writes text run language east asia and bidi", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", language: { value: "en-US", eastAsia: "zh-CN", bidi: "ar-SA" } }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:lang w:val="en-US" w:eastAsia="zh-CN" w:bidi="ar-SA"/></w:rPr><w:t>Mixed</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5582,6 +5612,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Plain", officeMath: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run language value", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Hello", language: { value: "en-US" } }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run language east asia and bidi", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", language: { value: "en-US", eastAsia: "zh-CN", bidi: "ar-SA" } }],
       },
     ]);
 
