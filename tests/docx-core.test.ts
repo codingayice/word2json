@@ -626,6 +626,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="("/><m:endChr m:val=")"/><m:grow m:val="0"/></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d>');
   });
 
+  it("writes delimiter separator", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "delimiter" as const,
+                  begin: "{",
+                  end: "}",
+                  separator: "|",
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="{"/><m:endChr m:val="}"/><m:sepChr m:val="|"/></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d>');
+  });
+
   it("writes accent office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4252,6 +4282,35 @@ describe("DOCX reader", () => {
                   begin: "(",
                   end: ")",
                   grow: false,
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips delimiter separator", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "delimiter" as const,
+                  begin: "{",
+                  end: "}",
+                  separator: "|",
                   content: [{ type: "text" as const, text: "x" }],
                 },
               ],

@@ -740,6 +740,7 @@ function mathNodeXml(node: MathNode): string {
       node.begin !== undefined ? `<m:begChr m:val="${escapeAttribute(node.begin)}"/>` : "",
       node.end !== undefined ? `<m:endChr m:val="${escapeAttribute(node.end)}"/>` : "",
       node.grow !== undefined ? `<m:grow m:val="${node.grow ? "1" : "0"}"/>` : "",
+      node.separator !== undefined ? `<m:sepChr m:val="${escapeAttribute(node.separator)}"/>` : "",
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:d>${delimiterProperties ? `<m:dPr>${delimiterProperties}</m:dPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:d>`;
