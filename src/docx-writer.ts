@@ -784,6 +784,7 @@ function mathNodeXml(node: MathNode): string {
   if (node.type === "equationArray") {
     const properties = mathControlPropertiesXml(node.controlProperties);
     const equationArrayProperties = [
+      node.baseJustification !== undefined ? `<m:baseJc m:val="${matrixBaseJustificationXml(node.baseJustification)}"/>` : "",
       node.rowSpacing !== undefined ? `<m:rSp m:val="${node.rowSpacing}"/>` : "",
       node.rowSpacingRule !== undefined ? `<m:rSpRule m:val="${node.rowSpacingRule}"/>` : "",
       node.objectDistribution !== undefined ? `<m:objDist m:val="${node.objectDistribution ? "1" : "0"}"/>` : "",
@@ -886,7 +887,7 @@ function naryLimitLocationXml(location: Extract<MathNode, { type: "nary" }>["lim
   return `<m:limLoc m:val="${location === "underOver" ? "undOvr" : "subSup"}"/>`;
 }
 
-function matrixBaseJustificationXml(value: Extract<MathNode, { type: "matrix" }>["baseJustification"]): string {
+function matrixBaseJustificationXml(value: "top" | "center" | "bottom" | undefined): string {
   return value === "bottom" ? "bot" : value ?? "center";
 }
 

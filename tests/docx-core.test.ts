@@ -1303,6 +1303,37 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:eqArr><m:eqArrPr><m:rSp m:val="3"/></m:eqArrPr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:r><m:t>y=2</m:t></m:r></m:e></m:eqArr>');
   });
 
+  it("writes equation array base justification", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "equationArray" as const,
+                  baseJustification: "bottom",
+                  rows: [
+                    [{ type: "text" as const, text: "x=1" }],
+                    [{ type: "text" as const, text: "y=2" }],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:eqArr><m:eqArrPr><m:baseJc m:val="bot"/></m:eqArrPr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:r><m:t>y=2</m:t></m:r></m:e></m:eqArr>');
+  });
+
   it("writes equation array row spacing rule", async () => {
     const document = createDocumentJson([
       {
@@ -5308,6 +5339,36 @@ describe("DOCX reader", () => {
                 {
                   type: "equationArray" as const,
                   rowSpacing: 3,
+                  rows: [
+                    [{ type: "text" as const, text: "x=1" }],
+                    [{ type: "text" as const, text: "y=2" }],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips equation array base justification", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "equationArray" as const,
+                  baseJustification: "bottom",
                   rows: [
                     [{ type: "text" as const, text: "x=1" }],
                     [{ type: "text" as const, text: "y=2" }],
