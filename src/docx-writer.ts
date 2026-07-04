@@ -730,8 +730,12 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "matrix") {
-    const properties = mathControlPropertiesXml(node.controlProperties);
-    return `<m:m>${properties ? `<m:mPr><m:ctrlPr>${properties}</m:ctrlPr></m:mPr>` : ""}${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
+    const controlProperties = mathControlPropertiesXml(node.controlProperties);
+    const properties = [
+      node.baseJustification !== undefined ? `<m:baseJc m:val="${matrixBaseJustificationXml(node.baseJustification)}"/>` : "",
+      controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
+    ].join("");
+    return `<m:m>${properties ? `<m:mPr>${properties}</m:mPr>` : ""}${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
   }
 
   if (node.type === "delimiter") {
@@ -867,6 +871,10 @@ function naryLimitLocationXml(location: Extract<MathNode, { type: "nary" }>["lim
     return "";
   }
   return `<m:limLoc m:val="${location === "underOver" ? "undOvr" : "subSup"}"/>`;
+}
+
+function matrixBaseJustificationXml(value: Extract<MathNode, { type: "matrix" }>["baseJustification"]): string {
+  return value === "bottom" ? "bot" : value ?? "center";
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {

@@ -1721,9 +1721,12 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.m)
       .map((matrix) => {
         const matrixNode = asObject(matrix);
-        const controlProperties = parseMathControlProperties(asObject(asObject(matrixNode.mPr).ctrlPr).rPr);
+        const matrixProperties = asObject(matrixNode.mPr);
+        const baseJustification = matrixBaseJustificationValue(asObject(matrixProperties.baseJc).val);
+        const controlProperties = parseMathControlProperties(asObject(matrixProperties.ctrlPr).rPr);
         return {
           type: "matrix" as const,
+          ...(baseJustification ? { baseJustification } : {}),
           ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(matrixNode.mr).map((row) =>
             asArray(asObject(row).e).map((cell) => parseMathNodes(asObject(cell))),
@@ -1956,6 +1959,16 @@ function naryLimitLocationValue(value: unknown): Extract<MathNode, { type: "nary
     return "underOver";
   }
   return value === "subSup" ? "subSup" : undefined;
+}
+
+function matrixBaseJustificationValue(value: unknown): Extract<MathNode, { type: "matrix" }>["baseJustification"] | undefined {
+  if (value === "top" || value === "center") {
+    return value;
+  }
+  if (value === "bot") {
+    return "bottom";
+  }
+  return undefined;
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
