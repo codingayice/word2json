@@ -23,6 +23,7 @@ import type {
   MathNode,
   MathControlProperties,
   RunLanguage,
+  SectionNode,
 } from "./schema.js";
 
 type XmlNode = Record<string, unknown>;
@@ -1052,17 +1053,40 @@ async function parseHeaderFooterContent(
   sectionPropertiesValue: unknown,
   relationships: RelationshipMap,
   comments: CommentMap,
-): Promise<Pick<import("./schema.js").SectionNode, "headers" | "footers">> {
+): Promise<Pick<SectionNode, "headers" | "footers" | "titlePage">> {
   const sectionProperties = asObject(sectionPropertiesValue);
-  const headerReference = asObject(sectionProperties.headerReference);
-  const footerReference = asObject(sectionProperties.footerReference);
-  const headers = await parseHeaderFooterReference(zip, headerReference, relationships, comments);
-  const footers = await parseHeaderFooterReference(zip, footerReference, relationships, comments);
+  const headers = await parseHeaderFooterReferences(zip, sectionProperties.headerReference, relationships, comments);
+  const footers = await parseHeaderFooterReferences(zip, sectionProperties.footerReference, relationships, comments);
 
   return {
-    ...(headers ? { headers: { default: headers } } : {}),
-    ...(footers ? { footers: { default: footers } } : {}),
+    ...(sectionProperties.titlePg !== undefined ? { titlePage: true } : {}),
+    ...(headers ? { headers } : {}),
+    ...(footers ? { footers } : {}),
   };
+}
+
+async function parseHeaderFooterReferences(
+  zip: JSZip,
+  value: unknown,
+  relationships: RelationshipMap,
+  comments: CommentMap,
+): Promise<SectionNode["headers"] | undefined> {
+  const entries = await Promise.all(asArray(value).map(async (referenceValue) => {
+    const reference = asObject(referenceValue);
+    const blocks = await parseHeaderFooterReference(zip, reference, relationships, comments);
+    const type = headerFooterReferenceType(reference.type);
+
+    return blocks ? { type, blocks } : undefined;
+  }));
+  const parsed = entries.reduce<NonNullable<SectionNode["headers"]>>((accumulator, entry) => {
+    if (entry) {
+      accumulator[entry.type] = entry.blocks;
+    }
+
+    return accumulator;
+  }, {});
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 async function parseHeaderFooterReference(
@@ -1090,6 +1114,10 @@ async function parseHeaderFooterReference(
   const root = asObject(parsed.hdr ?? parsed.ftr);
 
   return asArray(root.p).map((paragraph) => parseParagraph(paragraph, relationships, comments));
+}
+
+function headerFooterReferenceType(value: unknown): keyof NonNullable<SectionNode["headers"]> {
+  return value === "first" || value === "even" ? value : "default";
 }
 
 async function parseMedia(zip: JSZip, relationships: RelationshipMap): Promise<MediaMap> {

@@ -366,6 +366,7 @@ export type StyleTableProperties = {
 
 export type SectionNode = {
   breakType?: SectionBreakType;
+  titlePage?: boolean;
   page?: PageSettings;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
@@ -382,6 +383,8 @@ export type ColumnSettings = {
 
 export type HeaderFooterContent = {
   default?: ParagraphNode[];
+  first?: ParagraphNode[];
+  even?: ParagraphNode[];
 };
 
 export type PageSettings = {

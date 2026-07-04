@@ -4676,6 +4676,47 @@ describe("DOCX writer", () => {
     expect(rels).toContain('Target="footer1.xml"');
   });
 
+  it("writes first and even page headers and footers", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          titlePage: true,
+          headers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Default header" }] }],
+            first: [{ type: "paragraph" as const, runs: [{ text: "First header" }] }],
+            even: [{ type: "paragraph" as const, runs: [{ text: "Even header" }] }],
+          },
+          footers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Default footer" }] }],
+            first: [{ type: "paragraph" as const, runs: [{ text: "First footer" }] }],
+            even: [{ type: "paragraph" as const, runs: [{ text: "Even footer" }] }],
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Body" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
+    const firstHeader = await zip.file("word/header2.xml")!.async("string");
+    const evenFooter = await zip.file("word/footer3.xml")!.async("string");
+
+    expect(xml).toContain('<w:headerReference w:type="default" r:id="rIdHeader1"/>');
+    expect(xml).toContain('<w:headerReference w:type="first" r:id="rIdHeader2"/>');
+    expect(xml).toContain('<w:headerReference w:type="even" r:id="rIdHeader3"/>');
+    expect(xml).toContain('<w:footerReference w:type="default" r:id="rIdFooter1"/>');
+    expect(xml).toContain('<w:footerReference w:type="first" r:id="rIdFooter2"/>');
+    expect(xml).toContain('<w:footerReference w:type="even" r:id="rIdFooter3"/>');
+    expect(xml).toContain("<w:titlePg/>");
+    expect(firstHeader).toContain("<w:t>First header</w:t>");
+    expect(evenFooter).toContain("<w:t>Even footer</w:t>");
+    expect(rels).toContain('Target="header2.xml"');
+    expect(rels).toContain('Target="footer3.xml"');
+  });
+
   it("writes page fields in footer runs", async () => {
     const document = {
       version: "1.0" as const,
@@ -10280,6 +10321,33 @@ describe("DOCX reader", () => {
           blocks: [
             { type: "paragraph" as const, runs: [{ text: "Body" }] },
           ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips first and even page headers and footers", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          titlePage: true,
+          headers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Default header" }] }],
+            first: [{ type: "paragraph" as const, runs: [{ text: "First header" }] }],
+            even: [{ type: "paragraph" as const, runs: [{ text: "Even header" }] }],
+          },
+          footers: {
+            default: [{ type: "paragraph" as const, runs: [{ text: "Default footer" }] }],
+            first: [{ type: "paragraph" as const, runs: [{ text: "First footer" }] }],
+            even: [{ type: "paragraph" as const, runs: [{ text: "Even footer" }] }],
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Body" }] }],
         },
       ],
     };

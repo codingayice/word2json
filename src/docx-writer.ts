@@ -331,12 +331,9 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const orientation = page.orientation && page.orientation !== "portrait"
     ? ` w:orient="${page.orientation}"`
     : "";
-  const headerReference = section.headers?.default
-    ? createHeaderReference(section.headers.default, context)
-    : "";
-  const footerReference = section.footers?.default
-    ? createFooterReference(section.footers.default, context)
-    : "";
+  const headerReference = headerFooterReferencesXml(section.headers, "header", context);
+  const footerReference = headerFooterReferencesXml(section.footers, "footer", context);
+  const titlePage = section.titlePage ? "<w:titlePg/>" : "";
   const breakType = section.breakType
     ? `<w:type w:val="${sectionBreakValue(section.breakType)}"/>`
     : "";
@@ -347,6 +344,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   return `<w:sectPr>` +
     headerReference +
     footerReference +
+    titlePage +
     breakType +
     `<w:pgSz w:w="${page.width}" w:h="${page.height}"${orientation}/>` +
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
@@ -370,18 +368,37 @@ function sectionBreakValue(value: SectionNode["breakType"]): string {
   return "nextPage";
 }
 
-function createHeaderReference(blocks: ParagraphNode[], context: WriterContext): string {
+function headerFooterReferencesXml(content: SectionNode["headers"], root: "header" | "footer", context: WriterContext): string {
+  if (!content) {
+    return "";
+  }
+
+  return (["default", "first", "even"] as const)
+    .map((type) => {
+      const blocks = content[type];
+      if (!blocks) {
+        return "";
+      }
+
+      return root === "header"
+        ? createHeaderReference(type, blocks, context)
+        : createFooterReference(type, blocks, context);
+    })
+    .join("");
+}
+
+function createHeaderReference(type: keyof NonNullable<SectionNode["headers"]>, blocks: ParagraphNode[], context: WriterContext): string {
   const index = context.headers.length + 1;
   const id = `rIdHeader${index}`;
   context.headers.push({ id, filename: `header${index}.xml`, blocks });
-  return `<w:headerReference w:type="default" r:id="${id}"/>`;
+  return `<w:headerReference w:type="${type}" r:id="${id}"/>`;
 }
 
-function createFooterReference(blocks: ParagraphNode[], context: WriterContext): string {
+function createFooterReference(type: keyof NonNullable<SectionNode["footers"]>, blocks: ParagraphNode[], context: WriterContext): string {
   const index = context.footers.length + 1;
   const id = `rIdFooter${index}`;
   context.footers.push({ id, filename: `footer${index}.xml`, blocks });
-  return `<w:footerReference w:type="default" r:id="${id}"/>`;
+  return `<w:footerReference w:type="${type}" r:id="${id}"/>`;
 }
 
 function defaultPageSettings(): PageSettings {
