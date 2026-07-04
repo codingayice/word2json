@@ -4784,6 +4784,29 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:pgSz w:w="16840" w:h="11900" w:orient="landscape"/>');
   });
 
+  it("writes section page numbering settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          pageNumbering: {
+            start: 3,
+            format: "lowerRoman" as const,
+            chapterStyle: 1,
+            chapterSeparator: "hyphen" as const,
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Preface" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:pgNumType w:start="3" w:fmt="lowerRoman" w:chapStyle="1" w:chapSep="hyphen"/>');
+  });
+
   it("writes section columns", async () => {
     const document = {
       version: "1.0" as const,
@@ -10408,6 +10431,28 @@ describe("DOCX reader", () => {
             margins: { top: 720, right: 900, bottom: 720, left: 900, header: 360, footer: 360, gutter: 0 },
           },
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Section two" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section page numbering settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          pageNumbering: {
+            start: 3,
+            format: "lowerRoman" as const,
+            chapterStyle: 1,
+            chapterSeparator: "hyphen" as const,
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Preface" }] }],
         },
       ],
     };

@@ -337,6 +337,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const breakType = section.breakType
     ? `<w:type w:val="${sectionBreakValue(section.breakType)}"/>`
     : "";
+  const pageNumbering = pageNumberingXml(section.pageNumbering);
   const columns = section.columns
     ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
     : "";
@@ -348,8 +349,24 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     breakType +
     `<w:pgSz w:w="${page.width}" w:h="${page.height}"${orientation}/>` +
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
+    pageNumbering +
     columns +
     `</w:sectPr>`;
+}
+
+function pageNumberingXml(pageNumbering?: SectionNode["pageNumbering"]): string {
+  if (!pageNumbering) {
+    return "";
+  }
+
+  const attributes = [
+    pageNumbering.start !== undefined ? ` w:start="${pageNumbering.start}"` : "",
+    pageNumbering.format ? ` w:fmt="${pageNumbering.format}"` : "",
+    pageNumbering.chapterStyle !== undefined ? ` w:chapStyle="${pageNumbering.chapterStyle}"` : "",
+    pageNumbering.chapterSeparator ? ` w:chapSep="${pageNumbering.chapterSeparator}"` : "",
+  ].join("");
+
+  return attributes ? `<w:pgNumType${attributes}/>` : "";
 }
 
 function sectionBreakValue(value: SectionNode["breakType"]): string {

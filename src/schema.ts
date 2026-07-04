@@ -368,6 +368,7 @@ export type SectionNode = {
   breakType?: SectionBreakType;
   titlePage?: boolean;
   page?: PageSettings;
+  pageNumbering?: SectionPageNumbering;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;
@@ -385,6 +386,13 @@ export type HeaderFooterContent = {
   default?: ParagraphNode[];
   first?: ParagraphNode[];
   even?: ParagraphNode[];
+};
+
+export type SectionPageNumbering = {
+  start?: number;
+  format?: NumberingFormat;
+  chapterStyle?: number;
+  chapterSeparator?: "colon" | "emDash" | "enDash" | "hyphen" | "period";
 };
 
 export type PageSettings = {

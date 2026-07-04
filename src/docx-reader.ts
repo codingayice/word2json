@@ -1018,8 +1018,10 @@ async function parseSections(
   if (sectionParts.length === 0) {
     const page = parsePageSettings(body.sectPr, false);
     const headerFooter = await parseHeaderFooterContent(zip, body.sectPr, relationships, comments);
+    const pageNumbering = parsePageNumbering(body.sectPr);
     return [{
       ...(page ? { page } : {}),
+      ...(pageNumbering ? { pageNumbering } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
@@ -1031,10 +1033,12 @@ async function parseSections(
     const headerFooter = await parseHeaderFooterContent(zip, sectPr, relationships, comments);
     const breakType = parseSectionBreakType(sectPr);
     const columns = parseColumns(sectPr);
+    const pageNumbering = parsePageNumbering(sectPr);
 
     return {
       ...(breakType ? { breakType } : {}),
       ...(page ? { page } : {}),
+      ...(pageNumbering ? { pageNumbering } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
       blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1555,6 +1559,18 @@ function parseSectionBreakType(sectionPropertiesValue: unknown): import("./schem
   }
 
   return undefined;
+}
+
+function parsePageNumbering(sectionPropertiesValue: unknown): SectionNode["pageNumbering"] | undefined {
+  const pageNumbering = asObject(asObject(sectionPropertiesValue).pgNumType);
+  const parsed = {
+    ...(pageNumbering.start !== undefined ? { start: parseNumber(pageNumbering.start) } : {}),
+    ...(typeof pageNumbering.fmt === "string" ? { format: pageNumbering.fmt as NonNullable<SectionNode["pageNumbering"]>["format"] } : {}),
+    ...(pageNumbering.chapStyle !== undefined ? { chapterStyle: parseNumber(pageNumbering.chapStyle) } : {}),
+    ...(typeof pageNumbering.chapSep === "string" ? { chapterSeparator: pageNumbering.chapSep as NonNullable<SectionNode["pageNumbering"]>["chapterSeparator"] } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parseColumns(sectionPropertiesValue: unknown): import("./schema.js").ColumnSettings | undefined {
