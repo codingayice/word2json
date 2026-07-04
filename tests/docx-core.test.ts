@@ -4215,6 +4215,48 @@ describe("DOCX writer", () => {
     expect(numbering).toContain('<w:num w:numId="10"><w:abstractNumId w:val="10"/></w:num>');
   });
 
+  it("writes numbering level suffix restart and legal controls", async () => {
+    const document = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 20,
+            levels: [
+              {
+                level: 0,
+                format: "decimal" as const,
+                text: "%1)",
+                start: 3,
+                suffix: "space" as const,
+                restart: 2,
+                legal: true,
+                left: 720,
+                hanging: 360,
+              },
+              {
+                level: 1,
+                format: "lowerLetter" as const,
+                text: "%2.",
+                start: 1,
+                legal: false,
+              },
+            ],
+          },
+        ],
+        nums: [{ id: 20, abstractId: 20 }],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const numbering = await zip.file("word/numbering.xml")!.async("string");
+
+    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="3"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1)"/><w:suff w:val="space"/><w:lvlRestart w:val="2"/><w:isLgl/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl>');
+    expect(numbering).toContain('<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="%2."/><w:isLgl w:val="0"/></w:lvl>');
+  });
+
   it("writes hyperlinks with external relationships", async () => {
     const document = createDocumentJson([
       {
@@ -9737,6 +9779,46 @@ describe("DOCX reader", () => {
           ],
         },
       ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips numbering level suffix restart and legal controls", async () => {
+    const source = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 20,
+            levels: [
+              {
+                level: 0,
+                format: "decimal" as const,
+                text: "%1)",
+                start: 3,
+                suffix: "space" as const,
+                restart: 2,
+                legal: true,
+                left: 720,
+                hanging: 360,
+              },
+              {
+                level: 1,
+                format: "lowerLetter" as const,
+                text: "%2.",
+                start: 1,
+                legal: false,
+              },
+            ],
+          },
+        ],
+        nums: [{ id: 20, abstractId: 20 }],
+      },
+      sections: [{ blocks: [] }],
     };
 
     const docx = await buildDocx(source);

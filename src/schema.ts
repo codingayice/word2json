@@ -172,6 +172,9 @@ export type NumberingLevelDefinition = {
   format: NumberingFormat;
   text: string;
   start?: number;
+  suffix?: "nothing" | "space" | "tab";
+  restart?: number;
+  legal?: boolean;
   left?: number;
   hanging?: number;
 };

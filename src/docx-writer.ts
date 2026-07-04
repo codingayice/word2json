@@ -1765,11 +1765,17 @@ function numberingLevelXml(level: NonNullable<DocumentJson["numbering"]>["abstra
   const indentation = level.left !== undefined || level.hanging !== undefined
     ? `<w:pPr><w:ind${level.left !== undefined ? ` w:left="${level.left}"` : ""}${level.hanging !== undefined ? ` w:hanging="${level.hanging}"` : ""}/></w:pPr>`
     : "";
+  const suffix = level.suffix ? `<w:suff w:val="${level.suffix}"/>` : "";
+  const restart = level.restart !== undefined ? `<w:lvlRestart w:val="${level.restart}"/>` : "";
+  const legal = level.legal !== undefined ? (level.legal ? "<w:isLgl/>" : '<w:isLgl w:val="0"/>') : "";
 
   return `<w:lvl w:ilvl="${level.level}">` +
     `<w:start w:val="${level.start ?? 1}"/>` +
     `<w:numFmt w:val="${level.format}"/>` +
     `<w:lvlText w:val="${escapeAttribute(level.text)}"/>` +
+    suffix +
+    restart +
+    legal +
     indentation +
     `</w:lvl>`;
 }

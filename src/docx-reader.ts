@@ -11,6 +11,7 @@ import type {
   ParagraphAlignment,
   ParagraphNode,
   ParagraphStyle,
+  NumberingLevelDefinition,
   NumberingFormat,
   StyleParagraphProperties,
   StyleRunProperties,
@@ -473,6 +474,9 @@ function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefi
       const start = asObject(level.start);
       const format = asObject(level.numFmt);
       const text = asObject(level.lvlText);
+      const suffix = asObject(level.suff);
+      const restart = asObject(level.lvlRestart);
+      const legal = parseOptionalOnOff(level.isLgl);
       const indentation = asObject(asObject(level.pPr).ind);
 
       return {
@@ -480,6 +484,9 @@ function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefi
         format: parseNumberingFormat(format.val),
         text: typeof text.val === "string" ? text.val : "",
         ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
+        ...(isNumberingSuffix(suffix.val) ? { suffix: suffix.val } : {}),
+        ...(restart.val !== undefined ? { restart: parseNumber(restart.val) } : {}),
+        ...(legal !== undefined ? { legal } : {}),
         ...(indentation.left !== undefined ? { left: parseNumber(indentation.left) } : {}),
         ...(indentation.hanging !== undefined ? { hanging: parseNumber(indentation.hanging) } : {}),
       };
@@ -493,6 +500,19 @@ function parseNumberingFormat(value: unknown): NumberingFormat {
   }
 
   return "decimal";
+}
+
+function isNumberingSuffix(value: unknown): value is NonNullable<NumberingLevelDefinition["suffix"]> {
+  return value === "nothing" || value === "space" || value === "tab";
+}
+
+function parseOptionalOnOff(value: unknown): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const rawValue = asObject(value).val;
+  return rawValue === "0" || rawValue === false || rawValue === "false" || rawValue === "off" ? false : true;
 }
 
 function isBuiltInNumberingId(id: number): boolean {
