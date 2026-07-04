@@ -858,6 +858,7 @@ export type ImageCrop = {
 export type ImageFloatingLayout = {
   wrap: "none" | "square" | "topAndBottom" | "tight" | "through";
   wrapText?: "bothSides" | "left" | "right" | "largest";
+  wrapPolygon?: ImageWrapPolygon;
   horizontalOffset: number;
   verticalOffset: number;
   horizontalRelativeFrom?: "page" | "margin" | "column" | "character";
@@ -874,6 +875,12 @@ export type ImageFloatingLayout = {
   behindDoc?: boolean;
   allowOverlap?: boolean;
   layoutInCell?: boolean;
+};
+
+export type ImageWrapPolygon = {
+  edited?: boolean;
+  start: { x: number; y: number };
+  points: Array<{ x: number; y: number }>;
 };
 
 export function createDocumentJson(blocks: DocumentBlock[]): DocumentJson {

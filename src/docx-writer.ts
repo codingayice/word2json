@@ -1590,11 +1590,11 @@ function imageWrapXml(floating: NonNullable<ImageNode["floating"]>): string {
   }
 
   if (wrap === "tight") {
-    return imagePolygonWrapXml("wrapTight", floating.wrapText ?? "bothSides");
+    return imagePolygonWrapXml("wrapTight", floating);
   }
 
   if (wrap === "through") {
-    return imagePolygonWrapXml("wrapThrough", floating.wrapText ?? "bothSides");
+    return imagePolygonWrapXml("wrapThrough", floating);
   }
 
   return floating.wrapText
@@ -1602,8 +1602,17 @@ function imageWrapXml(floating: NonNullable<ImageNode["floating"]>): string {
     : "<wp:wrapSquare/>";
 }
 
-function imagePolygonWrapXml(tag: "wrapTight" | "wrapThrough", wrapText: NonNullable<NonNullable<ImageNode["floating"]>["wrapText"]>): string {
-  return `<wp:${tag} wrapText="${wrapText}"><wp:wrapPolygon edited="0"><wp:start x="0" y="0"/><wp:lineTo x="0" y="0"/></wp:wrapPolygon></wp:${tag}>`;
+function imagePolygonWrapXml(tag: "wrapTight" | "wrapThrough", floating: NonNullable<ImageNode["floating"]>): string {
+  const polygon = floating.wrapPolygon ?? { edited: false, start: { x: 0, y: 0 }, points: [{ x: 0, y: 0 }] };
+  const points = polygon.points
+    .map((point) => `<wp:lineTo x="${point.x}" y="${point.y}"/>`)
+    .join("");
+
+  return `<wp:${tag} wrapText="${floating.wrapText ?? "bothSides"}">` +
+    `<wp:wrapPolygon edited="${polygon.edited ? "1" : "0"}">` +
+    `<wp:start x="${polygon.start.x}" y="${polygon.start.y}"/>` +
+    points +
+    `</wp:wrapPolygon></wp:${tag}>`;
 }
 
 function contentTypesXml(context: WriterContext): string {

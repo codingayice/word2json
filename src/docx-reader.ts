@@ -1494,10 +1494,12 @@ function parseImageFloating(drawing: XmlNode, simplePositionFromXml?: NonNullabl
   const verticalAlign = parseImageVerticalAlign(positionV.align);
   const simplePosition = simplePositionFromXml ?? parseImageSimplePosition(anchor.simplePos);
   const wrapText = parseImageWrapText(anchor);
+  const wrapPolygon = parseImageWrapPolygon(anchor);
 
   return {
     wrap: parseImageWrap(anchor),
     ...(wrapText ? { wrapText } : {}),
+    ...(wrapPolygon ? { wrapPolygon } : {}),
     horizontalOffset: horizontalAlign ? 0 : parseNumber(positionH.posOffset),
     verticalOffset: verticalAlign ? 0 : parseNumber(positionV.posOffset),
     ...parseImageHorizontalRelativeFrom(positionH.relativeFrom),
@@ -1583,6 +1585,29 @@ function parseImageWrapText(anchor: XmlNode): NonNullable<NonNullable<ImageNode[
   return wrap === "bothSides" || wrap === "left" || wrap === "right" || wrap === "largest"
     ? wrap
     : undefined;
+}
+
+function parseImageWrapPolygon(anchor: XmlNode): NonNullable<NonNullable<ImageNode["floating"]>["wrapPolygon"]> | undefined {
+  const polygon = asObject(asObject(anchor.wrapTight).wrapPolygon ?? asObject(anchor.wrapThrough).wrapPolygon);
+  const start = asObject(polygon.start);
+  const points = asArray(polygon.lineTo)
+    .map((point) => asObject(point))
+    .filter((point) => point.x !== undefined || point.y !== undefined)
+    .map((point) => ({ x: parseNumber(point.x), y: parseNumber(point.y) }));
+
+  if (start.x === undefined && start.y === undefined && points.length === 0) {
+    return undefined;
+  }
+
+  if (!parseOnOff(polygon.edited) && parseNumber(start.x) === 0 && parseNumber(start.y) === 0 && points.length === 1 && points[0].x === 0 && points[0].y === 0) {
+    return undefined;
+  }
+
+  return {
+    ...(parseOnOff(polygon.edited) ? { edited: true } : {}),
+    start: { x: parseNumber(start.x), y: parseNumber(start.y) },
+    points,
+  };
 }
 
 function parseImageRotation(inline: XmlNode): number | undefined {
