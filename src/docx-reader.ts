@@ -3136,7 +3136,9 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   const verticalAlignment = asObject(properties.vAlign);
   const shading = parseTableCellShading(properties.shd);
   const borders = parseParagraphBorders(properties.tcBorders);
+  const noWrap = parseTableCellOnOff(properties.noWrap);
   const textDirection = asObject(properties.textDirection);
+  const fitText = parseTableCellOnOff(properties.tcFitText);
   const margins = parseTableCellMargins(properties.tcMar);
   const propertyRevision = parsePropertyRevision(properties.tcPrChange);
 
@@ -3147,11 +3149,22 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
     ...(typeof verticalAlignment.val === "string" ? { verticalAlignment: verticalAlignment.val as NonNullable<TableCellNode["verticalAlignment"]> } : {}),
     ...(shading ? { shading } : {}),
     ...(borders ? { borders } : {}),
+    ...(noWrap ? { noWrap } : {}),
     ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<TableCellNode["textDirection"]> } : {}),
+    ...(fitText ? { fitText } : {}),
     ...(margins ? { margins } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
     blocks: asArray(cell.p).map((paragraph) => parseParagraph(paragraph, relationships, comments, footnotes, endnotes, numberingContext)),
   };
+}
+
+function parseTableCellOnOff(value: unknown): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const val = asObject(value).val;
+  return val === undefined || parseOnOff(val) ? true : undefined;
 }
 
 function parseTableCellShading(value: unknown): TableCellNode["shading"] | undefined {

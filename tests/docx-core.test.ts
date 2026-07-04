@@ -4159,6 +4159,32 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="180" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="180" w:type="dxa"/></w:tcMar>');
   });
 
+  it("writes cell no-wrap and fit-text controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                noWrap: true,
+                fitText: true,
+                blocks: [{ type: "paragraph", runs: [{ text: "Compact code" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:noWrap/>");
+    expect(xml).toContain("<w:tcFitText/>");
+  });
+
   it("writes cell borders", async () => {
     const document = createDocumentJson([
       {
@@ -10213,6 +10239,30 @@ describe("DOCX reader", () => {
               {
                 textDirection: "btLr",
                 blocks: [{ type: "paragraph", runs: [{ text: "Vertical" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell no-wrap and fit-text controls", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                noWrap: true,
+                fitText: true,
+                blocks: [{ type: "paragraph", runs: [{ text: "Compact code" }] }],
               },
             ],
           },

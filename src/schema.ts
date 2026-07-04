@@ -739,7 +739,9 @@ export type TableCellNode = {
   verticalAlignment?: "top" | "center" | "bottom";
   shading?: TableCellShading;
   borders?: ParagraphBorders;
+  noWrap?: boolean;
   textDirection?: "lrTb" | "tbRl" | "btLr";
+  fitText?: boolean;
   margins?: TableCellMargins;
   propertyRevision?: ParagraphPropertyRevision;
   blocks: ParagraphNode[];

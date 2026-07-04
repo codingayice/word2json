@@ -1357,8 +1357,10 @@ function tableCellXml(cell: TableCellNode, context: WriterContext): string {
     cell.verticalMerge ? `<w:vMerge w:val="${cell.verticalMerge}"/>` : "",
     cell.borders ? tableCellBordersXml(cell.borders) : "",
     cell.shading ? shadingXml(cell.shading) : "",
+    cell.noWrap ? "<w:noWrap/>" : "",
     cell.margins ? tableCellMarginsXml(cell.margins) : "",
     cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
+    cell.fitText ? "<w:tcFitText/>" : "",
     cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
     cell.propertyRevision ? propertyRevisionXml("tcPr", "tcPrChange", cell.propertyRevision) : "",
   ].join("");
