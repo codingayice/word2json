@@ -1834,6 +1834,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           type: "equationArray" as const,
           ...(baseJustification ? { baseJustification } : {}),
           ...(verticalJustification ? { verticalJustification } : {}),
+          ...mathOptionalBooleanProperty(equationArrayProperties.aln, "alignment"),
           ...(rowSpacing !== undefined ? { rowSpacing: parseNumber(rowSpacing) } : {}),
           ...(rowSpacingRule ? { rowSpacingRule } : {}),
           ...mathOptionalBooleanProperty(equationArrayProperties.objDist, "objectDistribution"),
