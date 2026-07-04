@@ -1079,6 +1079,7 @@ function runPropertiesXml(run: TextRun): string {
     run.shadow !== undefined ? (run.shadow ? "<w:shadow/>" : '<w:shadow w:val="0"/>') : "",
     run.outline !== undefined ? (run.outline ? "<w:outline/>" : '<w:outline w:val="0"/>') : "",
     run.emboss !== undefined ? (run.emboss ? "<w:emboss/>" : '<w:emboss w:val="0"/>') : "",
+    run.imprint !== undefined ? (run.imprint ? "<w:imprint/>" : '<w:imprint w:val="0"/>') : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
