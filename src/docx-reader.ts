@@ -2478,7 +2478,7 @@ function parseRun(value: unknown): TextRun {
     ...parseRunStyle(properties),
     ...(properties.b !== undefined ? { bold: true } : {}),
     ...(properties.i !== undefined ? { italic: true } : {}),
-    ...(properties.u !== undefined ? { underline: true } : {}),
+    ...parseUnderline(properties.u),
     ...parseRunFont(properties),
   };
 }
@@ -2487,6 +2487,14 @@ function parseRunStyle(properties: XmlNode): Partial<TextRun> {
   const style = asObject(properties.rStyle);
 
   return typeof style.val === "string" ? { styleId: style.val } : {};
+}
+
+function parseUnderline(value: unknown): Partial<Pick<TextRun, "underline">> {
+  if (value === undefined) {
+    return {};
+  }
+  const val = asObject(value).val;
+  return { underline: !(val === "none" || val === "0" || val === false) };
 }
 
 function parseField(value: unknown): TextRun["field"] {

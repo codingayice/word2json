@@ -49,6 +49,21 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:t>Word</w:t>");
   });
 
+  it("writes text run underline none", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", underline: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:u w:val="none"/></w:rPr><w:t>Plain</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4534,6 +4549,20 @@ describe("DOCX reader", () => {
           { text: "A", bold: true },
           { text: "B", italic: true, underline: true },
         ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run underline none", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", underline: false }],
       },
     ]);
 
