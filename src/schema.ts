@@ -423,7 +423,7 @@ export type MathNode =
   | { type: "subscript"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[] }
   | { type: "subSup"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "sPre"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
-  | { type: "preSubSup"; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
+  | { type: "preSubSup"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "radical"; controlProperties?: MathControlProperties; degree?: MathNode[]; content: MathNode[] }
   | { type: "nary"; controlProperties?: MathControlProperties; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
   | { type: "matrix"; controlProperties?: MathControlProperties; rows: MathNode[][][] }

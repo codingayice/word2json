@@ -1673,8 +1673,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.preSubSup)
       .map((preSubSup) => {
         const preSubSupNode = asObject(preSubSup);
+        const controlProperties = parseMathControlProperties(asObject(asObject(preSubSupNode.preSubSupPr).ctrlPr).rPr);
         return {
           type: "preSubSup" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           base: parseMathNodes(asObject(preSubSupNode.e)),
           subscript: parseMathNodes(asObject(preSubSupNode.sub)),
           superscript: parseMathNodes(asObject(preSubSupNode.sup)),

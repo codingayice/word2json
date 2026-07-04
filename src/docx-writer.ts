@@ -715,7 +715,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "preSubSup") {
-    return `<m:preSubSup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:preSubSup>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:preSubSup>${properties ? `<m:preSubSupPr><m:ctrlPr>${properties}</m:ctrlPr></m:preSubSupPr>` : ""}<m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup></m:preSubSup>`;
   }
 
   if (node.type === "radical") {
