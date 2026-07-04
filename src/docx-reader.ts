@@ -1488,10 +1488,22 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
   }
 
   return {
-    wrap: "square",
+    wrap: parseImageWrap(anchor),
     horizontalOffset: parseNumber(asObject(anchor.positionH).posOffset),
     verticalOffset: parseNumber(asObject(anchor.positionV).posOffset),
   };
+}
+
+function parseImageWrap(anchor: XmlNode): NonNullable<NonNullable<ImageNode["floating"]>["wrap"]> {
+  if (anchor.wrapNone !== undefined) {
+    return "none";
+  }
+
+  if (anchor.wrapTopAndBottom !== undefined) {
+    return "topAndBottom";
+  }
+
+  return "square";
 }
 
 function parseImageRotation(inline: XmlNode): number | undefined {

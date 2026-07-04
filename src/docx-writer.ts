@@ -1540,7 +1540,7 @@ function imageXml(image: ImageNode, context: WriterContext): string {
     ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="0" relativeHeight="0" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">` +
       `<wp:positionH relativeFrom="page"><wp:posOffset>${image.floating.horizontalOffset}</wp:posOffset></wp:positionH>` +
       `<wp:positionV relativeFrom="page"><wp:posOffset>${image.floating.verticalOffset}</wp:posOffset></wp:positionV>` +
-      `<wp:wrapSquare/>` +
+      imageWrapXml(image.floating.wrap) +
       graphic +
       `</wp:anchor>`
     : `<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">${graphic}</wp:inline>`;
@@ -1548,6 +1548,18 @@ function imageXml(image: ImageNode, context: WriterContext): string {
   return `<w:p><w:r><w:drawing>` +
     drawing +
     `</w:drawing></w:r></w:p>`;
+}
+
+function imageWrapXml(wrap: NonNullable<ImageNode["floating"]>["wrap"]): string {
+  if (wrap === "none") {
+    return "<wp:wrapNone/>";
+  }
+
+  if (wrap === "topAndBottom") {
+    return "<wp:wrapTopAndBottom/>";
+  }
+
+  return "<wp:wrapSquare/>";
 }
 
 function contentTypesXml(context: WriterContext): string {

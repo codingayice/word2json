@@ -856,7 +856,7 @@ export type ImageCrop = {
 };
 
 export type ImageFloatingLayout = {
-  wrap: "square";
+  wrap: "none" | "square" | "topAndBottom";
   horizontalOffset: number;
   verticalOffset: number;
 };
