@@ -1703,11 +1703,14 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const naryNode = asObject(nary);
         const lowerLimit = parseMathNodes(asObject(naryNode.sub));
         const upperLimit = parseMathNodes(asObject(naryNode.sup));
-        const controlProperties = parseMathControlProperties(asObject(asObject(naryNode.naryPr).ctrlPr).rPr);
+        const naryProperties = asObject(naryNode.naryPr);
+        const controlProperties = parseMathControlProperties(asObject(naryProperties.ctrlPr).rPr);
+        const limitLocation = naryLimitLocationValue(asObject(naryProperties.limLoc).val);
         return {
           type: "nary" as const,
-          operator: naryOperatorValue(asObject(asObject(naryNode.naryPr).chr).val),
+          operator: naryOperatorValue(asObject(naryProperties.chr).val),
           ...(controlProperties ? { controlProperties } : {}),
+          ...(limitLocation ? { limitLocation } : {}),
           ...(lowerLimit.length > 0 ? { lowerLimit } : {}),
           ...(upperLimit.length > 0 ? { upperLimit } : {}),
           body: parseMathNodes(asObject(naryNode.e)),
@@ -1941,6 +1944,13 @@ function naryOperatorValue(value: unknown): Extract<MathNode, { type: "nary" }>[
     "⋃": "union",
   } as const;
   return typeof value === "string" && value in values ? values[value as keyof typeof values] : "sum";
+}
+
+function naryLimitLocationValue(value: unknown): Extract<MathNode, { type: "nary" }>["limitLocation"] | undefined {
+  if (value === "undOvr") {
+    return "underOver";
+  }
+  return value === "subSup" ? "subSup" : undefined;
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {

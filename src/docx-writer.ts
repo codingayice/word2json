@@ -823,7 +823,7 @@ function mathNodeXml(node: MathNode): string {
   }
 
   const properties = mathControlPropertiesXml(node.controlProperties);
-  return `<m:nary><m:naryPr>${naryOperatorXml(node.operator)}${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:naryPr>` +
+  return `<m:nary><m:naryPr>${naryOperatorXml(node.operator)}${naryLimitLocationXml(node.limitLocation)}${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
     `<m:e>${node.body.map((child) => mathNodeXml(child)).join("")}</m:e></m:nary>`;
@@ -851,6 +851,13 @@ function naryOperatorXml(operator: Extract<MathNode, { type: "nary" }>["operator
     union: "⋃",
   } satisfies Record<Extract<MathNode, { type: "nary" }>["operator"], string>;
   return `<m:chr m:val="${values[operator]}"/>`;
+}
+
+function naryLimitLocationXml(location: Extract<MathNode, { type: "nary" }>["limitLocation"]): string {
+  if (location === undefined) {
+    return "";
+  }
+  return `<m:limLoc m:val="${location === "underOver" ? "undOvr" : "subSup"}"/>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
