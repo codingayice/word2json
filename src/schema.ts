@@ -798,10 +798,15 @@ export type TableCellShading = {
 };
 
 export type TableCellMargins = {
-  top?: number;
-  right?: number;
-  bottom?: number;
-  left?: number;
+  top?: TableCellMarginSide;
+  right?: TableCellMarginSide;
+  bottom?: TableCellMarginSide;
+  left?: TableCellMarginSide;
+};
+
+export type TableCellMarginSide = number | {
+  width: number;
+  type?: "auto" | "dxa" | "nil" | "pct";
 };
 
 export type ImageNode = {

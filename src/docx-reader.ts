@@ -3326,7 +3326,16 @@ function parseTableCellMargins(value: unknown): TableCellNode["margins"] | undef
 function parseTableCellMarginSide(value: unknown, side: keyof NonNullable<TableCellNode["margins"]>): Partial<NonNullable<TableCellNode["margins"]>> {
   const margin = asObject(value);
 
-  return margin.w !== undefined ? { [side]: parseNumber(margin.w) } : {};
+  if (margin.w === undefined) {
+    return {};
+  }
+
+  const width = parseNumber(margin.w);
+  const type = parseTableWidthType(margin.type);
+
+  return type && type !== "dxa"
+    ? { [side]: { width, type } }
+    : { [side]: width };
 }
 
 function parseText(value: unknown): string {

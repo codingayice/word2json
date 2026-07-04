@@ -1446,13 +1446,23 @@ function tableCellBordersXml(borders: NonNullable<TableCellNode["borders"]>): st
 
 function tableCellMarginsXml(margins: NonNullable<TableCellNode["margins"]>): string {
   const sides = [
-    margins.top !== undefined ? `<w:top w:w="${margins.top}" w:type="dxa"/>` : "",
-    margins.right !== undefined ? `<w:right w:w="${margins.right}" w:type="dxa"/>` : "",
-    margins.bottom !== undefined ? `<w:bottom w:w="${margins.bottom}" w:type="dxa"/>` : "",
-    margins.left !== undefined ? `<w:left w:w="${margins.left}" w:type="dxa"/>` : "",
+    tableCellMarginSideXml("top", margins.top),
+    tableCellMarginSideXml("right", margins.right),
+    tableCellMarginSideXml("bottom", margins.bottom),
+    tableCellMarginSideXml("left", margins.left),
   ].join("");
 
   return sides ? `<w:tcMar>${sides}</w:tcMar>` : "";
+}
+
+function tableCellMarginSideXml(side: "top" | "right" | "bottom" | "left", margin: NonNullable<TableCellNode["margins"]>[typeof side] | undefined): string {
+  if (margin === undefined) {
+    return "";
+  }
+
+  const width = typeof margin === "number" ? margin : margin.width;
+  const type = typeof margin === "number" ? "dxa" : margin.type ?? "dxa";
+  return `<w:${side} w:w="${width}" w:type="${type}"/>`;
 }
 
 function tableBordersXml(border: "single"): string {

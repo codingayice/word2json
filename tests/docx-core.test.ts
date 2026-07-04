@@ -4364,6 +4364,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="180" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="180" w:type="dxa"/></w:tcMar>');
   });
 
+  it("writes cell margin width types", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                margins: {
+                  top: { width: 240, type: "pct" },
+                  right: 180,
+                  bottom: { width: 0, type: "nil" },
+                  left: { width: 120 },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Typed margins" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tcMar><w:top w:w="240" w:type="pct"/><w:right w:w="180" w:type="dxa"/><w:bottom w:w="0" w:type="nil"/><w:left w:w="120" w:type="dxa"/></w:tcMar>');
+  });
+
   it("writes cell no-wrap and fit-text controls", async () => {
     const document = createDocumentJson([
       {
@@ -10590,6 +10619,34 @@ describe("DOCX reader", () => {
                 shading: { fill: "D9EAF7" },
                 margins: { top: 120, right: 180, bottom: 120, left: 180 },
                 blocks: [{ type: "paragraph", runs: [{ text: "Header" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips cell margin width types", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                margins: {
+                  top: { width: 240, type: "pct" },
+                  right: 180,
+                  bottom: { width: 0, type: "nil" },
+                  left: 120,
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Typed margins" }] }],
               },
             ],
           },
