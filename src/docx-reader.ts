@@ -1683,9 +1683,11 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.rad)
       .map((radical) => {
         const radicalNode = asObject(radical);
+        const controlProperties = parseMathControlProperties(asObject(asObject(radicalNode.radPr).ctrlPr).rPr);
         const degree = parseMathNodes(asObject(radicalNode.deg));
         return {
           type: "radical" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           ...(degree.length > 0 ? { degree } : {}),
           content: parseMathNodes(asObject(radicalNode.e)),
         };

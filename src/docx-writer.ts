@@ -719,8 +719,9 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "radical") {
+    const properties = mathControlPropertiesXml(node.controlProperties);
     const degree = node.degree ? `<m:deg>${node.degree.map((child) => mathNodeXml(child)).join("")}</m:deg>` : "";
-    return `<m:rad>${degree}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:rad>`;
+    return `<m:rad>${properties ? `<m:radPr><m:ctrlPr>${properties}</m:ctrlPr></m:radPr>` : ""}${degree}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:rad>`;
   }
 
   if (node.type === "matrix") {

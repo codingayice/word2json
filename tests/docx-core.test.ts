@@ -257,6 +257,43 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
   });
 
+  it("writes radical control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "radical" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  degree: [{ type: "text" as const, text: "3" }],
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:rad><m:radPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:radPr><m:deg><m:r><m:t>3</m:t></m:r></m:deg><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad>');
+  });
+
   it("writes matrix office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -3204,6 +3241,42 @@ describe("DOCX reader", () => {
                   lowerLimit: [{ type: "text" as const, text: "i=1" }],
                   upperLimit: [{ type: "text" as const, text: "n" }],
                   body: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips radical control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "radical" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  degree: [{ type: "text" as const, text: "3" }],
+                  content: [{ type: "text" as const, text: "x" }],
                 },
               ],
             },
