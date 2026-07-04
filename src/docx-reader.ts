@@ -759,6 +759,11 @@ function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNod
   const mirrorIndents = parsePaginationToggle(properties.mirrorIndents);
   const overflowPunct = parsePaginationToggle(properties.overflowPunct);
   const topLinePunct = parsePaginationToggle(properties.topLinePunct);
+  const textAlignment = asObject(properties.textAlignment);
+  const textDirection = asObject(properties.textDirection);
+  const adjustRightInd = parsePaginationToggle(properties.adjustRightInd);
+  const autoSpaceDE = parsePaginationToggle(properties.autoSpaceDE);
+  const autoSpaceDN = parsePaginationToggle(properties.autoSpaceDN);
   const pagination = {
     ...(keepNext !== undefined ? { keepNext } : {}),
     ...(keepLines !== undefined ? { keepLines } : {}),
@@ -770,6 +775,11 @@ function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNod
     ...(mirrorIndents !== undefined ? { mirrorIndents } : {}),
     ...(overflowPunct !== undefined ? { overflowPunct } : {}),
     ...(topLinePunct !== undefined ? { topLinePunct } : {}),
+    ...(typeof textAlignment.val === "string" ? { textAlignment: textAlignment.val as NonNullable<ParagraphNode["pagination"]>["textAlignment"] } : {}),
+    ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<ParagraphNode["pagination"]>["textDirection"] } : {}),
+    ...(adjustRightInd !== undefined ? { adjustRightInd } : {}),
+    ...(autoSpaceDE !== undefined ? { autoSpaceDE } : {}),
+    ...(autoSpaceDN !== undefined ? { autoSpaceDN } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;
@@ -1608,6 +1618,11 @@ function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | und
   const mirrorIndents = parsePaginationToggle(properties.mirrorIndents);
   const overflowPunct = parsePaginationToggle(properties.overflowPunct);
   const topLinePunct = parsePaginationToggle(properties.topLinePunct);
+  const textAlignment = asObject(properties.textAlignment);
+  const textDirection = asObject(properties.textDirection);
+  const adjustRightInd = parsePaginationToggle(properties.adjustRightInd);
+  const autoSpaceDE = parsePaginationToggle(properties.autoSpaceDE);
+  const autoSpaceDN = parsePaginationToggle(properties.autoSpaceDN);
   const pagination = {
     ...(keepNext !== undefined ? { keepNext } : {}),
     ...(keepLines !== undefined ? { keepLines } : {}),
@@ -1619,6 +1634,11 @@ function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | und
     ...(mirrorIndents !== undefined ? { mirrorIndents } : {}),
     ...(overflowPunct !== undefined ? { overflowPunct } : {}),
     ...(topLinePunct !== undefined ? { topLinePunct } : {}),
+    ...(typeof textAlignment.val === "string" ? { textAlignment: textAlignment.val as NonNullable<ParagraphNode["pagination"]>["textAlignment"] } : {}),
+    ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<ParagraphNode["pagination"]>["textDirection"] } : {}),
+    ...(adjustRightInd !== undefined ? { adjustRightInd } : {}),
+    ...(autoSpaceDE !== undefined ? { autoSpaceDE } : {}),
+    ...(autoSpaceDN !== undefined ? { autoSpaceDN } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;

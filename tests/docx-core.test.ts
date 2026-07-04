@@ -4679,6 +4679,32 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:topLinePunct w:val="0"/>');
   });
 
+  it("writes paragraph text flow properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        pagination: {
+          textAlignment: "center",
+          textDirection: "tbRl",
+          adjustRightInd: true,
+          autoSpaceDE: false,
+          autoSpaceDN: true,
+        },
+        runs: [{ text: "Vertical paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:textAlignment w:val="center"/>');
+    expect(xml).toContain('<w:textDirection w:val="tbRl"/>');
+    expect(xml).toContain("<w:adjustRightInd/>");
+    expect(xml).toContain('<w:autoSpaceDE w:val="0"/>');
+    expect(xml).toContain("<w:autoSpaceDN/>");
+  });
+
   it("writes paragraph spacing", async () => {
     const document = createDocumentJson([
       {
@@ -5073,6 +5099,34 @@ describe("DOCX writer", () => {
     const styles = await zip.file("word/styles.xml")!.async("string");
 
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="LayoutBody"><w:name w:val="Layout Body"/><w:pPr><w:contextualSpacing w:val="0"/><w:mirrorIndents/><w:overflowPunct w:val="0"/><w:topLinePunct/></w:pPr></w:style>');
+  });
+
+  it("writes paragraph style text flow properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "VerticalBody",
+          name: "Vertical Body",
+          paragraph: {
+            pagination: {
+              textAlignment: "baseline",
+              textDirection: "btLr",
+              adjustRightInd: false,
+              autoSpaceDE: true,
+              autoSpaceDN: false,
+            },
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "VerticalBody", runs: [{ text: "Body" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="VerticalBody"><w:name w:val="Vertical Body"/><w:pPr><w:textAlignment w:val="baseline"/><w:textDirection w:val="btLr"/><w:adjustRightInd w:val="0"/><w:autoSpaceDE/><w:autoSpaceDN w:val="0"/></w:pPr></w:style>');
   });
 
   it("writes paragraph style borders and shading", async () => {
@@ -9993,6 +10047,46 @@ describe("DOCX reader", () => {
           styleId: "LayoutBody",
           pagination: { contextualSpacing: true, mirrorIndents: false, overflowPunct: true, topLinePunct: false },
           runs: [{ text: "Layout-sensitive paragraph" }],
+        }],
+      }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph text flow properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "VerticalBody",
+          name: "Vertical Body",
+          paragraph: {
+            pagination: {
+              textAlignment: "baseline",
+              textDirection: "btLr",
+              adjustRightInd: false,
+              autoSpaceDE: true,
+              autoSpaceDN: false,
+            },
+          },
+        }],
+      },
+      sections: [{
+        blocks: [{
+          type: "paragraph" as const,
+          styleId: "VerticalBody",
+          pagination: {
+            textAlignment: "center",
+            textDirection: "tbRl",
+            adjustRightInd: true,
+            autoSpaceDE: false,
+            autoSpaceDN: true,
+          },
+          runs: [{ text: "Vertical paragraph" }],
         }],
       }],
     };

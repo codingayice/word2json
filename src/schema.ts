@@ -427,6 +427,11 @@ export type ParagraphPagination = {
   mirrorIndents?: boolean;
   overflowPunct?: boolean;
   topLinePunct?: boolean;
+  textAlignment?: "auto" | "baseline" | "bottom" | "center" | "top";
+  textDirection?: "lrTb" | "tbRl" | "btLr";
+  adjustRightInd?: boolean;
+  autoSpaceDE?: boolean;
+  autoSpaceDN?: boolean;
 };
 
 export type ListSettings = {

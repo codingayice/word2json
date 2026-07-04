@@ -643,6 +643,11 @@ function paragraphPaginationXml(pagination?: ParagraphNode["pagination"]): strin
       paragraphPaginationToggleXml("mirrorIndents", pagination.mirrorIndents),
       paragraphPaginationToggleXml("overflowPunct", pagination.overflowPunct),
       paragraphPaginationToggleXml("topLinePunct", pagination.topLinePunct),
+      pagination.textAlignment ? `<w:textAlignment w:val="${pagination.textAlignment}"/>` : "",
+      pagination.textDirection ? `<w:textDirection w:val="${pagination.textDirection}"/>` : "",
+      paragraphPaginationToggleXml("adjustRightInd", pagination.adjustRightInd),
+      paragraphPaginationToggleXml("autoSpaceDE", pagination.autoSpaceDE),
+      paragraphPaginationToggleXml("autoSpaceDN", pagination.autoSpaceDN),
     ].join("")
     : "";
 }
