@@ -699,7 +699,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "subscript") {
-    return `<m:sSub><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub></m:sSub>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:sSub>${properties ? `<m:sSubPr><m:ctrlPr>${properties}</m:ctrlPr></m:sSubPr>` : ""}<m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub></m:sSub>`;
   }
 
   if (node.type === "subSup") {

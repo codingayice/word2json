@@ -420,7 +420,7 @@ export type MathNode =
   | { type: "text"; text: string }
   | { type: "fraction"; numerator: MathNode[]; denominator: MathNode[] }
   | { type: "superscript"; controlProperties?: MathControlProperties; base: MathNode[]; superscript: MathNode[] }
-  | { type: "subscript"; base: MathNode[]; subscript: MathNode[] }
+  | { type: "subscript"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[] }
   | { type: "subSup"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "sPre"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "preSubSup"; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
