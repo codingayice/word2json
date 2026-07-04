@@ -1537,7 +1537,12 @@ function imageXml(image: ImageNode, context: WriterContext): string {
     `<pic:spPr><a:xfrm${rotation}><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
     `</pic:pic></a:graphicData></a:graphic>`;
   const drawing = image.floating
-    ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="0" relativeHeight="0" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">` +
+    ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="0" relativeHeight="0"` +
+      (image.floating.distanceTop !== undefined ? ` distT="${image.floating.distanceTop}"` : "") +
+      (image.floating.distanceBottom !== undefined ? ` distB="${image.floating.distanceBottom}"` : "") +
+      (image.floating.distanceLeft !== undefined ? ` distL="${image.floating.distanceLeft}"` : "") +
+      (image.floating.distanceRight !== undefined ? ` distR="${image.floating.distanceRight}"` : "") +
+      ` behindDoc="${image.floating.behindDoc ? "1" : "0"}" locked="0" layoutInCell="${image.floating.layoutInCell === false ? "0" : "1"}" allowOverlap="${image.floating.allowOverlap === false ? "0" : "1"}">` +
       `<wp:positionH relativeFrom="${image.floating.horizontalRelativeFrom ?? "page"}"><wp:posOffset>${image.floating.horizontalOffset}</wp:posOffset></wp:positionH>` +
       `<wp:positionV relativeFrom="${image.floating.verticalRelativeFrom ?? "page"}"><wp:posOffset>${image.floating.verticalOffset}</wp:posOffset></wp:positionV>` +
       imageWrapXml(image.floating.wrap) +

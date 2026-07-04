@@ -1493,6 +1493,13 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
     verticalOffset: parseNumber(asObject(anchor.positionV).posOffset),
     ...parseImageHorizontalRelativeFrom(asObject(anchor.positionH).relativeFrom),
     ...parseImageVerticalRelativeFrom(asObject(anchor.positionV).relativeFrom),
+    ...(anchor.distT !== undefined ? { distanceTop: parseNumber(anchor.distT) } : {}),
+    ...(anchor.distB !== undefined ? { distanceBottom: parseNumber(anchor.distB) } : {}),
+    ...(anchor.distL !== undefined ? { distanceLeft: parseNumber(anchor.distL) } : {}),
+    ...(anchor.distR !== undefined ? { distanceRight: parseNumber(anchor.distR) } : {}),
+    ...(parseOnOff(anchor.behindDoc) ? { behindDoc: true } : {}),
+    ...(anchor.allowOverlap !== undefined && !parseOnOff(anchor.allowOverlap) ? { allowOverlap: false } : {}),
+    ...(anchor.layoutInCell !== undefined && !parseOnOff(anchor.layoutInCell) ? { layoutInCell: false } : {}),
   };
 }
 

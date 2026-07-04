@@ -5075,6 +5075,38 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<wp:positionV relativeFrom="paragraph"><wp:posOffset>720</wp:posOffset></wp:positionV>');
   });
 
+  it("writes floating image distances and layout flags", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          distanceTop: 10,
+          distanceBottom: 20,
+          distanceLeft: 30,
+          distanceRight: 40,
+          behindDoc: true,
+          allowOverlap: false,
+          layoutInCell: false,
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('behindDoc="1" locked="0" layoutInCell="0" allowOverlap="0"');
+    expect(xml).toContain('distT="10" distB="20" distL="30" distR="40"');
+  });
+
   it("writes headers and footers with section relationships", async () => {
     const document = {
       version: "1.0" as const,
@@ -11380,6 +11412,36 @@ describe("DOCX reader", () => {
           verticalOffset: 720,
           horizontalRelativeFrom: "margin",
           verticalRelativeFrom: "paragraph",
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image distances and layout flags", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          distanceTop: 10,
+          distanceBottom: 20,
+          distanceLeft: 30,
+          distanceRight: 40,
+          behindDoc: true,
+          allowOverlap: false,
+          layoutInCell: false,
         },
       },
     ]);

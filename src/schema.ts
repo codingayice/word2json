@@ -861,6 +861,13 @@ export type ImageFloatingLayout = {
   verticalOffset: number;
   horizontalRelativeFrom?: "page" | "margin" | "column" | "character";
   verticalRelativeFrom?: "page" | "margin" | "paragraph" | "line";
+  distanceTop?: number;
+  distanceBottom?: number;
+  distanceLeft?: number;
+  distanceRight?: number;
+  behindDoc?: boolean;
+  allowOverlap?: boolean;
+  layoutInCell?: boolean;
 };
 
 export function createDocumentJson(blocks: DocumentBlock[]): DocumentJson {
