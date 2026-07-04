@@ -294,6 +294,8 @@ export type ParagraphStyleDefinition = StyleDefinition & {
 export type StyleRunProperties = {
   bold?: boolean;
   italic?: boolean;
+  complexScriptBold?: boolean;
+  complexScriptItalic?: boolean;
   underline?: boolean;
   fontFamily?: string;
   eastAsiaFontFamily?: string;

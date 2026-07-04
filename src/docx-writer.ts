@@ -1299,6 +1299,8 @@ function runPropertiesXml(run: TextRun): string {
     runFontsXml(run),
     run.bold !== undefined ? (run.bold ? "<w:b/>" : '<w:b w:val="0"/>') : "",
     run.italic !== undefined ? (run.italic ? "<w:i/>" : '<w:i w:val="0"/>') : "",
+    run.complexScriptBold !== undefined ? (run.complexScriptBold ? "<w:bCs/>" : '<w:bCs w:val="0"/>') : "",
+    run.complexScriptItalic !== undefined ? (run.complexScriptItalic ? "<w:iCs/>" : '<w:iCs w:val="0"/>') : "",
     run.allCaps !== undefined ? (run.allCaps ? "<w:caps/>" : '<w:caps w:val="0"/>') : "",
     run.smallCaps !== undefined ? (run.smallCaps ? "<w:smallCaps/>" : '<w:smallCaps w:val="0"/>') : "",
     run.strike !== undefined ? (run.strike ? "<w:strike/>" : '<w:strike w:val="0"/>') : "",
@@ -2241,6 +2243,8 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
   const properties = [
     styleOnOffXml("b", run.bold),
     styleOnOffXml("i", run.italic),
+    styleOnOffXml("bCs", run.complexScriptBold),
+    styleOnOffXml("iCs", run.complexScriptItalic),
     run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
     styleRunFontsXml(run),
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",

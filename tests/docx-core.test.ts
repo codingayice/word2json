@@ -350,6 +350,21 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:cs w:val="0"/></w:rPr><w:t>Plain</w:t>');
   });
 
+  it("writes text run complex script bold and italic", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Complex", complexScriptBold: true, complexScriptItalic: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:bCs/><w:iCs w:val="0"/></w:rPr><w:t>Complex</w:t>');
+  });
+
   it("writes text run spec vanish on", async () => {
     const document = createDocumentJson([
       {
@@ -7016,6 +7031,26 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:b w:val="0"/><w:i w:val="0"/><w:strike w:val="0"/><w:dstrike w:val="0"/><w:smallCaps w:val="0"/><w:caps w:val="0"/><w:shadow w:val="0"/><w:outline w:val="0"/><w:emboss w:val="0"/><w:imprint w:val="0"/><w:rtl w:val="0"/><w:cs w:val="0"/><w:specVanish w:val="0"/><w:vanish w:val="0"/><w:webHidden w:val="0"/><w:snapToGrid w:val="0"/><w:noProof w:val="0"/><w:oMath w:val="0"/></w:rPr>');
   });
 
+  it("writes style run complex script bold and italic", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "CsHeading",
+          name: "CS Heading",
+          run: { complexScriptBold: true, complexScriptItalic: false },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "CsHeading", runs: [{ text: "Heading" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:rPr><w:bCs/><w:iCs w:val="0"/></w:rPr>');
+  });
+
   it("writes table style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -7702,6 +7737,20 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Plain", complexScript: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run complex script bold and italic", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Complex", complexScriptBold: true, complexScriptItalic: false }],
       },
     ]);
 
@@ -14063,6 +14112,25 @@ describe("DOCX reader", () => {
         }],
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Off", styleId: "ExplicitOffText" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run complex script bold and italic", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "CsHeading",
+          name: "CS Heading",
+          run: { complexScriptBold: true, complexScriptItalic: false },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "CsHeading", runs: [{ text: "Heading" }] }] }],
     };
 
     const docx = await buildDocx(source);

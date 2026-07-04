@@ -1005,6 +1005,8 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const parsed = {
     ...parseStyleOnOffRunProperty(properties.b, "bold"),
     ...parseStyleOnOffRunProperty(properties.i, "italic"),
+    ...parseStyleOnOffRunProperty(properties.bCs, "complexScriptBold"),
+    ...parseStyleOnOffRunProperty(properties.iCs, "complexScriptItalic"),
     ...parseUnderline(properties.u),
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
     ...(typeof fonts.eastAsia === "string" ? { eastAsiaFontFamily: fonts.eastAsia } : {}),
@@ -3540,6 +3542,8 @@ function parseRun(value: unknown): TextRun {
     ...parseRunStyle(properties),
     ...parseOnOffRunProperty(properties.b, "bold"),
     ...parseOnOffRunProperty(properties.i, "italic"),
+    ...parseOnOffRunProperty(properties.bCs, "complexScriptBold"),
+    ...parseOnOffRunProperty(properties.iCs, "complexScriptItalic"),
     ...parseUnderline(properties.u),
     ...parseRunFont(properties),
   };
@@ -3629,6 +3633,8 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...parseRunColor(color),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<TextRun["highlight"]> } : {}),
     ...parseOnOffRunProperty(properties.strike, "strike"),
+    ...parseOnOffRunProperty(properties.bCs, "complexScriptBold"),
+    ...parseOnOffRunProperty(properties.iCs, "complexScriptItalic"),
     ...parseOnOffRunProperty(properties.dstrike, "doubleStrike"),
     ...parseOnOffRunProperty(properties.smallCaps, "smallCaps"),
     ...parseOnOffRunProperty(properties.caps, "allCaps"),
