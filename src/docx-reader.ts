@@ -982,12 +982,30 @@ function parseRunColor(color: XmlNode): Pick<StyleRunProperties, "color" | "colo
 
 function parseStyleTableProperties(style: XmlNode): TableStyleDefinition["table"] | undefined {
   const properties = asObject(style.tblPr);
+  const rowBandSize = asObject(properties.tblStyleRowBandSize);
+  const columnBandSize = asObject(properties.tblStyleColBandSize);
+  const width = asObject(properties.tblW);
+  const widthType = parseTableWidthType(width.type);
   const borders = parseTableBorders(properties.tblBorders);
+  const cellSpacing = asObject(properties.tblCellSpacing);
+  const indent = parseTableIndent(properties.tblInd);
+  const layout = parseTableLayout(properties.tblLayout);
+  const look = parseTableLook(properties.tblLook);
+  const cellMargins = parseTableCellMargins(properties.tblCellMar);
   const conditionalStyles = asArray(style.tblStylePr)
     .map(parseTableConditionalStyle)
     .filter((conditionalStyle): conditionalStyle is NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number] => conditionalStyle !== undefined);
   const parsed = {
+    ...(rowBandSize.val !== undefined ? { rowBandSize: parseNumber(rowBandSize.val) } : {}),
+    ...(columnBandSize.val !== undefined ? { columnBandSize: parseNumber(columnBandSize.val) } : {}),
+    ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
+    ...(widthType && widthType !== "dxa" ? { widthType } : {}),
     ...(borders ? { borders } : {}),
+    ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+    ...(indent ? { indent } : {}),
+    ...(layout ? { layout } : {}),
+    ...(look ? { look } : {}),
+    ...(cellMargins ? { cellMargins } : {}),
     ...(conditionalStyles.length > 0 ? { conditionalStyles } : {}),
   };
 

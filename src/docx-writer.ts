@@ -2227,7 +2227,7 @@ function styleRunFontsXml(run: StyleRunProperties): string {
 }
 
 function tableStylePropertiesXml(properties: StyleTableProperties | undefined): string {
-  if (!properties?.borders && !properties?.conditionalStyles?.length) {
+  if (!properties || (!tableStyleBasePropertiesXml(properties) && !properties.conditionalStyles?.length)) {
     return "";
   }
 
@@ -2236,7 +2236,34 @@ function tableStylePropertiesXml(properties: StyleTableProperties | undefined): 
 }
 
 function tableStyleBasePropertiesXml(properties?: StyleTableProperties): string {
-  return properties?.borders ? `<w:tblPr>${tableBordersXml(properties.borders)}</w:tblPr>` : "";
+  if (!properties) {
+    return "";
+  }
+
+  const tableProperties = [
+    properties.rowBandSize !== undefined ? `<w:tblStyleRowBandSize w:val="${properties.rowBandSize}"/>` : "",
+    properties.columnBandSize !== undefined ? `<w:tblStyleColBandSize w:val="${properties.columnBandSize}"/>` : "",
+    properties.width !== undefined ? `<w:tblW w:w="${properties.width}" w:type="${properties.widthType ?? "dxa"}"/>` : "",
+    properties.borders ? tableBordersXml(properties.borders) : "",
+    properties.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${properties.cellSpacing}" w:type="dxa"/>` : "",
+    properties.indent ? `<w:tblInd w:w="${properties.indent.width}" w:type="${properties.indent.type ?? "dxa"}"/>` : "",
+    properties.layout ? `<w:tblLayout w:type="${properties.layout}"/>` : "",
+    properties.look ? tableLookXml(properties.look) : "",
+    properties.cellMargins ? tableStyleCellMarginsXml(properties.cellMargins) : "",
+  ].join("");
+
+  return tableProperties ? `<w:tblPr>${tableProperties}</w:tblPr>` : "";
+}
+
+function tableStyleCellMarginsXml(margins: NonNullable<StyleTableProperties["cellMargins"]>): string {
+  const sides = [
+    tableCellMarginSideXml("top", margins.top),
+    tableCellMarginSideXml("right", margins.right),
+    tableCellMarginSideXml("bottom", margins.bottom),
+    tableCellMarginSideXml("left", margins.left),
+  ].join("");
+
+  return sides ? `<w:tblCellMar>${sides}</w:tblCellMar>` : "";
 }
 
 function tableConditionalStyleXml(style: TableConditionalStyle): string {

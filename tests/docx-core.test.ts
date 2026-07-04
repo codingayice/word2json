@@ -6951,6 +6951,50 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:tblStylePr w:type="firstRow"><w:tblPr><w:tblBorders><w:bottom w:val="single" w:sz="12" w:color="4472C4"/></w:tblBorders></w:tblPr><w:tcPr><w:shd w:val="clear" w:fill="D9EAF7" w:themeFill="accent5" w:themeFillTint="99"/></w:tcPr><w:rPr><w:b/><w:color w:val="1F4E79" w:themeColor="accent1"/></w:rPr></w:tblStylePr>');
   });
 
+  it("writes table style base table properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "BaseTable",
+            name: "Base Table",
+            table: {
+              rowBandSize: 2,
+              columnBandSize: 3,
+              width: 5000,
+              widthType: "pct" as const,
+              cellSpacing: 120,
+              indent: { width: 360 },
+              layout: "fixed" as const,
+              look: {
+                firstRow: true,
+                lastRow: false,
+                firstColumn: false,
+                lastColumn: false,
+                bandedRows: false,
+                bandedColumns: true,
+              },
+              cellMargins: {
+                top: 0,
+                right: 144,
+                bottom: { width: 0, type: "nil" as const },
+                left: 108,
+              },
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:tblPr><w:tblStyleRowBandSize w:val="2"/><w:tblStyleColBandSize w:val="3"/><w:tblW w:w="5000" w:type="pct"/><w:tblCellSpacing w:w="120" w:type="dxa"/><w:tblInd w:w="360" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblLook w:val="0220"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:right w:w="144" w:type="dxa"/><w:bottom w:w="0" w:type="nil"/><w:left w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr>');
+  });
+
   it("writes extended table conditional style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -13801,6 +13845,49 @@ describe("DOCX reader", () => {
                   run: { bold: true, color: "1F4E79", colorTheme: "accent1" },
                 },
               ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table style base table properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "BaseTable",
+            name: "Base Table",
+            table: {
+              rowBandSize: 2,
+              columnBandSize: 3,
+              width: 5000,
+              widthType: "pct" as const,
+              cellSpacing: 120,
+              indent: { width: 360 },
+              layout: "fixed" as const,
+              look: {
+                firstRow: true,
+                lastRow: false,
+                firstColumn: false,
+                lastColumn: false,
+                bandedRows: false,
+                bandedColumns: true,
+              },
+              cellMargins: {
+                top: 0,
+                right: 144,
+                bottom: { width: 0, type: "nil" as const },
+                left: 108,
+              },
             },
           },
         ],

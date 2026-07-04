@@ -384,7 +384,16 @@ export type TableStyleDefinition = StyleDefinition & {
 };
 
 export type StyleTableProperties = {
+  rowBandSize?: number;
+  columnBandSize?: number;
+  width?: number;
+  widthType?: "auto" | "dxa" | "nil" | "pct";
   borders?: TableBorders;
+  cellSpacing?: number;
+  indent?: TableIndent;
+  layout?: "autofit" | "fixed";
+  look?: TableLook;
+  cellMargins?: TableCellMargins;
   conditionalStyles?: TableConditionalStyle[];
 };
 
