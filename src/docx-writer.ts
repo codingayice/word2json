@@ -828,10 +828,10 @@ function mathNodeXml(node: MathNode): string {
     const controlProperties = mathControlPropertiesXml(node.controlProperties);
     const properties = [
       node.show !== undefined ? `<m:show m:val="${node.show ? "1" : "0"}"/>` : "",
-      node.zeroWidth ? '<m:zeroWid m:val="1"/>' : "",
-      node.zeroAscent ? '<m:zeroAsc m:val="1"/>' : "",
-      node.zeroDescent ? '<m:zeroDesc m:val="1"/>' : "",
-      node.transparent ? '<m:transp m:val="1"/>' : "",
+      node.zeroWidth !== undefined ? `<m:zeroWid m:val="${node.zeroWidth ? "1" : "0"}"/>` : "",
+      node.zeroAscent !== undefined ? `<m:zeroAsc m:val="${node.zeroAscent ? "1" : "0"}"/>` : "",
+      node.zeroDescent !== undefined ? `<m:zeroDesc m:val="${node.zeroDescent ? "1" : "0"}"/>` : "",
+      node.transparent !== undefined ? `<m:transp m:val="${node.transparent ? "1" : "0"}"/>` : "",
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:phant>${properties ? `<m:phantPr>${properties}</m:phantPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:phant>`;

@@ -1838,6 +1838,37 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:phant><m:phantPr><m:show m:val="0"/><m:zeroWid m:val="1"/></m:phantPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:phant>');
   });
 
+  it("writes phantom explicit false properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "phantom" as const,
+                  zeroWidth: false,
+                  zeroAscent: false,
+                  zeroDescent: false,
+                  transparent: false,
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:phant><m:phantPr><m:zeroWid m:val="0"/><m:zeroAsc m:val="0"/><m:zeroDesc m:val="0"/><m:transp m:val="0"/></m:phantPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:phant>');
+  });
+
   it("writes phantom control properties", async () => {
     const document = createDocumentJson([
       {
@@ -6132,6 +6163,42 @@ describe("DOCX reader", () => {
                   show: false,
                   zeroAscent: true,
                   zeroDescent: true,
+                  content: [
+                    {
+                      type: "fraction" as const,
+                      numerator: [{ type: "text" as const, text: "a" }],
+                      denominator: [{ type: "text" as const, text: "b" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips phantom explicit false properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "phantom" as const,
+                  zeroWidth: false,
+                  zeroAscent: false,
+                  zeroDescent: false,
+                  transparent: false,
                   content: [
                     {
                       type: "fraction" as const,
