@@ -1616,8 +1616,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.f)
       .map((fraction) => {
         const fractionNode = asObject(fraction);
+        const controlProperties = parseMathControlProperties(asObject(asObject(fractionNode.fPr).ctrlPr).rPr);
         return {
           type: "fraction" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           numerator: parseMathNodes(asObject(fractionNode.num)),
           denominator: parseMathNodes(asObject(fractionNode.den)),
         };

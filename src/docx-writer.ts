@@ -690,7 +690,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "fraction") {
-    return `<m:f><m:num>${node.numerator.map((child) => mathNodeXml(child)).join("")}</m:num><m:den>${node.denominator.map((child) => mathNodeXml(child)).join("")}</m:den></m:f>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:f>${properties ? `<m:fPr><m:ctrlPr>${properties}</m:ctrlPr></m:fPr>` : ""}<m:num>${node.numerator.map((child) => mathNodeXml(child)).join("")}</m:num><m:den>${node.denominator.map((child) => mathNodeXml(child)).join("")}</m:den></m:f>`;
   }
 
   if (node.type === "superscript") {

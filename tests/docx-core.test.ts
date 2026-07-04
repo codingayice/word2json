@@ -110,6 +110,43 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<m:sSub><m:e><m:r><m:t>a</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub></m:sSub>");
   });
 
+  it("writes fraction control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "fraction" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 15,
+                    color: "C55A11",
+                    underline: true,
+                    highlight: "blue",
+                  },
+                  numerator: [{ type: "text" as const, text: "1" }],
+                  denominator: [{ type: "text" as const, text: "2" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:f><m:fPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="30"/><w:color w:val="C55A11"/><w:highlight w:val="blue"/></w:rPr></m:ctrlPr></m:fPr><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f>');
+  });
+
   it("writes superscript control properties", async () => {
     const document = createDocumentJson([
       {
@@ -3680,6 +3717,42 @@ describe("DOCX reader", () => {
                   },
                   base: [{ type: "text" as const, text: "a" }],
                   subscript: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips fraction control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "fraction" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 15,
+                    color: "C55A11",
+                    underline: true,
+                    highlight: "blue",
+                  },
+                  numerator: [{ type: "text" as const, text: "1" }],
+                  denominator: [{ type: "text" as const, text: "2" }],
                 },
               ],
             },
