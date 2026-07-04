@@ -1071,6 +1071,7 @@ function parseRunColor(color: XmlNode): Pick<StyleRunProperties, "color" | "colo
 }
 
 function parseStyleTableProperties(style: XmlNode): TableStyleDefinition["table"] | undefined {
+  const hasTableProperties = style.tblPr !== undefined;
   const properties = asObject(style.tblPr);
   const rowBandSize = asObject(properties.tblStyleRowBandSize);
   const columnBandSize = asObject(properties.tblStyleColBandSize);
@@ -1087,7 +1088,9 @@ function parseStyleTableProperties(style: XmlNode): TableStyleDefinition["table"
   const conditionalStyles = asArray(style.tblStylePr)
     .map(parseTableConditionalStyle)
     .filter((conditionalStyle): conditionalStyle is NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number] => conditionalStyle !== undefined);
+  const hasEmptyTableProperties = hasTableProperties && Object.keys(properties).length === 0;
   const parsed = {
+    ...(hasEmptyTableProperties ? { preserveEmpty: true } : {}),
     ...(rowBandSize.val !== undefined ? { rowBandSize: parseNumber(rowBandSize.val) } : {}),
     ...(columnBandSize.val !== undefined ? { columnBandSize: parseNumber(columnBandSize.val) } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),

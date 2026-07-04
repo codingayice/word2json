@@ -413,6 +413,7 @@ export type TableStyleDefinition = StyleDefinition & {
 };
 
 export type StyleTableProperties = {
+  preserveEmpty?: boolean;
   rowBandSize?: number;
   columnBandSize?: number;
   width?: number;

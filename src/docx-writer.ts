@@ -2327,7 +2327,7 @@ function tableStyleBasePropertiesXml(properties?: StyleTableProperties): string 
     properties.cellMargins ? tableStyleCellMarginsXml(properties.cellMargins) : "",
   ].join("");
 
-  return tableProperties ? `<w:tblPr>${tableProperties}</w:tblPr>` : "";
+  return tableProperties ? `<w:tblPr>${tableProperties}</w:tblPr>` : properties.preserveEmpty ? "<w:tblPr/>" : "";
 }
 
 function tableStyleCellMarginsXml(margins: NonNullable<StyleTableProperties["cellMargins"]>): string {

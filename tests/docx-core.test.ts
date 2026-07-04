@@ -7128,6 +7128,36 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:tblStylePr w:type="firstRow"><w:tblPr><w:tblBorders><w:bottom w:val="single" w:sz="12" w:color="4472C4"/></w:tblBorders></w:tblPr><w:tcPr><w:shd w:val="clear" w:fill="D9EAF7" w:themeFill="accent5" w:themeFillTint="99"/></w:tcPr><w:rPr><w:b/><w:color w:val="1F4E79" w:themeColor="accent1"/></w:rPr></w:tblStylePr>');
   });
 
+  it("writes empty table properties in table conditional styles", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "EmptyConditionalTable",
+            name: "Empty Conditional Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "firstRow" as const,
+                  table: { preserveEmpty: true },
+                  run: { bold: true },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:tblStylePr w:type="firstRow"><w:tblPr/><w:rPr><w:b/></w:rPr></w:tblStylePr>');
+  });
+
   it("writes table style base table properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -14256,6 +14286,35 @@ describe("DOCX reader", () => {
                     shading: { fill: "D9EAF7", themeFill: "accent5", themeFillTint: "99" },
                   },
                   run: { bold: true, color: "1F4E79", colorTheme: "accent1" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips empty table properties in table conditional styles", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "EmptyConditionalTable",
+            name: "Empty Conditional Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "firstRow" as const,
+                  table: { preserveEmpty: true },
+                  run: { bold: true },
                 },
               ],
             },
