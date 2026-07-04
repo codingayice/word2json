@@ -1969,7 +1969,12 @@ function parseBorderStyle(value: unknown): NonNullable<TextRun["border"]>["style
     value === "dashed" ||
     value === "dotted" ||
     value === "nil" ||
-    value === "none"
+    value === "none" ||
+    value === "thick" ||
+    value === "dotDash" ||
+    value === "dotDotDash" ||
+    value === "triple" ||
+    value === "wave"
     ? value
     : undefined;
 }

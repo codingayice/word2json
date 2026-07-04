@@ -11913,6 +11913,46 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips additional border styles", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        borders: {
+          top: { style: "thick", size: 18, color: "4472C4", space: 2 },
+          bottom: { style: "dotDash", size: 8, color: "70AD47", space: 1 },
+          bar: { style: "wave", size: 12, color: "C00000", space: 0 },
+        },
+        runs: [{ text: "Additional paragraph border styles" }],
+      },
+      {
+        type: "table",
+        borders: {
+          top: { style: "triple", size: 12, color: "7030A0", space: 1 },
+          insideH: { style: "dotDotDash", size: 6, color: "808080", space: 0 },
+        },
+        rows: [
+          {
+            cells: [
+              {
+                borders: {
+                  left: { style: "thick", size: 16, color: "4472C4", space: 2 },
+                  right: { style: "wave", size: 10, color: "C00000", space: 0 },
+                  insideV: { style: "dotDash", size: 4, color: "70AD47", space: 1 },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Additional cell border styles" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips paragraph indentation", async () => {
     const source = createDocumentJson([
       {

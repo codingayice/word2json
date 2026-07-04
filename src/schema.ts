@@ -342,7 +342,7 @@ export type ShadingDefinition = {
   fill: string;
 };
 
-export type BorderStyle = "single" | "double" | "dashed" | "dotted" | "nil" | "none";
+export type BorderStyle = "single" | "double" | "dashed" | "dotted" | "nil" | "none" | "thick" | "dotDash" | "dotDotDash" | "triple" | "wave";
 
 export type BorderDefinition = {
   style: BorderStyle;
