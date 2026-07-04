@@ -2476,7 +2476,7 @@ function parseRun(value: unknown): TextRun {
   return {
     text: parseText(run.t ?? run.delText),
     ...parseRunStyle(properties),
-    ...(properties.b !== undefined ? { bold: true } : {}),
+    ...parseOnOffRunProperty(properties.b, "bold"),
     ...(properties.i !== undefined ? { italic: true } : {}),
     ...parseUnderline(properties.u),
     ...parseRunFont(properties),
@@ -2495,6 +2495,14 @@ function parseUnderline(value: unknown): Partial<Pick<TextRun, "underline">> {
   }
   const val = asObject(value).val;
   return { underline: !(val === "none" || val === "0" || val === false) };
+}
+
+function parseOnOffRunProperty<K extends keyof TextRun>(value: unknown, key: K): Partial<Pick<TextRun, K>> {
+  if (value === undefined) {
+    return {};
+  }
+  const val = asObject(value).val;
+  return { [key]: !(val === "0" || val === false || val === "false") } as Partial<Pick<TextRun, K>>;
 }
 
 function parseField(value: unknown): TextRun["field"] {
