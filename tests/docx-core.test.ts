@@ -5146,6 +5146,31 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:highlight w:val="yellow"/><w:strike/><w:vertAlign w:val="superscript"/><w:spacing w:val="20"/><w:w w:val="90"/></w:rPr>');
   });
 
+  it("writes style run advanced typography properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "EmphasisText",
+          name: "Emphasis Text",
+          run: {
+            complexScriptFontSize: 14,
+            language: { value: "en-US", eastAsia: "zh-CN", bidi: "ar-SA" },
+            characterPosition: 4,
+            kerning: 28,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Term", styleId: "EmphasisText" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:rPr><w:szCs w:val="28"/><w:lang w:val="en-US" w:eastAsia="zh-CN" w:bidi="ar-SA"/><w:position w:val="4"/><w:kern w:val="28"/></w:rPr>');
+  });
+
   it("writes table style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -10112,6 +10137,30 @@ describe("DOCX reader", () => {
           ],
         },
       ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run advanced typography properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "EmphasisText",
+          name: "Emphasis Text",
+          run: {
+            complexScriptFontSize: 14,
+            language: { value: "en-US", eastAsia: "zh-CN", bidi: "ar-SA" },
+            characterPosition: 4,
+            kerning: 28,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Term", styleId: "EmphasisText" }] }] }],
     };
 
     const docx = await buildDocx(source);

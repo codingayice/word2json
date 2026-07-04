@@ -750,8 +750,12 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const properties = asObject(value);
   const fonts = asObject(properties.rFonts);
   const size = asObject(properties.sz);
+  const complexScriptSize = asObject(properties.szCs);
   const color = asObject(properties.color);
   const highlight = asObject(properties.highlight);
+  const language = parseRunLanguage(properties.lang);
+  const characterPosition = asObject(properties.position);
+  const kerning = asObject(properties.kern);
   const verticalAlign = asObject(properties.vertAlign);
   const characterSpacing = asObject(properties.spacing);
   const scale = asObject(properties.w);
@@ -769,12 +773,17 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
     ...(typeof fonts.hint === "string" ? { fontHint: fonts.hint as NonNullable<StyleRunProperties["fontHint"]> } : {}),
     ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
+    ...(typeof complexScriptSize.val === "number" ? { complexScriptFontSize: complexScriptSize.val / 2 } : {}),
+    ...(typeof complexScriptSize.val === "string" ? { complexScriptFontSize: Number.parseInt(complexScriptSize.val, 10) / 2 } : {}),
     ...(typeof color.val === "string" ? { color: color.val } : {}),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<StyleRunProperties["highlight"]> } : {}),
     ...(properties.strike !== undefined ? { strike: true } : {}),
     ...(properties.dstrike !== undefined ? { doubleStrike: true } : {}),
     ...(properties.smallCaps !== undefined ? { smallCaps: true } : {}),
     ...(properties.caps !== undefined ? { allCaps: true } : {}),
+    ...(language ? { language } : {}),
+    ...(characterPosition.val !== undefined ? { characterPosition: parseNumber(characterPosition.val) } : {}),
+    ...(kerning.val !== undefined ? { kerning: parseNumber(kerning.val) } : {}),
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<StyleRunProperties["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
