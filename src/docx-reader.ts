@@ -1097,13 +1097,15 @@ async function parseHeaderFooterContent(
   sectionPropertiesValue: unknown,
   relationships: RelationshipMap,
   comments: CommentMap,
-): Promise<Pick<SectionNode, "headers" | "footers" | "titlePage">> {
+): Promise<Pick<SectionNode, "headers" | "footers" | "titlePage" | "watermark">> {
   const sectionProperties = asObject(sectionPropertiesValue);
   const headers = await parseHeaderFooterReferences(zip, sectionProperties.headerReference, relationships, comments);
   const footers = await parseHeaderFooterReferences(zip, sectionProperties.footerReference, relationships, comments);
+  const watermark = await parseWatermarkFromHeaderReferences(zip, sectionProperties.headerReference, relationships);
 
   return {
     ...(sectionProperties.titlePg !== undefined ? { titlePage: true } : {}),
+    ...(watermark ? { watermark } : {}),
     ...(headers ? { headers } : {}),
     ...(footers ? { footers } : {}),
   };
@@ -1120,7 +1122,7 @@ async function parseHeaderFooterReferences(
     const blocks = await parseHeaderFooterReference(zip, reference, relationships, comments);
     const type = headerFooterReferenceType(reference.type);
 
-    return blocks ? { type, blocks } : undefined;
+    return blocks && blocks.length > 0 ? { type, blocks } : undefined;
   }));
   const parsed = entries.reduce<NonNullable<SectionNode["headers"]>>((accumulator, entry) => {
     if (entry) {
@@ -1157,7 +1159,60 @@ async function parseHeaderFooterReference(
   const parsed = parser.parse(xml) as XmlNode;
   const root = asObject(parsed.hdr ?? parsed.ftr);
 
-  return asArray(root.p).map((paragraph) => parseParagraph(paragraph, relationships, comments));
+  return asArray(root.p)
+    .filter((paragraph) => !isWatermarkParagraph(paragraph))
+    .map((paragraph) => parseParagraph(paragraph, relationships, comments));
+}
+
+async function parseWatermarkFromHeaderReferences(
+  zip: JSZip,
+  value: unknown,
+  relationships: RelationshipMap,
+): Promise<SectionNode["watermark"] | undefined> {
+  for (const referenceValue of asArray(value)) {
+    const reference = asObject(referenceValue);
+    if (headerFooterReferenceType(reference.type) !== "default" || typeof reference.id !== "string") {
+      continue;
+    }
+
+    const target = relationships[reference.id];
+    const file = target ? zip.file(`word/${target}`) : undefined;
+    if (!file) {
+      continue;
+    }
+
+    const watermark = parseWatermarkXml(await file.async("string"));
+    if (watermark) {
+      return watermark;
+    }
+  }
+
+  return undefined;
+}
+
+function parseWatermarkXml(xml: string): SectionNode["watermark"] | undefined {
+  const text = xml.match(/<v:textpath\b[^>]*\bstring="([^"]*)"/)?.[1];
+  if (!text) {
+    return undefined;
+  }
+
+  const shape = xml.match(/<v:shape\b[^>]*>/)?.[0] ?? "";
+  const fill = xml.match(/<v:fill\b[^>]*\bopacity="([^"]*)"/)?.[1];
+  const fontFamily = xml.match(/font-family:&quot;([^&]*)&quot;/)?.[1];
+  const color = shape.match(/\bfillcolor="#?([^"\s]*)"/)?.[1];
+  const rotation = shape.match(/rotation:([^;"]+)/)?.[1];
+
+  return {
+    text: unescapeXml(text),
+    ...(color ? { color } : {}),
+    ...(fill !== undefined ? { opacity: Number.parseFloat(fill) } : {}),
+    ...(rotation !== undefined ? { rotation: Number.parseFloat(rotation) } : {}),
+    ...(fontFamily ? { fontFamily: unescapeXml(fontFamily) } : {}),
+  };
+}
+
+function isWatermarkParagraph(value: unknown): boolean {
+  return asArray(asObject(value).r).some((run) => asObject(run).pict !== undefined);
 }
 
 function headerFooterReferenceType(value: unknown): keyof NonNullable<SectionNode["headers"]> {
@@ -3151,6 +3206,15 @@ function xmlText(value: unknown): string | undefined {
   const text = object["#text"];
 
   return typeof text === "string" ? text : undefined;
+}
+
+function unescapeXml(value: string): string {
+  return value
+    .replaceAll("&quot;", '"')
+    .replaceAll("&apos;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
 }
 
 function paragraphStyleFromId(styleId: string): ParagraphStyle | undefined {

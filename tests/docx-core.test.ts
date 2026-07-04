@@ -4977,6 +4977,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:mirrorMargins/>");
   });
 
+  it("writes text watermarks into section headers", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          watermark: {
+            text: "IMPORT QA",
+            color: "C0C0C0",
+            opacity: 0.15,
+            rotation: 315,
+            fontFamily: "Calibri",
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Body" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const header = await zip.file("word/header1.xml")!.async("string");
+
+    expect(xml).toContain('<w:headerReference w:type="default" r:id="rIdHeader1"/>');
+    expect(header).toContain('<v:shape id="Word2JsonWatermark"');
+    expect(header).toContain('fillcolor="#C0C0C0"');
+    expect(header).toContain("rotation:315");
+    expect(header).toContain('<v:fill opacity="0.15"/>');
+    expect(header).toContain('string="IMPORT QA"');
+  });
+
   it("writes section footnote and endnote properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -10794,6 +10824,29 @@ describe("DOCX reader", () => {
         {
           mirrorMargins: true,
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Booklet" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text watermarks", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          watermark: {
+            text: "IMPORT QA",
+            color: "C0C0C0",
+            opacity: 0.15,
+            rotation: 315,
+            fontFamily: "Calibri",
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Body" }] }],
         },
       ],
     };

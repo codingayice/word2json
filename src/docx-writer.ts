@@ -58,6 +58,7 @@ type HeaderFooterRelationship = {
   id: string;
   filename: string;
   blocks: ParagraphNode[];
+  watermark?: SectionNode["watermark"];
 };
 
 type NoteEntry = {
@@ -90,7 +91,7 @@ export async function buildDocx(document: DocumentJson): Promise<Buffer> {
     }
   });
   for (const header of context.headers) {
-    zip.folder("word")!.file(header.filename, headerFooterXml("hdr", header.blocks, context));
+    zip.folder("word")!.file(header.filename, headerFooterXml("hdr", header.blocks, context, header.watermark));
   }
   for (const footer of context.footers) {
     zip.folder("word")!.file(footer.filename, headerFooterXml("ftr", footer.blocks, context));
@@ -331,7 +332,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const orientation = page.orientation && page.orientation !== "portrait"
     ? ` w:orient="${page.orientation}"`
     : "";
-  const headerReference = headerFooterReferencesXml(section.headers, "header", context);
+  const headerReference = headerFooterReferencesXml(sectionHeadersWithWatermark(section), "header", context, section.watermark);
   const footerReference = headerFooterReferencesXml(section.footers, "footer", context);
   const titlePage = section.titlePage ? "<w:titlePg/>" : "";
   const breakType = section.breakType
@@ -453,7 +454,18 @@ function sectionBreakValue(value: SectionNode["breakType"]): string {
   return "nextPage";
 }
 
-function headerFooterReferencesXml(content: SectionNode["headers"], root: "header" | "footer", context: WriterContext): string {
+function sectionHeadersWithWatermark(section: SectionNode): SectionNode["headers"] {
+  if (!section.watermark) {
+    return section.headers;
+  }
+
+  return {
+    ...section.headers,
+    default: section.headers?.default ?? [],
+  };
+}
+
+function headerFooterReferencesXml(content: SectionNode["headers"], root: "header" | "footer", context: WriterContext, watermark?: SectionNode["watermark"]): string {
   if (!content) {
     return "";
   }
@@ -466,16 +478,16 @@ function headerFooterReferencesXml(content: SectionNode["headers"], root: "heade
       }
 
       return root === "header"
-        ? createHeaderReference(type, blocks, context)
+        ? createHeaderReference(type, blocks, context, type === "default" ? watermark : undefined)
         : createFooterReference(type, blocks, context);
     })
     .join("");
 }
 
-function createHeaderReference(type: keyof NonNullable<SectionNode["headers"]>, blocks: ParagraphNode[], context: WriterContext): string {
+function createHeaderReference(type: keyof NonNullable<SectionNode["headers"]>, blocks: ParagraphNode[], context: WriterContext, watermark?: SectionNode["watermark"]): string {
   const index = context.headers.length + 1;
   const id = `rIdHeader${index}`;
-  context.headers.push({ id, filename: `header${index}.xml`, blocks });
+  context.headers.push({ id, filename: `header${index}.xml`, blocks, watermark });
   return `<w:headerReference w:type="${type}" r:id="${id}"/>`;
 }
 
@@ -1962,12 +1974,32 @@ function commentsXml(context: WriterContext): string {
   );
 }
 
-function headerFooterXml(root: "hdr" | "ftr", blocks: ParagraphNode[], context: WriterContext): string {
+function headerFooterXml(root: "hdr" | "ftr", blocks: ParagraphNode[], context: WriterContext, watermark?: SectionNode["watermark"]): string {
+  const watermarkXml = root === "hdr" && watermark ? watermarkParagraphXml(watermark) : "";
+
   return xmlDeclaration(
-    `<w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+    `<w:${root} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">` +
+      watermarkXml +
       blocks.map((block) => paragraphXml(block, context)).join("") +
       `</w:${root}>`,
   );
+}
+
+function watermarkParagraphXml(watermark: NonNullable<SectionNode["watermark"]>): string {
+  const color = watermark.color ?? "C0C0C0";
+  const opacity = watermark.opacity ?? 0.15;
+  const rotation = watermark.rotation ?? 315;
+  const fontFamily = watermark.fontFamily ?? "Calibri";
+
+  return `<w:p><w:r><w:pict>` +
+    `<v:shape id="Word2JsonWatermark" o:spid="_x0000_s1025" type="#_x0000_t136" ` +
+    `style="position:absolute;margin-left:0;margin-top:0;width:468pt;height:468pt;rotation:${rotation};z-index:-251654144;mso-position-horizontal:center;mso-position-vertical:center;mso-wrap-edited:f;" ` +
+    `fillcolor="#${escapeAttribute(color)}" stroked="f">` +
+    `<v:fill opacity="${opacity}"/>` +
+    `<v:textpath style="font-family:&quot;${escapeAttribute(fontFamily)}&quot;;font-size:1pt" string="${escapeAttribute(watermark.text)}"/>` +
+    `<v:path textpathok="t"/>` +
+    `</v:shape>` +
+    `</w:pict></w:r></w:p>`;
 }
 
 function notesXml(root: "footnotes" | "endnotes", item: "footnote" | "endnote", notes: NoteEntry[], context: WriterContext): string {

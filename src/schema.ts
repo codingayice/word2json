@@ -379,10 +379,19 @@ export type SectionNode = {
   bidi?: boolean;
   rtlGutter?: boolean;
   mirrorMargins?: boolean;
+  watermark?: TextWatermark;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;
   blocks: DocumentBlock[];
+};
+
+export type TextWatermark = {
+  text: string;
+  color?: string;
+  opacity?: number;
+  rotation?: number;
+  fontFamily?: string;
 };
 
 export type SectionBreakType = "nextPage" | "continuous" | "evenPage" | "oddPage";
