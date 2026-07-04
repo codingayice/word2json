@@ -990,26 +990,42 @@ async function parseSections(
   numberingContext: NumberingContext,
 ): Promise<DocumentJson["sections"]> {
   const bodyContent = documentXml.match(/<w:body>([\s\S]*?)<\/w:body>/)?.[1] ?? "";
-  const breakPattern = /<w:p><w:pPr>(<w:sectPr>[\s\S]*?<\/w:sectPr>)<\/w:pPr><\/w:p>/g;
   const sectionParts: Array<{ content: string; sectPrXml: string; preserveDefaultPage: boolean }> = [];
+  const finalSectionMatch = finalBodySectionProperties(bodyContent);
+  const finalSectionStart = finalSectionMatch?.index ?? -1;
+  const finalSectionXml = finalSectionMatch?.xml;
+  const sectionedBodyContent = finalSectionStart >= 0 ? bodyContent.slice(0, finalSectionStart) : bodyContent;
+  const paragraphPattern = /<w:p\b[\s\S]*?<\/w:p>/g;
+  let pendingContent = "";
   let cursor = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = breakPattern.exec(bodyContent)) !== null) {
+  while ((match = paragraphPattern.exec(sectionedBodyContent)) !== null) {
+    const paragraphXml = match[0];
+    const sectPrXml = paragraphXml.match(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/)?.[0];
+    if (!sectPrXml) {
+      continue;
+    }
+
+    pendingContent += sectionedBodyContent.slice(cursor, match.index);
+    const paragraphWithoutSection = stripParagraphSectionProperties(paragraphXml);
+    if (paragraphHasContent(paragraphWithoutSection)) {
+      pendingContent += paragraphWithoutSection;
+    }
+
     sectionParts.push({
-      content: bodyContent.slice(cursor, match.index),
-      sectPrXml: match[1],
+      content: pendingContent,
+      sectPrXml,
       preserveDefaultPage: true,
     });
-    cursor = match.index + match[0].length;
+    pendingContent = "";
+    cursor = match.index + paragraphXml.length;
   }
 
-  const remainingBody = bodyContent.slice(cursor);
-  const finalSectionXml = remainingBody.match(/(<w:sectPr>[\s\S]*?<\/w:sectPr>)\s*$/)?.[1];
-
   if (finalSectionXml) {
+    const remainingBody = pendingContent + sectionedBodyContent.slice(cursor);
     sectionParts.push({
-      content: remainingBody.slice(0, remainingBody.lastIndexOf(finalSectionXml)),
+      content: remainingBody,
       sectPrXml: finalSectionXml,
       preserveDefaultPage: sectionParts.length > 0,
     });
@@ -1086,10 +1102,34 @@ async function parseSections(
   }));
 }
 
+function stripParagraphSectionProperties(paragraphXml: string): string {
+  return paragraphXml
+    .replace(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/, "")
+    .replace(/<w:pPr>\s*<\/w:pPr>/, "");
+}
+
+function paragraphHasContent(paragraphXml: string): boolean {
+  return /<w:(r|hyperlink|fldSimple|sdt|bookmarkStart|bookmarkEnd|commentRangeStart|commentRangeEnd)\b/.test(paragraphXml);
+}
+
 function parseSectPrXml(xml: string): XmlNode {
-  const namespacedXml = xml.replace("<w:sectPr>", '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">');
+  const namespacedXml = xml.replace(/^<w:sectPr\b/, '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"');
   const parsed = parser.parse(namespacedXml) as XmlNode;
   return asObject(parsed.sectPr);
+}
+
+function finalBodySectionProperties(bodyContent: string): { index: number; xml: string } | undefined {
+  const trimmedLength = bodyContent.trimEnd().length;
+  const sectionPattern = /<w:sectPr\b[\s\S]*?<\/w:sectPr>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = sectionPattern.exec(bodyContent)) !== null) {
+    if (match.index + match[0].length === trimmedLength) {
+      return { index: match.index, xml: match[0] };
+    }
+  }
+
+  return undefined;
 }
 
 async function parseHeaderFooterContent(

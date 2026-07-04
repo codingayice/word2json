@@ -12447,6 +12447,42 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("reads section break from paragraph with content", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          breakType: "continuous" as const,
+          columns: { count: 2, space: 420 },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Before break" }] }],
+        },
+        {
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "After break" }] }],
+        },
+      ],
+    };
+    const docx = await buildDocx(source);
+    const zip = await JSZip.loadAsync(docx);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    const sectionBreakParagraph = xml.match(/<w:p><w:pPr>(<w:sectPr>[\s\S]*?<\/w:sectPr>)<\/w:pPr><\/w:p>/)![0];
+    const sectionProperties = xml.match(/<w:p><w:pPr>(<w:sectPr>[\s\S]*?<\/w:sectPr>)<\/w:pPr><\/w:p>/)![1];
+    const contentParagraph = '<w:p><w:pPr>' + sectionProperties + '</w:pPr><w:r><w:t>Before break</w:t></w:r></w:p>';
+    const modifiedXml = xml
+      .replace('<w:p><w:r><w:t>Before break</w:t></w:r></w:p>', "")
+      .replace(sectionBreakParagraph, contentParagraph);
+    zip.file("word/document.xml", modifiedXml);
+
+    const parsed = await parseDocx(await zip.generateAsync({ type: "nodebuffer" }));
+
+    expect(parsed.sections).toHaveLength(2);
+    expect(parsed.sections[0]).toMatchObject({
+      breakType: "continuous",
+      columns: { count: 2, space: 420 },
+      blocks: [{ type: "paragraph", runs: [{ text: "Before break" }] }],
+    });
+    expect(parsed.sections[1].blocks).toEqual([{ type: "paragraph", runs: [{ text: "After break" }] }]);
+  });
+
   it("round-trips section custom column layout", async () => {
     const source = {
       version: "1.0" as const,
