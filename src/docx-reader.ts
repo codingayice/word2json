@@ -1023,15 +1023,19 @@ function parseTableConditionalCellStyle(value: unknown): NonNullable<NonNullable
   const verticalAlignment = asObject(properties.vAlign);
   const borders = parseTableCellBorders(properties.tcBorders);
   const shading = parseShading(properties.shd);
+  const noWrap = parseTableCellOnOff(properties.noWrap);
   const margins = parseTableCellMargins(properties.tcMar);
   const textDirection = asObject(properties.textDirection);
+  const fitText = parseTableCellOnOff(properties.tcFitText);
   const parsed = {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(widthType && widthType !== "dxa" ? { widthType } : {}),
     ...(borders ? { borders } : {}),
     ...(shading ? { shading } : {}),
+    ...(noWrap ? { noWrap } : {}),
     ...(margins ? { margins } : {}),
     ...(typeof textDirection.val === "string" ? { textDirection: textDirection.val as NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]>["textDirection"] } : {}),
+    ...(fitText ? { fitText } : {}),
     ...(typeof verticalAlignment.val === "string" ? { verticalAlignment: verticalAlignment.val as NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]>["verticalAlignment"] } : {}),
   };
 

@@ -402,6 +402,8 @@ export type TableConditionalCellStyle = {
   shading?: TableCellShading;
   borders?: TableCellBorders;
   margins?: TableCellMargins;
+  noWrap?: boolean;
+  fitText?: boolean;
   verticalAlignment?: "top" | "center" | "bottom";
   textDirection?: "lrTb" | "tbRl" | "btLr";
 };

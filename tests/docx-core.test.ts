@@ -7026,6 +7026,38 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:tblStylePr w:type="lastCol"><w:tcPr><w:tcW w:w="1800" w:type="dxa"/><w:textDirection w:val="tbRl"/><w:vAlign w:val="bottom"/></w:tcPr></w:tblStylePr>');
   });
 
+  it("writes table conditional cell behavior properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "CompactBandTable",
+            name: "Compact Band Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "band2Vert" as const,
+                  cell: {
+                    noWrap: true,
+                    fitText: true,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:tblStylePr w:type="band2Vert"><w:tcPr><w:noWrap/><w:tcFitText/></w:tcPr></w:tblStylePr>');
+  });
+
   it("writes theme part", async () => {
     const document = {
       version: "1.0" as const,
@@ -13839,6 +13871,37 @@ describe("DOCX reader", () => {
                     widthType: "pct" as const,
                     verticalAlignment: "bottom" as const,
                     textDirection: "tbRl" as const,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table conditional cell behavior properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "CompactBandTable",
+            name: "Compact Band Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "band2Vert" as const,
+                  cell: {
+                    noWrap: true,
+                    fitText: true,
                   },
                 },
               ],

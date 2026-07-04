@@ -2259,8 +2259,10 @@ function tableConditionalCellStyleXml(cell: TableConditionalStyle["cell"]): stri
     cell.width !== undefined ? `<w:tcW w:w="${cell.width}" w:type="${cell.widthType ?? "dxa"}"/>` : "",
     cell.borders ? tableCellBordersXml(cell.borders) : "",
     cell.shading ? shadingXml(cell.shading) : "",
+    cell.noWrap ? "<w:noWrap/>" : "",
     cell.margins ? tableCellMarginsXml(cell.margins) : "",
     cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
+    cell.fitText ? "<w:tcFitText/>" : "",
     cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
   ].join("");
 
