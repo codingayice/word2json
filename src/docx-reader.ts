@@ -1795,8 +1795,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.eqArr)
       .map((equationArray) => {
         const equationArrayNode = asObject(equationArray);
+        const controlProperties = parseMathControlProperties(asObject(asObject(equationArrayNode.eqArrPr).ctrlPr).rPr);
         return {
           type: "equationArray" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(equationArrayNode.e).map((row) => parseMathNodes(asObject(row))),
         };
       }),
