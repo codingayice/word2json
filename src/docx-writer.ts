@@ -803,10 +803,10 @@ function mathNodeXml(node: MathNode): string {
   if (node.type === "box") {
     const controlProperties = mathControlPropertiesXml(node.controlProperties);
     const properties = [
-      node.hideTop ? '<m:hideTop m:val="1"/>' : "",
-      node.hideBottom ? '<m:hideBot m:val="1"/>' : "",
-      node.hideLeft ? '<m:hideLeft m:val="1"/>' : "",
-      node.hideRight ? '<m:hideRight m:val="1"/>' : "",
+      node.hideTop !== undefined ? `<m:hideTop m:val="${node.hideTop ? "1" : "0"}"/>` : "",
+      node.hideBottom !== undefined ? `<m:hideBot m:val="${node.hideBottom ? "1" : "0"}"/>` : "",
+      node.hideLeft !== undefined ? `<m:hideLeft m:val="${node.hideLeft ? "1" : "0"}"/>` : "",
+      node.hideRight !== undefined ? `<m:hideRight m:val="${node.hideRight ? "1" : "0"}"/>` : "",
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:box>${properties ? `<m:boxPr>${properties}</m:boxPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:box>`;

@@ -1642,6 +1642,37 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:box><m:boxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/></m:boxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:box>');
   });
 
+  it("writes box explicit visible borders", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "box" as const,
+                  hideTop: false,
+                  hideBottom: false,
+                  hideLeft: false,
+                  hideRight: false,
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:box><m:boxPr><m:hideTop m:val="0"/><m:hideBot m:val="0"/><m:hideLeft m:val="0"/><m:hideRight m:val="0"/></m:boxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:box>');
+  });
+
   it("writes box control properties", async () => {
     const document = createDocumentJson([
       {
@@ -5855,6 +5886,42 @@ describe("DOCX reader", () => {
                   type: "box" as const,
                   hideLeft: true,
                   hideRight: true,
+                  content: [
+                    {
+                      type: "superscript" as const,
+                      base: [{ type: "text" as const, text: "x" }],
+                      superscript: [{ type: "text" as const, text: "2" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips box explicit visible borders", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "box" as const,
+                  hideTop: false,
+                  hideBottom: false,
+                  hideLeft: false,
+                  hideRight: false,
                   content: [
                     {
                       type: "superscript" as const,
