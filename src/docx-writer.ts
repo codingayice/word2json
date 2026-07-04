@@ -691,7 +691,11 @@ function mathNodeXml(node: MathNode): string {
 
   if (node.type === "fraction") {
     const properties = mathControlPropertiesXml(node.controlProperties);
-    return `<m:f>${properties ? `<m:fPr><m:ctrlPr>${properties}</m:ctrlPr></m:fPr>` : ""}<m:num>${node.numerator.map((child) => mathNodeXml(child)).join("")}</m:num><m:den>${node.denominator.map((child) => mathNodeXml(child)).join("")}</m:den></m:f>`;
+    const fractionProperties = [
+      fractionTypeXml(node.fractionType),
+      properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
+    ].join("");
+    return `<m:f>${fractionProperties ? `<m:fPr>${fractionProperties}</m:fPr>` : ""}<m:num>${node.numerator.map((child) => mathNodeXml(child)).join("")}</m:num><m:den>${node.denominator.map((child) => mathNodeXml(child)).join("")}</m:den></m:f>`;
   }
 
   if (node.type === "superscript") {
@@ -827,6 +831,14 @@ function mathNodeXml(node: MathNode): string {
 
 function mathControlPropertiesXml(properties: MathControlProperties | undefined): string {
   return properties ? runPropertiesXml({ text: "", ...properties }) : "";
+}
+
+function fractionTypeXml(type: Extract<MathNode, { type: "fraction" }>["fractionType"]): string {
+  if (type === undefined) {
+    return "";
+  }
+  const value = type === "skewed" ? "skw" : type === "linear" ? "lin" : type;
+  return `<m:type m:val="${value}"/>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {

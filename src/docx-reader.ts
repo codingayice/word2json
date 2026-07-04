@@ -18,6 +18,7 @@ import type {
   TableCellNode,
   TableNode,
   TextRun,
+  MathNode,
   MathControlProperties,
 } from "./schema.js";
 
@@ -1616,9 +1617,12 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.f)
       .map((fraction) => {
         const fractionNode = asObject(fraction);
-        const controlProperties = parseMathControlProperties(asObject(asObject(fractionNode.fPr).ctrlPr).rPr);
+        const fractionProperties = asObject(fractionNode.fPr);
+        const controlProperties = parseMathControlProperties(asObject(fractionProperties.ctrlPr).rPr);
+        const fractionType = fractionTypeValue(asObject(fractionProperties.type).val);
         return {
           type: "fraction" as const,
+          ...(fractionType ? { fractionType } : {}),
           ...(controlProperties ? { controlProperties } : {}),
           numerator: parseMathNodes(asObject(fractionNode.num)),
           denominator: parseMathNodes(asObject(fractionNode.den)),
@@ -1881,6 +1885,16 @@ function parseMathControlProperties(value: unknown): MathControlProperties | und
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function fractionTypeValue(value: unknown): Extract<MathNode, { type: "fraction" }>["fractionType"] | undefined {
+  if (value === "skw") {
+    return "skewed";
+  }
+  if (value === "lin") {
+    return "linear";
+  }
+  return value === "bar" || value === "noBar" ? value : undefined;
 }
 
 function groupCharacterPositionValue(value: unknown): "top" | "bottom" | undefined {
