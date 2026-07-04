@@ -1832,6 +1832,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           type: "equationArray" as const,
           ...(rowSpacing !== undefined ? { rowSpacing: parseNumber(rowSpacing) } : {}),
           ...(rowSpacingRule ? { rowSpacingRule } : {}),
+          ...mathOptionalBooleanProperty(equationArrayProperties.objDist, "objectDistribution"),
           ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(equationArrayNode.e).map((row) => parseMathNodes(asObject(row))),
         };
