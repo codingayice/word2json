@@ -340,6 +340,14 @@ export type StyleParagraphProperties = {
 
 export type ShadingDefinition = {
   fill: string;
+  value?: string;
+  color?: string;
+  themeFill?: string;
+  themeFillTint?: string;
+  themeFillShade?: string;
+  themeColor?: string;
+  themeTint?: string;
+  themeShade?: string;
 };
 
 export type BorderStyle = "single" | "double" | "dashed" | "dotted" | "nil" | "none" | "thick" | "dotDash" | "dotDotDash" | "triple" | "wave";
@@ -814,9 +822,7 @@ export type TableCellNode = {
   blocks: ParagraphNode[];
 };
 
-export type TableCellShading = {
-  fill: string;
-};
+export type TableCellShading = ShadingDefinition;
 
 export type TableCellMargins = {
   top?: TableCellMarginSide;

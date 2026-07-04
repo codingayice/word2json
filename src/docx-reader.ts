@@ -1869,7 +1869,21 @@ function parseTableRowRevisionMarker(
 function parseShading(value: unknown): NonNullable<ParagraphNode["shading"]> | undefined {
   const shading = asObject(value);
 
-  return typeof shading.fill === "string" ? { fill: shading.fill } : undefined;
+  if (typeof shading.fill !== "string") {
+    return undefined;
+  }
+
+  return {
+    fill: shading.fill,
+    ...(typeof shading.val === "string" && shading.val !== "clear" ? { value: shading.val } : {}),
+    ...(typeof shading.color === "string" ? { color: shading.color } : {}),
+    ...(typeof shading.themeFill === "string" ? { themeFill: shading.themeFill } : {}),
+    ...(typeof shading.themeFillTint === "string" ? { themeFillTint: shading.themeFillTint } : {}),
+    ...(typeof shading.themeFillShade === "string" ? { themeFillShade: shading.themeFillShade } : {}),
+    ...(typeof shading.themeColor === "string" ? { themeColor: shading.themeColor } : {}),
+    ...(typeof shading.themeTint === "string" ? { themeTint: shading.themeTint } : {}),
+    ...(typeof shading.themeShade === "string" ? { themeShade: shading.themeShade } : {}),
+  };
 }
 
 function parseParagraphBorders(value: unknown): NonNullable<ParagraphNode["borders"]> | undefined {
@@ -3383,9 +3397,7 @@ function parseTableCellOnOff(value: unknown): boolean | undefined {
 }
 
 function parseTableCellShading(value: unknown): TableCellNode["shading"] | undefined {
-  const shading = asObject(value);
-
-  return typeof shading.fill === "string" ? { fill: shading.fill } : undefined;
+  return parseShading(value);
 }
 
 function parseTableCellMargins(value: unknown): TableCellNode["margins"] | undefined {

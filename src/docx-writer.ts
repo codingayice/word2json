@@ -726,8 +726,17 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }
 
-function shadingXml(shading: { fill: string }): string {
-  return `<w:shd w:val="clear" w:fill="${escapeAttribute(shading.fill)}"/>`;
+function shadingXml(shading: { fill: string; value?: string; color?: string; themeFill?: string; themeFillTint?: string; themeFillShade?: string; themeColor?: string; themeTint?: string; themeShade?: string }): string {
+  return `<w:shd w:val="${escapeAttribute(shading.value ?? "clear")}"` +
+    (shading.color ? ` w:color="${escapeAttribute(shading.color)}"` : "") +
+    ` w:fill="${escapeAttribute(shading.fill)}"` +
+    (shading.themeFill ? ` w:themeFill="${escapeAttribute(shading.themeFill)}"` : "") +
+    (shading.themeFillTint ? ` w:themeFillTint="${escapeAttribute(shading.themeFillTint)}"` : "") +
+    (shading.themeFillShade ? ` w:themeFillShade="${escapeAttribute(shading.themeFillShade)}"` : "") +
+    (shading.themeColor ? ` w:themeColor="${escapeAttribute(shading.themeColor)}"` : "") +
+    (shading.themeTint ? ` w:themeTint="${escapeAttribute(shading.themeTint)}"` : "") +
+    (shading.themeShade ? ` w:themeShade="${escapeAttribute(shading.themeShade)}"` : "") +
+    `/>`;
 }
 
 function paragraphBordersXml(borders: NonNullable<ParagraphNode["borders"]>): string {

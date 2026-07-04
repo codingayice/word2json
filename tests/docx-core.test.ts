@@ -11877,6 +11877,78 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips shading theme attributes", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          {
+            id: "ThemedShade",
+            name: "Themed Shade",
+            paragraph: {
+              shading: {
+                fill: "E2F0D9",
+                themeFill: "accent3",
+                themeFillTint: "66",
+                themeColor: "accent1",
+                themeTint: "33",
+              },
+            },
+          },
+        ],
+      },
+      sections: [
+        {
+          blocks: [
+            {
+              type: "paragraph" as const,
+              shading: {
+                fill: "FFF2CC",
+                themeFill: "accent2",
+                themeFillShade: "80",
+                color: "auto",
+                themeColor: "text1",
+                themeShade: "40",
+              },
+              runs: [{ text: "Themed paragraph shading" }],
+            },
+            {
+              type: "table" as const,
+              rows: [
+                {
+                  cells: [
+                    {
+                      shading: {
+                        fill: "D9EAF7",
+                        themeFill: "accent5",
+                        themeFillTint: "99",
+                        color: "auto",
+                        themeColor: "background1",
+                      },
+                      blocks: [{ type: "paragraph" as const, runs: [{ text: "Themed cell shading" }] }],
+                    },
+                  ],
+                },
+              ],
+            },
+            { type: "paragraph" as const, styleId: "ThemedShade", runs: [{ text: "Styled shading" }] },
+          ],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const zip = await JSZip.loadAsync(docx);
+    const documentXml = await zip.file("word/document.xml")!.async("string");
+    const stylesXml = await zip.file("word/styles.xml")!.async("string");
+    const parsed = await parseDocx(docx);
+
+    expect(documentXml).toContain('<w:shd w:val="clear" w:color="auto" w:fill="FFF2CC" w:themeFill="accent2" w:themeFillShade="80" w:themeColor="text1" w:themeShade="40"/>');
+    expect(documentXml).toContain('<w:shd w:val="clear" w:color="auto" w:fill="D9EAF7" w:themeFill="accent5" w:themeFillTint="99" w:themeColor="background1"/>');
+    expect(stylesXml).toContain('<w:shd w:val="clear" w:fill="E2F0D9" w:themeFill="accent3" w:themeFillTint="66" w:themeColor="accent1" w:themeTint="33"/>');
+    expect(parsed).toEqual(source);
+  });
+
   it("round-trips paragraph borders", async () => {
     const source = createDocumentJson([
       {
