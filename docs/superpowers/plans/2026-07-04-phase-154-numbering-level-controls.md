@@ -182,7 +182,7 @@ git diff --check
 
 Expected: all commands exit 0. Existing LF/CRLF warnings from `git diff --check` are acceptable if the exit code is 0.
 
-- [ ] **Step 3: Commit feature**
+- [x] **Step 3: Commit feature**
 
 Run:
 
@@ -192,7 +192,7 @@ git commit -m "feat: add phase 154 numbering level controls"
 git push -u origin phase-154-numbering-level-controls
 ```
 
-- [ ] **Step 4: Record push**
+- [x] **Step 4: Record push**
 
 Append a Push Record with the branch, commit hash, verification commands, and PR URL:
 
@@ -200,7 +200,7 @@ Append a Push Record with the branch, commit hash, verification commands, and PR
 https://github.com/codingayice/word2json/pull/new/phase-154-numbering-level-controls
 ```
 
-- [ ] **Step 5: Commit push record**
+- [x] **Step 5: Commit push record**
 
 Run:
 
@@ -215,3 +215,14 @@ git push
 - Spec coverage: Covers schema, writer, reader, targeted tests, full verification, commit, push, and push record.
 - Placeholder scan: No placeholders or deferred implementation notes remain.
 - Type consistency: Uses `suffix`, `restart`, and `legal` consistently across schema, writer, reader, and tests.
+
+## Push Record
+
+- Branch: `phase-154-numbering-level-controls`
+- Feature commit: `6dabcdc feat: add phase 154 numbering level controls`
+- PR URL: `https://github.com/codingayice/word2json/pull/new/phase-154-numbering-level-controls`
+- RED verification: `npm test -- tests/docx-core.test.ts -t "numbering level suffix restart and legal controls"` failed with 2 expected failures before implementation.
+- GREEN targeted verification: `npm test -- tests/docx-core.test.ts -t "numbering level suffix restart and legal controls"` passed with 2 tests.
+- Full verification: `npm test` passed with 450 tests.
+- Build verification: `npm run build` exited 0.
+- Whitespace verification: `git diff --check` exited 0 with existing LF/CRLF warnings.
