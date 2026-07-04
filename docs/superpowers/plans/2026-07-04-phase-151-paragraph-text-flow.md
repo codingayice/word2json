@@ -210,20 +210,20 @@ git diff --check
 
 Expected: Targeted tests, full tests, and build pass. `git diff --check` may print LF/CRLF warnings but must exit 0.
 
-- [ ] **Step 2: Commit implementation**
+- [x] **Step 2: Commit implementation**
 
 ```bash
 git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test.ts docs/superpowers/plans/2026-07-04-phase-151-paragraph-text-flow.md
 git commit -m "feat: add phase 151 paragraph text flow"
 ```
 
-- [ ] **Step 3: Push branch**
+- [x] **Step 3: Push branch**
 
 ```bash
 git push -u origin phase-151-paragraph-text-flow
 ```
 
-- [ ] **Step 4: Record push metadata**
+- [x] **Step 4: Record push metadata**
 
 Append the pushed commit hash and remote branch to this plan, then commit the plan update:
 
@@ -235,4 +235,8 @@ git push
 
 ## Push Record
 
-- Pending.
+- Branch: `phase-151-paragraph-text-flow`
+- Remote: `origin`
+- Repository: `https://github.com/codingayice/word2json.git`
+- Implementation commit: `2d51d38171ecd59eef38039f4d27d2d7c78e1ee8`
+- Pull request URL: `https://github.com/codingayice/word2json/pull/new/phase-151-paragraph-text-flow`
