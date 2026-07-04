@@ -274,6 +274,7 @@ export type StyleRunProperties = {
   officeMath?: boolean;
   language?: RunLanguage;
   characterPosition?: number;
+  kerning?: number;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;

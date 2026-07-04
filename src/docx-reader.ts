@@ -2544,6 +2544,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   const highlight = asObject(properties.highlight);
   const verticalAlign = asObject(properties.vertAlign);
   const characterPosition = asObject(properties.position);
+  const kerning = asObject(properties.kern);
   const characterSpacing = asObject(properties.spacing);
   const scale = asObject(properties.w);
   const fitText = asObject(properties.fitText);
@@ -2575,6 +2576,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...parseOnOffRunProperty(properties.oMath, "officeMath"),
     ...(language ? { language } : {}),
     ...(characterPosition.val !== undefined ? { characterPosition: parseNumber(characterPosition.val) } : {}),
+    ...(kerning.val !== undefined ? { kerning: parseNumber(kerning.val) } : {}),
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),

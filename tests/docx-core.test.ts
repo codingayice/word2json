@@ -634,6 +634,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:position w:val="-4"/></w:rPr><w:t>Lowered</w:t>');
   });
 
+  it("writes text run kerning small threshold", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Title", kerning: 24 }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:kern w:val="24"/></w:rPr><w:t>Title</w:t>');
+  });
+
+  it("writes text run kerning large threshold", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Display", kerning: 48 }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:kern w:val="48"/></w:rPr><w:t>Display</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5698,6 +5728,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Lowered", characterPosition: -4 }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run kerning small threshold", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Title", kerning: 24 }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run kerning large threshold", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Display", kerning: 48 }],
       },
     ]);
 
