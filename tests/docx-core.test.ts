@@ -5053,6 +5053,43 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<a:effectLst><a:softEdge rad="25400"/></a:effectLst>');
   });
 
+  it("writes image reflection effect", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          reflection: {
+            blurRadius: 10000,
+            startAlpha: 50000,
+            startPosition: 0,
+            endAlpha: 10000,
+            endPosition: 60000,
+            distance: 40000,
+            direction: 5400000,
+            fadeDirection: 5400000,
+            scaleX: 100000,
+            scaleY: -100000,
+            skewX: 0,
+            skewY: 0,
+            alignment: "b",
+            rotateWithShape: true,
+          },
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<a:effectLst><a:reflection blurRad="10000" stA="50000" stPos="0" endA="10000" endPos="60000" dist="40000" dir="5400000" fadeDir="5400000" sx="100000" sy="-100000" kx="0" ky="0" algn="b" rotWithShape="1"/></a:effectLst>');
+  });
+
   it("writes floating image layout", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11596,6 +11633,42 @@ describe("DOCX reader", () => {
         height: 80,
         effects: {
           softEdge: { radius: 25400 },
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips image reflection effect", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        effects: {
+          reflection: {
+            blurRadius: 10000,
+            startAlpha: 50000,
+            startPosition: 0,
+            endAlpha: 10000,
+            endPosition: 60000,
+            distance: 40000,
+            direction: 5400000,
+            fadeDirection: 5400000,
+            scaleX: 100000,
+            scaleY: -100000,
+            skewX: 0,
+            skewY: 0,
+            alignment: "b",
+            rotateWithShape: true,
+          },
         },
       },
     ]);

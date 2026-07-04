@@ -1641,6 +1641,7 @@ function parseImageEffects(inline: XmlNode): ImageNode["effects"] | undefined {
     ...parseImageOuterShadow(effects.outerShdw),
     ...parseImageGlow(effects.glow),
     ...parseImageSoftEdge(effects.softEdge),
+    ...parseImageReflection(effects.reflection),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -1683,6 +1684,32 @@ function parseImageSoftEdge(value: unknown): Pick<NonNullable<ImageNode["effects
   return softEdge.rad !== undefined
     ? { softEdge: { radius: parseNumber(softEdge.rad) } }
     : {};
+}
+
+function parseImageReflection(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "reflection"> | {} {
+  const reflection = asObject(value);
+  if (Object.keys(reflection).length === 0) {
+    return {};
+  }
+
+  return {
+    reflection: {
+      ...(reflection.blurRad !== undefined ? { blurRadius: parseNumber(reflection.blurRad) } : {}),
+      ...(reflection.stA !== undefined ? { startAlpha: parseNumber(reflection.stA) } : {}),
+      ...(reflection.stPos !== undefined ? { startPosition: parseNumber(reflection.stPos) } : {}),
+      ...(reflection.endA !== undefined ? { endAlpha: parseNumber(reflection.endA) } : {}),
+      ...(reflection.endPos !== undefined ? { endPosition: parseNumber(reflection.endPos) } : {}),
+      ...(reflection.dist !== undefined ? { distance: parseNumber(reflection.dist) } : {}),
+      ...(reflection.dir !== undefined ? { direction: parseNumber(reflection.dir) } : {}),
+      ...(reflection.fadeDir !== undefined ? { fadeDirection: parseNumber(reflection.fadeDir) } : {}),
+      ...(reflection.sx !== undefined ? { scaleX: parseNumber(reflection.sx) } : {}),
+      ...(reflection.sy !== undefined ? { scaleY: parseNumber(reflection.sy) } : {}),
+      ...(reflection.kx !== undefined ? { skewX: parseNumber(reflection.kx) } : {}),
+      ...(reflection.ky !== undefined ? { skewY: parseNumber(reflection.ky) } : {}),
+      ...(parseImageEffectAlignment(reflection.algn) ? { alignment: parseImageEffectAlignment(reflection.algn) } : {}),
+      ...(reflection.rotWithShape !== undefined ? { rotateWithShape: parseOnOff(reflection.rotWithShape) } : {}),
+    },
+  };
 }
 
 function parseImageEffectColor(value: unknown): Pick<NonNullable<NonNullable<ImageNode["effects"]>["glow"]>, "color" | "alpha"> {

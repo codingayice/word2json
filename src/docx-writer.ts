@@ -1558,11 +1558,11 @@ function imageXml(image: ImageNode, context: WriterContext): string {
 }
 
 function imageEffectsXml(effects: ImageNode["effects"]): string {
-  if (!effects?.outerShadow && !effects?.glow && !effects?.softEdge) {
+  if (!effects?.outerShadow && !effects?.glow && !effects?.softEdge && !effects?.reflection) {
     return "";
   }
 
-  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}</a:effectLst>`;
+  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}${imageReflectionXml(effects.reflection)}</a:effectLst>`;
 }
 
 function imageOuterShadowXml(shadow: NonNullable<ImageNode["effects"]>["outerShadow"]): string {
@@ -1592,6 +1592,31 @@ function imageGlowXml(glow: NonNullable<ImageNode["effects"]>["glow"]): string {
 
 function imageSoftEdgeXml(softEdge: NonNullable<ImageNode["effects"]>["softEdge"]): string {
   return softEdge ? `<a:softEdge rad="${softEdge.radius}"/>` : "";
+}
+
+function imageReflectionXml(reflection: NonNullable<ImageNode["effects"]>["reflection"]): string {
+  if (!reflection) {
+    return "";
+  }
+
+  const attributes = [
+    reflection.blurRadius !== undefined ? ` blurRad="${reflection.blurRadius}"` : "",
+    reflection.startAlpha !== undefined ? ` stA="${reflection.startAlpha}"` : "",
+    reflection.startPosition !== undefined ? ` stPos="${reflection.startPosition}"` : "",
+    reflection.endAlpha !== undefined ? ` endA="${reflection.endAlpha}"` : "",
+    reflection.endPosition !== undefined ? ` endPos="${reflection.endPosition}"` : "",
+    reflection.distance !== undefined ? ` dist="${reflection.distance}"` : "",
+    reflection.direction !== undefined ? ` dir="${reflection.direction}"` : "",
+    reflection.fadeDirection !== undefined ? ` fadeDir="${reflection.fadeDirection}"` : "",
+    reflection.scaleX !== undefined ? ` sx="${reflection.scaleX}"` : "",
+    reflection.scaleY !== undefined ? ` sy="${reflection.scaleY}"` : "",
+    reflection.skewX !== undefined ? ` kx="${reflection.skewX}"` : "",
+    reflection.skewY !== undefined ? ` ky="${reflection.skewY}"` : "",
+    reflection.alignment ? ` algn="${reflection.alignment}"` : "",
+    reflection.rotateWithShape !== undefined ? ` rotWithShape="${reflection.rotateWithShape ? "1" : "0"}"` : "",
+  ].join("");
+
+  return `<a:reflection${attributes}/>`;
 }
 
 function imageEffectColorXml(color: string | undefined, alpha: number | undefined): string {

@@ -853,6 +853,7 @@ export type ImageEffects = {
   outerShadow?: ImageOuterShadowEffect;
   glow?: ImageGlowEffect;
   softEdge?: ImageSoftEdgeEffect;
+  reflection?: ImageReflectionEffect;
 };
 
 export type ImageOuterShadowEffect = {
@@ -873,6 +874,23 @@ export type ImageGlowEffect = {
 
 export type ImageSoftEdgeEffect = {
   radius: number;
+};
+
+export type ImageReflectionEffect = {
+  blurRadius?: number;
+  startAlpha?: number;
+  startPosition?: number;
+  endAlpha?: number;
+  endPosition?: number;
+  distance?: number;
+  direction?: number;
+  fadeDirection?: number;
+  scaleX?: number;
+  scaleY?: number;
+  skewX?: number;
+  skewY?: number;
+  alignment?: "tl" | "t" | "tr" | "l" | "ctr" | "r" | "bl" | "b" | "br";
+  rotateWithShape?: boolean;
 };
 
 export type ImageCrop = {
