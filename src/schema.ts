@@ -710,6 +710,7 @@ export type NoteContent = {
 export type TableNode = {
   type: "table";
   styleId?: string;
+  position?: TablePosition;
   look?: TableLook;
   layout?: "autofit" | "fixed";
   grid?: number[];
@@ -721,6 +722,19 @@ export type TableNode = {
   indent?: TableIndent;
   propertyRevision?: ParagraphPropertyRevision;
   rows: TableRowNode[];
+};
+
+export type TablePosition = {
+  horizontalAnchor?: "margin" | "page" | "text";
+  verticalAnchor?: "margin" | "page" | "text";
+  x?: number;
+  y?: number;
+  xAlign?: "center" | "inside" | "left" | "outside" | "right";
+  yAlign?: "bottom" | "center" | "inside" | "outside" | "top";
+  leftFromText?: number;
+  rightFromText?: number;
+  topFromText?: number;
+  bottomFromText?: number;
 };
 
 export type TableIndent = {

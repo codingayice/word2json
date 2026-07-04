@@ -1322,6 +1322,7 @@ function runLanguageXml(language: RunLanguage): string {
 function tableXml(table: TableNode, context: WriterContext): string {
   const properties = [
     table.styleId ? `<w:tblStyle w:val="${escapeAttribute(table.styleId)}"/>` : "",
+    table.position ? tablePositionXml(table.position) : "",
     table.width !== undefined ? `<w:tblW w:w="${table.width}" w:type="${table.widthType ?? "dxa"}"/>` : "",
     table.borders ? tableBordersXml(table.borders) : "",
     table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",
@@ -1351,6 +1352,23 @@ function tableXml(table: TableNode, context: WriterContext): string {
     : "";
 
   return `<w:tbl>${properties ? `<w:tblPr>${properties}</w:tblPr>` : ""}${grid}${rows}</w:tbl>`;
+}
+
+function tablePositionXml(position: NonNullable<TableNode["position"]>): string {
+  const attributes = [
+    position.leftFromText !== undefined ? ` w:leftFromText="${position.leftFromText}"` : "",
+    position.rightFromText !== undefined ? ` w:rightFromText="${position.rightFromText}"` : "",
+    position.topFromText !== undefined ? ` w:topFromText="${position.topFromText}"` : "",
+    position.bottomFromText !== undefined ? ` w:bottomFromText="${position.bottomFromText}"` : "",
+    position.horizontalAnchor ? ` w:horzAnchor="${position.horizontalAnchor}"` : "",
+    position.verticalAnchor ? ` w:vertAnchor="${position.verticalAnchor}"` : "",
+    position.x !== undefined ? ` w:tblpX="${position.x}"` : "",
+    position.y !== undefined ? ` w:tblpY="${position.y}"` : "",
+    position.xAlign ? ` w:tblpXSpec="${position.xAlign}"` : "",
+    position.yAlign ? ` w:tblpYSpec="${position.yAlign}"` : "",
+  ].join("");
+
+  return attributes ? `<w:tblpPr${attributes}/>` : "";
 }
 
 function tableLookXml(look: NonNullable<TableNode["look"]>): string {

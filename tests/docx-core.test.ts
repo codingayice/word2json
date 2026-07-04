@@ -4043,6 +4043,33 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tblInd w:w="720" w:type="dxa"/>');
   });
 
+  it("writes floating table positioning", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        position: {
+          horizontalAnchor: "margin",
+          verticalAnchor: "page",
+          x: 720,
+          y: 1440,
+          leftFromText: 180,
+          rightFromText: 180,
+          topFromText: 120,
+          bottomFromText: 120,
+        },
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Floating" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblpPr w:leftFromText="180" w:rightFromText="180" w:topFromText="120" w:bottomFromText="120" w:horzAnchor="margin" w:vertAnchor="page" w:tblpX="720" w:tblpY="1440"/>');
+  });
+
   it("writes percentage table width", async () => {
     const document = createDocumentJson([
       {
@@ -10191,6 +10218,32 @@ describe("DOCX reader", () => {
         indent: { width: 720 },
         rows: [
           { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Indented" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating table positioning", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        position: {
+          horizontalAnchor: "margin",
+          verticalAnchor: "page",
+          x: 720,
+          y: 1440,
+          leftFromText: 180,
+          rightFromText: 180,
+          topFromText: 120,
+          bottomFromText: 120,
+        },
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Floating" }] }] }] },
         ],
       },
     ]);

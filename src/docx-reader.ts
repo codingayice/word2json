@@ -3048,6 +3048,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const table = asObject(value);
   const properties = asObject(table.tblPr);
   const style = asObject(properties.tblStyle);
+  const position = parseTablePosition(properties.tblpPr);
   const width = asObject(properties.tblW);
   const borders = asObject(properties.tblBorders);
   const alignment = asObject(properties.jc);
@@ -3062,6 +3063,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   return {
     type: "table",
     ...(typeof style.val === "string" ? { styleId: style.val } : {}),
+    ...(position ? { position } : {}),
     ...(grid ? { grid } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(widthType && widthType !== "dxa" ? { widthType } : {}),
@@ -3089,6 +3091,24 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       };
     }),
   };
+}
+
+function parseTablePosition(value: unknown): TableNode["position"] | undefined {
+  const position = asObject(value);
+  const parsed = {
+    ...(typeof position.horzAnchor === "string" ? { horizontalAnchor: position.horzAnchor as NonNullable<TableNode["position"]>["horizontalAnchor"] } : {}),
+    ...(typeof position.vertAnchor === "string" ? { verticalAnchor: position.vertAnchor as NonNullable<TableNode["position"]>["verticalAnchor"] } : {}),
+    ...(position.tblpX !== undefined ? { x: parseNumber(position.tblpX) } : {}),
+    ...(position.tblpY !== undefined ? { y: parseNumber(position.tblpY) } : {}),
+    ...(typeof position.tblpXSpec === "string" ? { xAlign: position.tblpXSpec as NonNullable<TableNode["position"]>["xAlign"] } : {}),
+    ...(typeof position.tblpYSpec === "string" ? { yAlign: position.tblpYSpec as NonNullable<TableNode["position"]>["yAlign"] } : {}),
+    ...(position.leftFromText !== undefined ? { leftFromText: parseNumber(position.leftFromText) } : {}),
+    ...(position.rightFromText !== undefined ? { rightFromText: parseNumber(position.rightFromText) } : {}),
+    ...(position.topFromText !== undefined ? { topFromText: parseNumber(position.topFromText) } : {}),
+    ...(position.bottomFromText !== undefined ? { bottomFromText: parseNumber(position.bottomFromText) } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parseTableIndent(value: unknown): TableNode["indent"] | undefined {
