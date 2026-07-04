@@ -734,6 +734,7 @@ function mathNodeXml(node: MathNode): string {
     const columnProperties = matrixColumnPropertiesXml(node.columnJustifications, node.columnCounts);
     const properties = [
       node.baseJustification !== undefined ? `<m:baseJc m:val="${matrixBaseJustificationXml(node.baseJustification)}"/>` : "",
+      node.rowSpacing !== undefined ? `<m:rSp m:val="${node.rowSpacing}"/>` : "",
       columnProperties,
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");

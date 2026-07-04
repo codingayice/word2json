@@ -1723,12 +1723,14 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const matrixNode = asObject(matrix);
         const matrixProperties = asObject(matrixNode.mPr);
         const baseJustification = matrixBaseJustificationValue(asObject(matrixProperties.baseJc).val);
+        const rowSpacing = asObject(matrixProperties.rSp).val;
         const columnJustifications = matrixColumnJustificationValues(matrixProperties.mcs);
         const columnCounts = matrixColumnCountValues(matrixProperties.mcs);
         const controlProperties = parseMathControlProperties(asObject(matrixProperties.ctrlPr).rPr);
         return {
           type: "matrix" as const,
           ...(baseJustification ? { baseJustification } : {}),
+          ...(rowSpacing !== undefined ? { rowSpacing: parseNumber(rowSpacing) } : {}),
           ...(columnJustifications.length > 0 ? { columnJustifications } : {}),
           ...(columnCounts.length > 0 ? { columnCounts } : {}),
           ...(controlProperties ? { controlProperties } : {}),
