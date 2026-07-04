@@ -18,6 +18,7 @@ import type {
   TableCellNode,
   TableNode,
   TextRun,
+  MathControlProperties,
 } from "./schema.js";
 
 type XmlNode = Record<string, unknown>;
@@ -1652,8 +1653,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.sPre)
       .map((sPre) => {
         const sPreNode = asObject(sPre);
+        const controlProperties = parseMathControlProperties(asObject(asObject(sPreNode.sPrePr).ctrlPr).rPr);
         return {
           type: "sPre" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           base: parseMathNodes(asObject(sPreNode.e)),
           subscript: parseMathNodes(asObject(sPreNode.sub)),
           superscript: parseMathNodes(asObject(sPreNode.sup)),
@@ -1825,6 +1828,19 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         };
       }),
   ];
+}
+
+function parseMathControlProperties(value: unknown): MathControlProperties | undefined {
+  const properties = asObject(value);
+  const parsed: MathControlProperties = {
+    ...parseRunStyle(properties),
+    ...(properties.b !== undefined ? { bold: true } : {}),
+    ...(properties.i !== undefined ? { italic: true } : {}),
+    ...(properties.u !== undefined ? { underline: true } : {}),
+    ...parseRunFont(properties),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function groupCharacterPositionValue(value: unknown): "top" | "bottom" | undefined {

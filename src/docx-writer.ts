@@ -4,6 +4,7 @@ import type {
   DocumentBlock,
   DocumentJson,
   ImageNode,
+  MathControlProperties,
   MathNode,
   PageSettings,
   ParagraphNode,
@@ -705,7 +706,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "sPre") {
-    return `<m:sPre><m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e></m:sPre>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:sPre>${properties ? `<m:sPrePr><m:ctrlPr>${properties}</m:ctrlPr></m:sPrePr>` : ""}<m:sub>${node.subscript.map((child) => mathNodeXml(child)).join("")}</m:sub><m:sup>${node.superscript.map((child) => mathNodeXml(child)).join("")}</m:sup><m:e>${node.base.map((child) => mathNodeXml(child)).join("")}</m:e></m:sPre>`;
   }
 
   if (node.type === "preSubSup") {
@@ -796,6 +798,10 @@ function mathNodeXml(node: MathNode): string {
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
     `<m:e>${node.body.map((child) => mathNodeXml(child)).join("")}</m:e></m:nary>`;
+}
+
+function mathControlPropertiesXml(properties: MathControlProperties | undefined): string {
+  return properties ? runPropertiesXml({ text: "", ...properties }) : "";
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
