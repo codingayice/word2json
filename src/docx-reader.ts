@@ -1491,7 +1491,21 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
     wrap: parseImageWrap(anchor),
     horizontalOffset: parseNumber(asObject(anchor.positionH).posOffset),
     verticalOffset: parseNumber(asObject(anchor.positionV).posOffset),
+    ...parseImageHorizontalRelativeFrom(asObject(anchor.positionH).relativeFrom),
+    ...parseImageVerticalRelativeFrom(asObject(anchor.positionV).relativeFrom),
   };
+}
+
+function parseImageHorizontalRelativeFrom(value: unknown): Pick<NonNullable<ImageNode["floating"]>, "horizontalRelativeFrom"> | {} {
+  return value === "margin" || value === "column" || value === "character"
+    ? { horizontalRelativeFrom: value }
+    : {};
+}
+
+function parseImageVerticalRelativeFrom(value: unknown): Pick<NonNullable<ImageNode["floating"]>, "verticalRelativeFrom"> | {} {
+  return value === "margin" || value === "paragraph" || value === "line"
+    ? { verticalRelativeFrom: value }
+    : {};
 }
 
 function parseImageWrap(anchor: XmlNode): NonNullable<NonNullable<ImageNode["floating"]>["wrap"]> {

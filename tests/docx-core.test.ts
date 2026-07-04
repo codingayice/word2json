@@ -5048,6 +5048,33 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<wp:wrapNone/>");
   });
 
+  it("writes floating image anchor references", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          horizontalRelativeFrom: "margin",
+          verticalRelativeFrom: "paragraph",
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<wp:positionH relativeFrom="margin"><wp:posOffset>1440</wp:posOffset></wp:positionH>');
+    expect(xml).toContain('<wp:positionV relativeFrom="paragraph"><wp:posOffset>720</wp:posOffset></wp:positionV>');
+  });
+
   it("writes headers and footers with section relationships", async () => {
     const document = {
       version: "1.0" as const,
@@ -11329,6 +11356,31 @@ describe("DOCX reader", () => {
         width: 120,
         height: 80,
         floating: { wrap: "none", horizontalOffset: 2880, verticalOffset: 1440 },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image anchor references", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          horizontalRelativeFrom: "margin",
+          verticalRelativeFrom: "paragraph",
+        },
       },
     ]);
 
