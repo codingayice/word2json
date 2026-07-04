@@ -1272,6 +1272,37 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:eqArr><m:eqArrPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:eqArrPr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:r><m:t>y=2</m:t></m:r></m:e></m:eqArr>');
   });
 
+  it("writes equation array row spacing", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "equationArray" as const,
+                  rowSpacing: 3,
+                  rows: [
+                    [{ type: "text" as const, text: "x=1" }],
+                    [{ type: "text" as const, text: "y=2" }],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:eqArr><m:eqArrPr><m:rSp m:val="3"/></m:eqArrPr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:r><m:t>y=2</m:t></m:r></m:e></m:eqArr>');
+  });
+
   it("writes box office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5153,6 +5184,36 @@ describe("DOCX reader", () => {
                     underline: true,
                     highlight: "darkYellow",
                   },
+                  rows: [
+                    [{ type: "text" as const, text: "x=1" }],
+                    [{ type: "text" as const, text: "y=2" }],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips equation array row spacing", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "equationArray" as const,
+                  rowSpacing: 3,
                   rows: [
                     [{ type: "text" as const, text: "x=1" }],
                     [{ type: "text" as const, text: "y=2" }],

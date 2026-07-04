@@ -783,7 +783,11 @@ function mathNodeXml(node: MathNode): string {
 
   if (node.type === "equationArray") {
     const properties = mathControlPropertiesXml(node.controlProperties);
-    return `<m:eqArr>${properties ? `<m:eqArrPr><m:ctrlPr>${properties}</m:ctrlPr></m:eqArrPr>` : ""}${node.rows.map((row) => `<m:e>${row.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:eqArr>`;
+    const equationArrayProperties = [
+      node.rowSpacing !== undefined ? `<m:rSp m:val="${node.rowSpacing}"/>` : "",
+      properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
+    ].join("");
+    return `<m:eqArr>${equationArrayProperties ? `<m:eqArrPr>${equationArrayProperties}</m:eqArrPr>` : ""}${node.rows.map((row) => `<m:e>${row.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:eqArr>`;
   }
 
   if (node.type === "box") {
