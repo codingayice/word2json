@@ -356,6 +356,8 @@ export type ParagraphBorders = {
   left?: BorderDefinition;
   bottom?: BorderDefinition;
   right?: BorderDefinition;
+  between?: BorderDefinition;
+  bar?: BorderDefinition;
 };
 
 export type TableCellBorders = ParagraphBorders & {

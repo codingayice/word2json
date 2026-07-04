@@ -736,12 +736,14 @@ function paragraphBordersXml(borders: NonNullable<ParagraphNode["borders"]>): st
     borders.left ? borderSideXml("left", borders.left) : "",
     borders.bottom ? borderSideXml("bottom", borders.bottom) : "",
     borders.right ? borderSideXml("right", borders.right) : "",
+    borders.between ? borderSideXml("between", borders.between) : "",
+    borders.bar ? borderSideXml("bar", borders.bar) : "",
   ].join("");
 
   return sides ? `<w:pBdr>${sides}</w:pBdr>` : "";
 }
 
-function borderSideXml(side: "top" | "left" | "bottom" | "right" | "insideH" | "insideV" | "bdr", border: BorderDefinition): string {
+function borderSideXml(side: "top" | "left" | "bottom" | "right" | "between" | "bar" | "insideH" | "insideV" | "bdr", border: BorderDefinition): string {
   return `<w:${side} w:val="${border.style}"` +
     (border.size !== undefined ? ` w:sz="${border.size}"` : "") +
     (border.space !== undefined ? ` w:space="${border.space}"` : "") +

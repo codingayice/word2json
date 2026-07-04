@@ -1879,6 +1879,8 @@ function parseParagraphBorders(value: unknown): NonNullable<ParagraphNode["borde
     ...parseParagraphBorderSide(borders.left, "left"),
     ...parseParagraphBorderSide(borders.bottom, "bottom"),
     ...parseParagraphBorderSide(borders.right, "right"),
+    ...parseParagraphBorderSide(borders.between, "between"),
+    ...parseParagraphBorderSide(borders.bar, "bar"),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;

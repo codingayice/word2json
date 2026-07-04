@@ -5614,6 +5614,25 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:bottom w:val="single" w:sz="8" w:space="2" w:color="4472C4"/>');
   });
 
+  it("writes paragraph between and bar borders", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        borders: {
+          between: { style: "dashed", size: 6, color: "70AD47", space: 1 },
+          bar: { style: "double", size: 12, color: "C00000", space: 0 },
+        },
+        runs: [{ text: "Paragraph side borders" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:pBdr><w:between w:val="dashed" w:sz="6" w:space="1" w:color="70AD47"/><w:bar w:val="double" w:sz="12" w:space="0" w:color="C00000"/></w:pBdr>');
+  });
+
   it("writes paragraph indentation", async () => {
     const document = createDocumentJson([
       {
@@ -11867,6 +11886,24 @@ describe("DOCX reader", () => {
           bottom: { style: "single", size: 8, color: "4472C4", space: 2 },
         },
         runs: [{ text: "Bordered paragraph" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph between and bar borders", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        borders: {
+          between: { style: "dashed", size: 6, color: "70AD47", space: 1 },
+          bar: { style: "double", size: 12, color: "C00000", space: 0 },
+        },
+        runs: [{ text: "Paragraph side borders" }],
       },
     ]);
 
