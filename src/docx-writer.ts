@@ -1744,7 +1744,7 @@ function numberingXml(document: DocumentJson): string {
     .map((abstractNum) => abstractNumberingXml(abstractNum))
     .join("");
   const customNums = (document.numbering?.nums ?? [])
-    .map((num) => `<w:num w:numId="${num.id}"><w:abstractNumId w:val="${num.abstractId}"/></w:num>`)
+    .map((num) => numberingInstanceXml(num))
     .join("");
 
   return xmlDeclaration(
@@ -1757,6 +1757,21 @@ function numberingXml(document: DocumentJson): string {
       customNums +
       `</w:numbering>`,
   );
+}
+
+function numberingInstanceXml(num: NonNullable<DocumentJson["numbering"]>["nums"][number]): string {
+  const overrides = (num.overrides ?? [])
+    .map((override) => numberingLevelOverrideXml(override))
+    .join("");
+
+  return `<w:num w:numId="${num.id}"><w:abstractNumId w:val="${num.abstractId}"/>${overrides}</w:num>`;
+}
+
+function numberingLevelOverrideXml(override: NonNullable<NonNullable<DocumentJson["numbering"]>["nums"][number]["overrides"]>[number]): string {
+  const start = override.start !== undefined ? `<w:startOverride w:val="${override.start}"/>` : "";
+  const definition = override.definition ? numberingLevelXml(override.definition) : "";
+
+  return `<w:lvlOverride w:ilvl="${override.level}">${start}${definition}</w:lvlOverride>`;
 }
 
 function abstractNumberingXml(abstractNum: NonNullable<DocumentJson["numbering"]>["abstractNums"][number]): string {

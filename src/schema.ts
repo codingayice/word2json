@@ -170,6 +170,13 @@ export type AbstractNumberingDefinition = {
 export type NumberingInstance = {
   id: number;
   abstractId: number;
+  overrides?: NumberingLevelOverride[];
+};
+
+export type NumberingLevelOverride = {
+  level: number;
+  start?: number;
+  definition?: NumberingLevelDefinition;
 };
 
 export type NumberingLevelDefinition = {

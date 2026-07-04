@@ -12,6 +12,7 @@ import type {
   ParagraphNode,
   ParagraphStyle,
   NumberingLevelDefinition,
+  NumberingInstance,
   NumberingFormat,
   StyleParagraphProperties,
   StyleRunProperties,
@@ -442,10 +443,7 @@ async function parseNumbering(zip: JSZip): Promise<NumberingContext> {
   const nums = asArray(numberingRoot.num)
     .map((numValue) => asObject(numValue))
     .filter((num) => num.numId !== undefined)
-    .map((num) => ({
-      id: parseNumber(num.numId),
-      abstractId: parseNumber(asObject(num.abstractNumId).val),
-    }));
+    .map((num) => parseNumberingInstance(num));
   const customAbstractNums = abstractNums.filter((abstractNum) => !isBuiltInNumberingId(abstractNum.id));
   const customNums = nums.filter((num) => !isBuiltInNumberingId(num.id));
   const abstractTypes = new Map(abstractNums.map((abstractNum) => [
@@ -466,6 +464,28 @@ async function parseNumbering(zip: JSZip): Promise<NumberingContext> {
   };
 }
 
+function parseNumberingInstance(value: XmlNode): NumberingInstance {
+  const overrides = asArray(value.lvlOverride).map((overrideValue) => parseNumberingLevelOverride(overrideValue));
+
+  return {
+    id: parseNumber(value.numId),
+    abstractId: parseNumber(asObject(value.abstractNumId).val),
+    ...(overrides.length > 0 ? { overrides } : {}),
+  };
+}
+
+function parseNumberingLevelOverride(value: unknown): NonNullable<NumberingInstance["overrides"]>[number] {
+  const override = asObject(value);
+  const start = asObject(override.startOverride);
+  const level = asObject(override.lvl);
+
+  return {
+    level: parseNumber(override.ilvl),
+    ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
+    ...(override.lvl !== undefined ? { definition: parseNumberingLevelDefinition(level) } : {}),
+  };
+}
+
 function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefinition {
   const nsid = asObject(value.nsid);
   const multiLevelType = asObject(value.multiLevelType);
@@ -480,34 +500,36 @@ function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefi
     ...(typeof template.val === "string" ? { templateCode: template.val } : {}),
     ...(typeof styleLink.val === "string" ? { styleLink: styleLink.val } : {}),
     ...(typeof numberingStyleLink.val === "string" ? { numberingStyleLink: numberingStyleLink.val } : {}),
-    levels: asArray(value.lvl).map((levelValue) => {
-      const level = asObject(levelValue);
-      const start = asObject(level.start);
-      const style = asObject(level.pStyle);
-      const format = asObject(level.numFmt);
-      const text = asObject(level.lvlText);
-      const suffix = asObject(level.suff);
-      const restart = asObject(level.lvlRestart);
-      const legal = parseOptionalOnOff(level.isLgl);
-      const alignment = asObject(level.lvlJc);
-      const run = parseStyleRunProperties(level.rPr);
-      const indentation = asObject(asObject(level.pPr).ind);
+    levels: asArray(value.lvl).map((levelValue) => parseNumberingLevelDefinition(levelValue)),
+  };
+}
 
-      return {
-        level: parseNumber(level.ilvl),
-        format: parseNumberingFormat(format.val),
-        text: typeof text.val === "string" ? text.val : "",
-        ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
-        ...(typeof style.val === "string" ? { styleId: style.val } : {}),
-        ...(isNumberingSuffix(suffix.val) ? { suffix: suffix.val } : {}),
-        ...(restart.val !== undefined ? { restart: parseNumber(restart.val) } : {}),
-        ...(legal !== undefined ? { legal } : {}),
-        ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
-        ...(run ? { run } : {}),
-        ...(indentation.left !== undefined ? { left: parseNumber(indentation.left) } : {}),
-        ...(indentation.hanging !== undefined ? { hanging: parseNumber(indentation.hanging) } : {}),
-      };
-    }),
+function parseNumberingLevelDefinition(value: unknown): NumberingLevelDefinition {
+  const level = asObject(value);
+  const start = asObject(level.start);
+  const style = asObject(level.pStyle);
+  const format = asObject(level.numFmt);
+  const text = asObject(level.lvlText);
+  const suffix = asObject(level.suff);
+  const restart = asObject(level.lvlRestart);
+  const legal = parseOptionalOnOff(level.isLgl);
+  const alignment = asObject(level.lvlJc);
+  const run = parseStyleRunProperties(level.rPr);
+  const indentation = asObject(asObject(level.pPr).ind);
+
+  return {
+    level: parseNumber(level.ilvl),
+    format: parseNumberingFormat(format.val),
+    text: typeof text.val === "string" ? text.val : "",
+    ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
+    ...(typeof style.val === "string" ? { styleId: style.val } : {}),
+    ...(isNumberingSuffix(suffix.val) ? { suffix: suffix.val } : {}),
+    ...(restart.val !== undefined ? { restart: parseNumber(restart.val) } : {}),
+    ...(legal !== undefined ? { legal } : {}),
+    ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
+    ...(run ? { run } : {}),
+    ...(indentation.left !== undefined ? { left: parseNumber(indentation.left) } : {}),
+    ...(indentation.hanging !== undefined ? { hanging: parseNumber(indentation.hanging) } : {}),
   };
 }
 

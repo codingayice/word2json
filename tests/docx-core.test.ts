@@ -4326,6 +4326,50 @@ describe("DOCX writer", () => {
     expect(numbering).toContain('<w:abstractNum w:abstractNumId="40"><w:nsid w:val="5E2A1C9B"/><w:multiLevelType w:val="hybridMultilevel"/><w:tmpl w:val="03A54D6C"/><w:styleLink w:val="LegalList"/><w:numStyleLink w:val="LegalListNumbering"/><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl></w:abstractNum>');
   });
 
+  it("writes numbering instance level overrides", async () => {
+    const document = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 50,
+            levels: [
+              { level: 0, format: "decimal" as const, text: "%1.", start: 1 },
+              { level: 1, format: "lowerLetter" as const, text: "%2)", start: 1 },
+            ],
+          },
+        ],
+        nums: [
+          {
+            id: 50,
+            abstractId: 50,
+            overrides: [
+              { level: 0, start: 7 },
+              {
+                level: 1,
+                definition: {
+                  level: 1,
+                  format: "upperRoman" as const,
+                  text: "%2.",
+                  start: 3,
+                  left: 1440,
+                  hanging: 360,
+                },
+              },
+            ],
+          },
+        ],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const numbering = await zip.file("word/numbering.xml")!.async("string");
+
+    expect(numbering).toContain('<w:num w:numId="50"><w:abstractNumId w:val="50"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="7"/></w:lvlOverride><w:lvlOverride w:ilvl="1"><w:lvl w:ilvl="1"><w:start w:val="3"/><w:numFmt w:val="upperRoman"/><w:lvlText w:val="%2."/><w:pPr><w:ind w:left="1440" w:hanging="360"/></w:pPr></w:lvl></w:lvlOverride></w:num>');
+  });
+
   it("writes hyperlinks with external relationships", async () => {
     const document = createDocumentJson([
       {
@@ -9953,6 +9997,49 @@ describe("DOCX reader", () => {
           },
         ],
         nums: [{ id: 40, abstractId: 40 }],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips numbering instance level overrides", async () => {
+    const source = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 50,
+            levels: [
+              { level: 0, format: "decimal" as const, text: "%1.", start: 1 },
+              { level: 1, format: "lowerLetter" as const, text: "%2)", start: 1 },
+            ],
+          },
+        ],
+        nums: [
+          {
+            id: 50,
+            abstractId: 50,
+            overrides: [
+              { level: 0, start: 7 },
+              {
+                level: 1,
+                definition: {
+                  level: 1,
+                  format: "upperRoman" as const,
+                  text: "%2.",
+                  start: 3,
+                  left: 1440,
+                  hanging: 360,
+                },
+              },
+            ],
+          },
+        ],
       },
       sections: [{ blocks: [] }],
     };
