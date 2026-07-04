@@ -1,0 +1,499 @@
+{
+  "version": "1.0",
+  "properties": {
+    "core": {
+      "title": "Word2Json Roundtrip Demo",
+      "creator": "word2json",
+      "description": "A compact document for inspecting DOCX to JSON to DOCX fidelity."
+    },
+    "app": {
+      "application": "word2json demo",
+      "company": "codingayice"
+    },
+    "custom": [
+      {
+        "name": "DemoPhase",
+        "type": "string",
+        "value": "phase-169"
+      }
+    ]
+  },
+  "settings": {
+    "defaultTabStop": 720,
+    "evenAndOddHeaders": true,
+    "updateFields": true,
+    "view": {
+      "mode": "print",
+      "zoom": {
+        "percent": 100
+      }
+    },
+    "proofing": {
+      "spelling": "clean",
+      "grammar": "clean"
+    }
+  },
+  "styles": {
+    "defaults": {
+      "run": {
+        "fontFamily": "Arial",
+        "eastAsiaFontFamily": "Microsoft YaHei",
+        "fontSize": 22,
+        "color": "1F2937"
+      },
+      "paragraph": {
+        "spacing": {
+          "after": 160,
+          "line": 276,
+          "lineRule": "auto"
+        }
+      }
+    },
+    "paragraph": [
+      {
+        "id": "DemoTitle",
+        "name": "Demo Title",
+        "paragraph": {
+          "alignment": "center",
+          "spacing": {
+            "before": 120,
+            "after": 240
+          }
+        },
+        "run": {
+          "bold": true,
+          "fontSize": 36,
+          "color": "17365D",
+          "eastAsiaFontFamily": "Microsoft YaHei"
+        }
+      },
+      {
+        "id": "DemoCallout",
+        "name": "Demo Callout",
+        "paragraph": {
+          "shading": {
+            "fill": "EAF4FF"
+          },
+          "borders": {
+            "left": {
+              "style": "single",
+              "size": 12,
+              "color": "2F75B5",
+              "space": 4
+            }
+          },
+          "indent": {
+            "left": 240
+          }
+        },
+        "run": {
+          "color": "1F4E79"
+        }
+      }
+    ],
+    "table": [
+      {
+        "id": "DemoTable",
+        "name": "Demo Table",
+        "table": {
+          "borders": "single"
+        }
+      }
+    ]
+  },
+  "numbering": {
+    "abstractNums": [
+      {
+        "id": 1,
+        "multiLevelType": "singleLevel",
+        "levels": [
+          {
+            "level": 0,
+            "format": "bullet",
+            "text": "•",
+            "left": 720,
+            "hanging": 360
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "multiLevelType": "singleLevel",
+        "levels": [
+          {
+            "level": 0,
+            "format": "decimal",
+            "text": "%1.",
+            "start": 1,
+            "left": 720,
+            "hanging": 360
+          }
+        ]
+      }
+    ],
+    "nums": [
+      {
+        "id": 1,
+        "abstractId": 1
+      },
+      {
+        "id": 2,
+        "abstractId": 2
+      }
+    ]
+  },
+  "sections": [
+    {
+      "page": {
+        "width": 11906,
+        "height": 16838,
+        "orientation": "portrait",
+        "margins": {
+          "top": 1440,
+          "right": 1440,
+          "bottom": 1440,
+          "left": 1440,
+          "header": 720,
+          "footer": 720,
+          "gutter": 0
+        }
+      },
+      "pageNumbering": {
+        "start": 1,
+        "format": "decimal"
+      },
+      "headers": {
+        "default": [
+          {
+            "type": "paragraph",
+            "alignment": "center",
+            "runs": [
+              {
+                "text": "word2json roundtrip demo",
+                "italic": true,
+                "color": "666666"
+              }
+            ]
+          }
+        ]
+      },
+      "footers": {
+        "default": [
+          {
+            "type": "paragraph",
+            "alignment": "center",
+            "runs": [
+              {
+                "text": "Page "
+              },
+              {
+                "text": "",
+                "field": {
+                  "type": "page",
+                  "result": "1"
+                }
+              },
+              {
+                "text": " / "
+              },
+              {
+                "text": "",
+                "field": {
+                  "type": "numPages",
+                  "result": "1"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "blocks": [
+        {
+          "type": "paragraph",
+          "styleId": "DemoTitle",
+          "runs": [
+            {
+              "text": "Word ↔ JSON 往返演示"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "styleId": "DemoCallout",
+          "runs": [
+            {
+              "text": "这个文档用于快速观察当前支持能力的保真程度：段落样式、文字格式、表格、列表、页眉页脚、批注、脚注和字段。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "文字格式："
+            },
+            {
+              "text": "加粗",
+              "bold": true
+            },
+            {
+              "text": "、"
+            },
+            {
+              "text": "斜体",
+              "italic": true
+            },
+            {
+              "text": "、"
+            },
+            {
+              "text": "下划线",
+              "underline": true
+            },
+            {
+              "text": "、"
+            },
+            {
+              "text": "高亮",
+              "highlight": "yellow"
+            },
+            {
+              "text": "、"
+            },
+            {
+              "text": "彩色文字",
+              "color": "C00000"
+            },
+            {
+              "text": "，以及一个超链接。",
+              "link": {
+                "url": "https://github.com/codingayice/word2json"
+              }
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "这一句带有批注",
+              "comment": {
+                "id": 1,
+                "author": "Demo Reviewer",
+                "initials": "DR",
+                "date": "2026-07-04T10:00:00Z",
+                "text": "批注会写入 comments.xml，并在导入 JSON 时保留。"
+              }
+            },
+            {
+              "text": "，可以用 Word 打开查看。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "list": {
+            "type": "ordered",
+            "level": 0,
+            "numberingId": 2
+          },
+          "runs": [
+            {
+              "text": "导入 Word 得到结构化 JSON。"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "list": {
+            "type": "ordered",
+            "level": 0,
+            "numberingId": 2
+          },
+          "runs": [
+            {
+              "text": "再从 JSON 导出 Word，用视觉效果判断当前保真度。"
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "styleId": "DemoTable",
+          "borders": "single",
+          "grid": [
+            2200,
+            4200,
+            2200
+          ],
+          "rows": [
+            {
+              "cells": [
+                {
+                  "width": 2200,
+                  "shading": {
+                    "fill": "D9EAF7"
+                  },
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "能力",
+                          "bold": true
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "width": 4200,
+                  "shading": {
+                    "fill": "D9EAF7"
+                  },
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "示例"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "width": 2200,
+                  "shading": {
+                    "fill": "D9EAF7"
+                  },
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "状态"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "cells": [
+                {
+                  "width": 2200,
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "表格"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "width": 4200,
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "列宽、边框、底纹"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "width": 2200,
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "可往返"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "cells": [
+                {
+                  "width": 2200,
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "脚注"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "width": 4200,
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "正文中的脚注引用见下方"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "width": 2200,
+                  "blocks": [
+                    {
+                      "type": "paragraph",
+                      "runs": [
+                        {
+                          "text": "可往返"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "runs": [
+            {
+              "text": "脚注示例"
+            },
+            {
+              "text": "",
+              "footnote": {
+                "blocks": [
+                  {
+                    "type": "paragraph",
+                    "runs": [
+                      {
+                        "text": "这是由 JSON 生成并可重新导入的脚注内容。"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "text": " 会在页面底部显示。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
