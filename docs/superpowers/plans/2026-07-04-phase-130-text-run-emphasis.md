@@ -219,7 +219,7 @@ git diff --check
 
 Expected: exit code 0.
 
-- [ ] **Step 5: Commit implementation**
+- [x] **Step 5: Commit implementation**
 
 Run:
 
@@ -228,7 +228,7 @@ git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test
 git commit -m "feat: add phase 130 text run emphasis"
 ```
 
-- [ ] **Step 6: Push implementation branch**
+- [x] **Step 6: Push implementation branch**
 
 Run:
 
@@ -236,7 +236,7 @@ Run:
 git push -u origin phase-130-text-run-emphasis
 ```
 
-- [ ] **Step 7: Mark this plan pushed and commit docs**
+- [x] **Step 7: Mark this plan pushed and commit docs**
 
 Update this plan with the pushed branch name and implementation commit hash, then run:
 
@@ -262,3 +262,9 @@ git push
 - Full suite: `npm test` passed 374 tests.
 - Build: `npm run build` exited 0.
 - Whitespace: `git diff --check` exited 0 with LF/CRLF warnings only.
+
+### Push Record
+
+- Branch: `phase-130-text-run-emphasis`
+- Implementation commit: `863ee4e feat: add phase 130 text run emphasis`
+- Remote: `origin/phase-130-text-run-emphasis`
