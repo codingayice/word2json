@@ -144,7 +144,7 @@ git diff --check
 
 Expected: tests and build exit 0; `git diff --check` exits 0. CRLF warnings are acceptable only when the command still exits 0.
 
-- [ ] **Step 3: Commit feature**
+- [x] **Step 3: Commit feature**
 
 Run:
 
@@ -153,7 +153,7 @@ git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test
 git commit -m "feat: add phase 167 section bidi"
 ```
 
-- [ ] **Step 4: Push feature branch**
+- [x] **Step 4: Push feature branch**
 
 Run:
 
@@ -161,7 +161,7 @@ Run:
 git push -u origin phase-167-section-bidi
 ```
 
-- [ ] **Step 5: Record push and commit docs**
+- [x] **Step 5: Record push and commit docs**
 
 Add a Push Record section with the branch, commits, verification commands, and PR URL:
 
@@ -176,3 +176,14 @@ git add docs/superpowers/plans/2026-07-04-phase-167-section-bidi.md
 git commit -m "docs: mark phase 167 pushed"
 git push
 ```
+
+## Push Record
+
+- Branch: `phase-167-section-bidi`
+- Feature commit: `1f41e00 feat: add phase 167 section bidi`
+- Verification:
+  - `npm test -- tests/docx-core.test.ts -t "section bidi layout"`: 2 passed
+  - `npm test`: 476 passed
+  - `npm run build`: exit 0
+  - `git diff --check`: exit 0 with LF/CRLF warnings
+- PR: https://github.com/codingayice/word2json/pull/new/phase-167-section-bidi
