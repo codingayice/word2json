@@ -973,9 +973,9 @@ function parseStyleOnOffRunProperty<K extends keyof StyleRunProperties>(value: u
 
 function parseStyleTableProperties(value: unknown): TableStyleDefinition["table"] | undefined {
   const properties = asObject(value);
-  const borders = asObject(properties.tblBorders);
+  const borders = parseTableBorders(properties.tblBorders);
 
-  return borders.top !== undefined ? { borders: "single" } : undefined;
+  return borders ? { borders } : undefined;
 }
 
 async function parseSections(
@@ -1884,6 +1884,41 @@ function parseParagraphBorders(value: unknown): NonNullable<ParagraphNode["borde
   return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
+function parseTableBorders(value: unknown): TableNode["borders"] | undefined {
+  const borders = asObject(value);
+  const parsed = {
+    ...parseTableBorderSide(borders.top, "top"),
+    ...parseTableBorderSide(borders.left, "left"),
+    ...parseTableBorderSide(borders.bottom, "bottom"),
+    ...parseTableBorderSide(borders.right, "right"),
+    ...parseTableBorderSide(borders.insideH, "insideH"),
+    ...parseTableBorderSide(borders.insideV, "insideV"),
+  };
+
+  if (Object.keys(parsed).length === 0) {
+    return undefined;
+  }
+
+  return isDefaultSingleTableBorders(parsed) ? "single" : parsed;
+}
+
+function parseTableBorderSide(value: unknown, side: keyof Exclude<NonNullable<TableNode["borders"]>, string>): Partial<Exclude<NonNullable<TableNode["borders"]>, string>> {
+  const border = parseBorder(value);
+
+  return border ? { [side]: border } : {};
+}
+
+function isDefaultSingleTableBorders(borders: Exclude<NonNullable<TableNode["borders"]>, string>): boolean {
+  const sides: (keyof typeof borders)[] = ["top", "left", "bottom", "right", "insideH", "insideV"];
+  return sides.every((side) => {
+    const border = borders[side];
+    return border?.style === "single" &&
+      border.size === 4 &&
+      border.space === 0 &&
+      border.color === "auto";
+  });
+}
+
 function parseParagraphBorderSide(value: unknown, side: keyof NonNullable<ParagraphNode["borders"]>): Partial<NonNullable<ParagraphNode["borders"]>> {
   const border = parseBorder(value);
 
@@ -1892,17 +1927,29 @@ function parseParagraphBorderSide(value: unknown, side: keyof NonNullable<Paragr
 
 function parseBorder(value: unknown): NonNullable<TextRun["border"]> | undefined {
   const border = asObject(value);
+  const style = parseBorderStyle(border.val);
 
-  if (border.val !== "single") {
+  if (!style) {
     return undefined;
   }
 
   return {
-    style: "single",
+    style,
     ...(border.sz !== undefined ? { size: parseNumber(border.sz) } : {}),
     ...(typeof border.color === "string" ? { color: border.color } : {}),
     ...(border.space !== undefined ? { space: parseNumber(border.space) } : {}),
   };
+}
+
+function parseBorderStyle(value: unknown): NonNullable<TextRun["border"]>["style"] | undefined {
+  return value === "single" ||
+    value === "double" ||
+    value === "dashed" ||
+    value === "dotted" ||
+    value === "nil" ||
+    value === "none"
+    ? value
+    : undefined;
 }
 
 function parseParagraphSpacing(value: unknown): ParagraphNode["spacing"] | undefined {
@@ -3053,7 +3100,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const caption = asObject(properties.tblCaption);
   const description = asObject(properties.tblDescription);
   const width = asObject(properties.tblW);
-  const borders = asObject(properties.tblBorders);
+  const borders = parseTableBorders(properties.tblBorders);
   const alignment = asObject(properties.jc);
   const cellSpacing = asObject(properties.tblCellSpacing);
   const indent = parseTableIndent(properties.tblInd);
@@ -3073,7 +3120,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(grid ? { grid } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(widthType && widthType !== "dxa" ? { widthType } : {}),
-    ...(borders.top !== undefined ? { borders: "single" as const } : {}),
+    ...(borders ? { borders } : {}),
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
     ...(indent ? { indent } : {}),

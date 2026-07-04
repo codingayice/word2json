@@ -741,7 +741,7 @@ function paragraphBordersXml(borders: NonNullable<ParagraphNode["borders"]>): st
   return sides ? `<w:pBdr>${sides}</w:pBdr>` : "";
 }
 
-function borderSideXml(side: "top" | "left" | "bottom" | "right" | "bdr", border: BorderDefinition): string {
+function borderSideXml(side: "top" | "left" | "bottom" | "right" | "insideH" | "insideV" | "bdr", border: BorderDefinition): string {
   return `<w:${side} w:val="${border.style}"` +
     (border.size !== undefined ? ` w:sz="${border.size}"` : "") +
     (border.space !== undefined ? ` w:space="${border.space}"` : "") +
@@ -1465,15 +1465,29 @@ function tableCellMarginSideXml(side: "top" | "right" | "bottom" | "left", margi
   return `<w:${side} w:w="${width}" w:type="${type}"/>`;
 }
 
-function tableBordersXml(border: "single"): string {
-  return `<w:tblBorders>` +
-    `<w:top w:val="${border}" w:sz="4" w:space="0" w:color="auto"/>` +
-    `<w:left w:val="${border}" w:sz="4" w:space="0" w:color="auto"/>` +
-    `<w:bottom w:val="${border}" w:sz="4" w:space="0" w:color="auto"/>` +
-    `<w:right w:val="${border}" w:sz="4" w:space="0" w:color="auto"/>` +
-    `<w:insideH w:val="${border}" w:sz="4" w:space="0" w:color="auto"/>` +
-    `<w:insideV w:val="${border}" w:sz="4" w:space="0" w:color="auto"/>` +
-    `</w:tblBorders>`;
+function tableBordersXml(border: NonNullable<TableNode["borders"]>): string {
+  if (border === "single") {
+    const defaultBorder = { style: border, size: 4, space: 0, color: "auto" } satisfies BorderDefinition;
+    return `<w:tblBorders>` +
+      borderSideXml("top", defaultBorder) +
+      borderSideXml("left", defaultBorder) +
+      borderSideXml("bottom", defaultBorder) +
+      borderSideXml("right", defaultBorder) +
+      borderSideXml("insideH", defaultBorder) +
+      borderSideXml("insideV", defaultBorder) +
+      `</w:tblBorders>`;
+  }
+
+  const sides = [
+    border.top ? borderSideXml("top", border.top) : "",
+    border.left ? borderSideXml("left", border.left) : "",
+    border.bottom ? borderSideXml("bottom", border.bottom) : "",
+    border.right ? borderSideXml("right", border.right) : "",
+    border.insideH ? borderSideXml("insideH", border.insideH) : "",
+    border.insideV ? borderSideXml("insideV", border.insideV) : "",
+  ].join("");
+
+  return sides ? `<w:tblBorders>${sides}</w:tblBorders>` : "";
 }
 
 function imageXml(image: ImageNode, context: WriterContext): string {

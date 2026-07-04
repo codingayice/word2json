@@ -342,8 +342,10 @@ export type ShadingDefinition = {
   fill: string;
 };
 
+export type BorderStyle = "single" | "double" | "dashed" | "dotted" | "nil" | "none";
+
 export type BorderDefinition = {
-  style: "single";
+  style: BorderStyle;
   size?: number;
   color?: string;
   space?: number;
@@ -361,7 +363,7 @@ export type TableStyleDefinition = StyleDefinition & {
 };
 
 export type StyleTableProperties = {
-  borders?: "single";
+  borders?: TableBorders;
 };
 
 export type SectionNode = {
@@ -719,7 +721,7 @@ export type TableNode = {
   grid?: number[];
   width?: number;
   widthType?: "auto" | "dxa" | "nil" | "pct";
-  borders?: "single";
+  borders?: TableBorders;
   alignment?: ParagraphAlignment;
   cellSpacing?: number;
   indent?: TableIndent;
@@ -752,6 +754,15 @@ export type TableLook = {
   lastColumn?: boolean;
   bandedRows?: boolean;
   bandedColumns?: boolean;
+};
+
+export type TableBorders = "single" | {
+  top?: BorderDefinition;
+  left?: BorderDefinition;
+  bottom?: BorderDefinition;
+  right?: BorderDefinition;
+  insideH?: BorderDefinition;
+  insideV?: BorderDefinition;
 };
 
 export type TableRowNode = {
