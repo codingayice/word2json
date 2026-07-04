@@ -575,13 +575,7 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   const list = paragraph.list
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
-  const pagination = paragraph.pagination
-    ? [
-      paragraph.pagination.keepNext ? "<w:keepNext/>" : "",
-      paragraph.pagination.keepLines ? "<w:keepLines/>" : "",
-      paragraph.pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
-    ].join("")
-    : "";
+  const pagination = paragraphPaginationXml(paragraph.pagination);
   const propertyRevision = paragraph.propertyRevision
     ? propertyRevisionXml("pPr", "pPrChange", paragraph.propertyRevision)
     : "";
@@ -629,6 +623,16 @@ function paragraphIndentXml(indent: NonNullable<ParagraphNode["indent"]>): strin
     (indent.firstLine !== undefined ? ` w:firstLine="${indent.firstLine}"` : "") +
     (indent.hanging !== undefined ? ` w:hanging="${indent.hanging}"` : "") +
     `/>`;
+}
+
+function paragraphPaginationXml(pagination?: ParagraphNode["pagination"]): string {
+  return pagination
+    ? [
+      pagination.keepNext ? "<w:keepNext/>" : "",
+      pagination.keepLines ? "<w:keepLines/>" : "",
+      pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
+    ].join("")
+    : "";
 }
 
 function runXml(run: TextRun, context: WriterContext, options: { skipComment?: boolean } = {}): string {
@@ -1610,6 +1614,7 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
     properties.indent ? paragraphIndentXml(properties.indent) : "",
     properties.shading ? shadingXml(properties.shading) : "",
     properties.borders ? paragraphBordersXml(properties.borders) : "",
+    paragraphPaginationXml(properties.pagination),
   ].join("");
 
   return paragraphProperties ? `<w:pPr>${paragraphProperties}</w:pPr>` : "";

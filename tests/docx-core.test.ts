@@ -4932,6 +4932,28 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:pPr><w:spacing w:before="120" w:after="120"/><w:ind w:left="360" w:hanging="180"/></w:pPr>');
   });
 
+  it("writes paragraph style pagination properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "KeepHeading",
+          name: "Keep Heading",
+          paragraph: {
+            pagination: { keepNext: true, keepLines: true, pageBreakBefore: true },
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "KeepHeading", runs: [{ text: "Heading" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="KeepHeading"><w:name w:val="Keep Heading"/><w:pPr><w:keepNext/><w:keepLines/><w:pageBreakBefore/></w:pPr></w:style>');
+  });
+
   it("writes paragraph style borders and shading", async () => {
     const document = {
       version: "1.0" as const,
@@ -10006,6 +10028,27 @@ describe("DOCX reader", () => {
           ],
         },
       ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph style pagination properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "KeepHeading",
+          name: "Keep Heading",
+          paragraph: {
+            pagination: { keepNext: true, keepLines: true, pageBreakBefore: true },
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "KeepHeading", runs: [{ text: "Heading" }] }] }],
     };
 
     const docx = await buildDocx(source);

@@ -735,15 +735,27 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
   const indent = parseParagraphIndent(properties.ind);
   const shading = parseShading(properties.shd);
   const borders = parseParagraphBorders(properties.pBdr);
+  const pagination = parseParagraphPagination(properties);
   const parsed = {
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
     ...(spacing ? { spacing } : {}),
     ...(indent ? { indent } : {}),
     ...(shading ? { shading } : {}),
     ...(borders ? { borders } : {}),
+    ...(pagination ? { pagination } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNode["pagination"]> | undefined {
+  const pagination = {
+    ...(properties.keepNext !== undefined ? { keepNext: true } : {}),
+    ...(properties.keepLines !== undefined ? { keepLines: true } : {}),
+    ...(properties.pageBreakBefore !== undefined ? { pageBreakBefore: true } : {}),
+  };
+
+  return Object.keys(pagination).length > 0 ? pagination : undefined;
 }
 
 function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined {

@@ -315,6 +315,7 @@ export type StyleParagraphProperties = {
   indent?: ParagraphIndent;
   shading?: ShadingDefinition;
   borders?: ParagraphBorders;
+  pagination?: ParagraphPagination;
 };
 
 export type ShadingDefinition = {
