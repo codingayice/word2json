@@ -6421,6 +6421,35 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ListedHeading"><w:name w:val="Listed Heading"/><w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="10"/></w:numPr><w:outlineLvl w:val="2"/></w:pPr></w:style>');
   });
 
+  it("writes style metadata properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "LinkedHeading",
+          name: "Linked Heading",
+          linkedStyle: "LinkedHeadingChar",
+          uiPriority: 9,
+          qFormat: true,
+        }],
+        character: [{
+          id: "LinkedHeadingChar",
+          name: "Linked Heading Char",
+          semiHidden: true,
+          unhideWhenUsed: true,
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Heading" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="LinkedHeading"><w:name w:val="Linked Heading"/><w:link w:val="LinkedHeadingChar"/><w:uiPriority w:val="9"/><w:qFormat/></w:style>');
+    expect(styles).toContain('<w:style w:type="character" w:styleId="LinkedHeadingChar"><w:name w:val="Linked Heading Char"/><w:semiHidden/><w:unhideWhenUsed/></w:style>');
+  });
+
   it("writes partial paragraph style numbering properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -13557,6 +13586,33 @@ describe("DOCX reader", () => {
     expect(parsed).toEqual(source);
   });
 
+  it("round-trips style metadata properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "LinkedHeading",
+          name: "Linked Heading",
+          linkedStyle: "LinkedHeadingChar",
+          uiPriority: 9,
+          qFormat: true,
+        }],
+        character: [{
+          id: "LinkedHeadingChar",
+          name: "Linked Heading Char",
+          semiHidden: true,
+          unhideWhenUsed: true,
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Heading" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
   it("imports partial paragraph style numbering properties", async () => {
     const docx = await buildDocx({
       version: "1.0" as const,
@@ -13610,6 +13666,7 @@ describe("DOCX reader", () => {
       name: "heading 1",
       basedOn: "Normal",
       next: "Normal",
+      qFormat: true,
       paragraph: {
         spacing: { before: 320, after: 160 },
         pagination: { keepNext: true, keepLines: true },

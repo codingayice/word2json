@@ -258,6 +258,11 @@ export type StyleDefinition = {
   id: string;
   name: string;
   basedOn?: string;
+  linkedStyle?: string;
+  uiPriority?: number;
+  semiHidden?: boolean;
+  unhideWhenUsed?: boolean;
+  qFormat?: boolean;
   run?: StyleRunProperties;
 };
 

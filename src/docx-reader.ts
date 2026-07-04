@@ -14,6 +14,7 @@ import type {
   NumberingLevelDefinition,
   NumberingInstance,
   NumberingFormat,
+  StyleDefinition,
   StyleParagraphProperties,
   StyleRunProperties,
   TableStyleDefinition,
@@ -720,6 +721,7 @@ async function parseStyles(zip: JSZip, numberingContext: NumberingContext): Prom
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
       const next = asObject(style.next);
+      const metadata = parseStyleMetadata(style);
       const paragraph = parseStyleParagraphProperties(style.pPr, numberingContext);
       const run = parseStyleRunProperties(style.rPr);
 
@@ -728,6 +730,7 @@ async function parseStyles(zip: JSZip, numberingContext: NumberingContext): Prom
         name: typeof name.val === "string" ? name.val : String(style.styleId),
         ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
         ...(typeof next.val === "string" ? { next: next.val } : {}),
+        ...metadata,
         ...(paragraph ? { paragraph } : {}),
         ...(run ? { run } : {}),
       };
@@ -776,12 +779,14 @@ function parseStyleDefinitions(styleNodes: XmlNode[], type: "character" | "table
     .map((style) => {
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
+      const metadata = parseStyleMetadata(style);
       const run = parseStyleRunProperties(style.rPr);
 
       return {
         id: String(style.styleId),
         name: typeof name.val === "string" ? name.val : String(style.styleId),
         ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
+        ...metadata,
         ...(run ? { run } : {}),
       };
     });
@@ -793,6 +798,7 @@ function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition
     .map((style) => {
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
+      const metadata = parseStyleMetadata(style);
       const run = parseStyleRunProperties(style.rPr);
       const table = parseStyleTableProperties(style);
 
@@ -800,10 +806,24 @@ function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition
         id: String(style.styleId),
         name: typeof name.val === "string" ? name.val : String(style.styleId),
         ...(typeof basedOn.val === "string" ? { basedOn: basedOn.val } : {}),
+        ...metadata,
         ...(run ? { run } : {}),
         ...(table ? { table } : {}),
       };
     });
+}
+
+function parseStyleMetadata(style: XmlNode): Partial<StyleDefinition> {
+  const link = asObject(style.link);
+  const uiPriority = asObject(style.uiPriority);
+
+  return {
+    ...(typeof link.val === "string" ? { linkedStyle: link.val } : {}),
+    ...(uiPriority.val !== undefined ? { uiPriority: parseNumber(uiPriority.val) } : {}),
+    ...(style.semiHidden !== undefined ? { semiHidden: true } : {}),
+    ...(style.unhideWhenUsed !== undefined ? { unhideWhenUsed: true } : {}),
+    ...(style.qFormat !== undefined ? { qFormat: true } : {}),
+  };
 }
 
 function parseStyleParagraphProperties(value: unknown, numberingContext: NumberingContext = { listTypes: new Map([[1, "bullet"], [2, "ordered"]]) }): StyleParagraphProperties | undefined {

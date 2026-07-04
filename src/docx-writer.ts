@@ -11,6 +11,7 @@ import type {
   RunLanguage,
   RunRevision,
   SectionNode,
+  StyleDefinition,
   StyleParagraphProperties,
   StyleRunProperties,
   StyleTableProperties,
@@ -2105,15 +2106,16 @@ function stylesXml(document: DocumentJson): string {
       `<w:name w:val="${escapeAttribute(style.name)}"/>` +
       (style.basedOn ? `<w:basedOn w:val="${escapeAttribute(style.basedOn)}"/>` : "") +
       (style.next ? `<w:next w:val="${escapeAttribute(style.next)}"/>` : "") +
+      styleMetadataXml(style) +
       paragraphStylePropertiesXml(style.paragraph) +
       styleRunPropertiesXml(style.run) +
       `</w:style>`)
     .join("");
   const characterStyles = (document.styles?.character ?? [])
-    .map((style) => styleXml("character", style.id, style.name, style.basedOn, style.run))
+    .map((style) => styleDefinitionXml("character", style))
     .join("");
   const tableStyles = (document.styles?.table ?? [])
-    .map((style) => styleXml("table", style.id, style.name, style.basedOn, style.run, tableStylePropertiesXml(style.table)))
+    .map((style) => styleDefinitionXml("table", style, tableStylePropertiesXml(style.table)))
     .join("");
 
   return xmlDeclaration(
@@ -2147,13 +2149,24 @@ function docDefaultsXml(defaults: NonNullable<NonNullable<DocumentJson["styles"]
   return runDefaults || paragraphDefaults ? `<w:docDefaults>${runDefaults}${paragraphDefaults}</w:docDefaults>` : "";
 }
 
-function styleXml(type: "character" | "table", id: string, name: string, basedOn?: string, run?: StyleRunProperties, properties = ""): string {
-  return `<w:style w:type="${type}" w:styleId="${escapeAttribute(id)}">` +
-    `<w:name w:val="${escapeAttribute(name)}"/>` +
-    (basedOn ? `<w:basedOn w:val="${escapeAttribute(basedOn)}"/>` : "") +
-    styleRunPropertiesXml(run) +
+function styleDefinitionXml(type: "character" | "table", style: StyleDefinition, properties = ""): string {
+  return `<w:style w:type="${type}" w:styleId="${escapeAttribute(style.id)}">` +
+    `<w:name w:val="${escapeAttribute(style.name)}"/>` +
+    (style.basedOn ? `<w:basedOn w:val="${escapeAttribute(style.basedOn)}"/>` : "") +
+    styleMetadataXml(style) +
+    styleRunPropertiesXml(style.run) +
     properties +
     `</w:style>`;
+}
+
+function styleMetadataXml(style: Pick<StyleDefinition, "linkedStyle" | "uiPriority" | "semiHidden" | "unhideWhenUsed" | "qFormat">): string {
+  return [
+    style.linkedStyle ? `<w:link w:val="${escapeAttribute(style.linkedStyle)}"/>` : "",
+    style.uiPriority !== undefined ? `<w:uiPriority w:val="${style.uiPriority}"/>` : "",
+    style.semiHidden ? "<w:semiHidden/>" : "",
+    style.unhideWhenUsed ? "<w:unhideWhenUsed/>" : "",
+    style.qFormat ? "<w:qFormat/>" : "",
+  ].join("");
 }
 
 function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): string {
