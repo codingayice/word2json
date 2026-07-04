@@ -1391,7 +1391,7 @@ function parseBlockXml(
 
   if (parsed.p !== undefined) {
     if (xml.includes("<w:drawing>")) {
-      return parseImageBlock(parsed.p, media);
+      return parseImageBlock(parsed.p, media, xml);
     }
 
     const paragraph = parseParagraph(parsed.p, relationships, comments, footnotes, endnotes, numberingContext, xml);
@@ -1450,7 +1450,7 @@ function parseRevisedParagraph(
   };
 }
 
-function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
+function parseImageBlock(value: unknown, media: MediaMap, xml?: string): ImageNode {
   const paragraph = asObject(value);
   const run = asObject(paragraph.r);
   const drawing = asObject(run.drawing);
@@ -1460,7 +1460,8 @@ function parseImageBlock(value: unknown, media: MediaMap): ImageNode {
   const relationshipId = parseImageRelationshipId(container);
   const crop = parseImageCrop(container);
   const rotation = parseImageRotation(container);
-  const floating = parseImageFloating(drawing);
+  const simplePosition = parseImageSimplePositionXml(xml);
+  const floating = parseImageFloating(drawing, simplePosition);
   const image = relationshipId ? media[relationshipId] : undefined;
 
   return {
@@ -1480,7 +1481,7 @@ function imageDrawingContainer(drawing: XmlNode): XmlNode {
   return drawing.anchor !== undefined ? asObject(drawing.anchor) : asObject(drawing.inline);
 }
 
-function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined {
+function parseImageFloating(drawing: XmlNode, simplePositionFromXml?: NonNullable<NonNullable<ImageNode["floating"]>["simplePosition"]>): ImageNode["floating"] | undefined {
   const anchor = asObject(drawing.anchor);
 
   if (drawing.anchor === undefined) {
@@ -1491,6 +1492,7 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
   const positionV = asObject(anchor.positionV);
   const horizontalAlign = parseImageHorizontalAlign(positionH.align);
   const verticalAlign = parseImageVerticalAlign(positionV.align);
+  const simplePosition = simplePositionFromXml ?? parseImageSimplePosition(anchor.simplePos);
 
   return {
     wrap: parseImageWrap(anchor),
@@ -1500,6 +1502,9 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
     ...parseImageVerticalRelativeFrom(positionV.relativeFrom),
     ...(horizontalAlign ? { horizontalAlign } : {}),
     ...(verticalAlign ? { verticalAlign } : {}),
+    ...(simplePosition ? { simplePosition } : {}),
+    ...(anchor.relativeHeight !== undefined && parseNumber(anchor.relativeHeight) !== 0 ? { relativeHeight: parseNumber(anchor.relativeHeight) } : {}),
+    ...(parseOnOff(anchor.locked) ? { locked: true } : {}),
     ...(anchor.distT !== undefined ? { distanceTop: parseNumber(anchor.distT) } : {}),
     ...(anchor.distB !== undefined ? { distanceBottom: parseNumber(anchor.distB) } : {}),
     ...(anchor.distL !== undefined ? { distanceLeft: parseNumber(anchor.distL) } : {}),
@@ -1508,6 +1513,20 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
     ...(anchor.allowOverlap !== undefined && !parseOnOff(anchor.allowOverlap) ? { allowOverlap: false } : {}),
     ...(anchor.layoutInCell !== undefined && !parseOnOff(anchor.layoutInCell) ? { layoutInCell: false } : {}),
   };
+}
+
+function parseImageSimplePosition(value: unknown): NonNullable<NonNullable<ImageNode["floating"]>["simplePosition"]> | undefined {
+  const simplePosition = asObject(value);
+  return simplePosition.x !== undefined || simplePosition.y !== undefined
+    ? { x: parseNumber(simplePosition.x), y: parseNumber(simplePosition.y) }
+    : undefined;
+}
+
+function parseImageSimplePositionXml(xml?: string): NonNullable<NonNullable<ImageNode["floating"]>["simplePosition"]> | undefined {
+  const match = xml?.match(/<wp:simplePos\b[^>]*\bx="([^"]*)"[^>]*\by="([^"]*)"[^>]*\/>/);
+  return match
+    ? { x: parseNumber(match[1]), y: parseNumber(match[2]) }
+    : undefined;
 }
 
 function parseImageHorizontalAlign(value: unknown): NonNullable<NonNullable<ImageNode["floating"]>["horizontalAlign"]> | undefined {

@@ -5135,6 +5135,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain('distT="10" distB="20" distL="30" distR="40"');
   });
 
+  it("writes floating image anchor controls", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          simplePosition: { x: 123, y: 456 },
+          relativeHeight: 251659264,
+          locked: true,
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('simplePos="1" relativeHeight="251659264"');
+    expect(xml).toContain('locked="1" layoutInCell="1" allowOverlap="1"');
+    expect(xml).toContain('<wp:simplePos x="123" y="456"/>');
+  });
+
   it("writes headers and footers with section relationships", async () => {
     const document = {
       version: "1.0" as const,
@@ -11496,6 +11525,32 @@ describe("DOCX reader", () => {
           behindDoc: true,
           allowOverlap: false,
           layoutInCell: false,
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image anchor controls", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          simplePosition: { x: 123, y: 456 },
+          relativeHeight: 251659264,
+          locked: true,
         },
       },
     ]);

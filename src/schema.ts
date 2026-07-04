@@ -863,6 +863,9 @@ export type ImageFloatingLayout = {
   verticalRelativeFrom?: "page" | "margin" | "paragraph" | "line";
   horizontalAlign?: "left" | "center" | "right" | "inside" | "outside";
   verticalAlign?: "top" | "center" | "bottom" | "inside" | "outside";
+  simplePosition?: { x: number; y: number };
+  relativeHeight?: number;
+  locked?: boolean;
   distanceTop?: number;
   distanceBottom?: number;
   distanceLeft?: number;

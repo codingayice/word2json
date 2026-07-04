@@ -1537,12 +1537,13 @@ function imageXml(image: ImageNode, context: WriterContext): string {
     `<pic:spPr><a:xfrm${rotation}><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
     `</pic:pic></a:graphicData></a:graphic>`;
   const drawing = image.floating
-    ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="0" relativeHeight="0"` +
+    ? `<wp:anchor xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" simplePos="${image.floating.simplePosition ? "1" : "0"}" relativeHeight="${image.floating.relativeHeight ?? 0}"` +
       (image.floating.distanceTop !== undefined ? ` distT="${image.floating.distanceTop}"` : "") +
       (image.floating.distanceBottom !== undefined ? ` distB="${image.floating.distanceBottom}"` : "") +
       (image.floating.distanceLeft !== undefined ? ` distL="${image.floating.distanceLeft}"` : "") +
       (image.floating.distanceRight !== undefined ? ` distR="${image.floating.distanceRight}"` : "") +
-      ` behindDoc="${image.floating.behindDoc ? "1" : "0"}" locked="0" layoutInCell="${image.floating.layoutInCell === false ? "0" : "1"}" allowOverlap="${image.floating.allowOverlap === false ? "0" : "1"}">` +
+      ` behindDoc="${image.floating.behindDoc ? "1" : "0"}" locked="${image.floating.locked ? "1" : "0"}" layoutInCell="${image.floating.layoutInCell === false ? "0" : "1"}" allowOverlap="${image.floating.allowOverlap === false ? "0" : "1"}">` +
+      imageSimplePositionXml(image.floating) +
       imagePositionHXml(image.floating) +
       imagePositionVXml(image.floating) +
       imageWrapXml(image.floating.wrap) +
@@ -1553,6 +1554,12 @@ function imageXml(image: ImageNode, context: WriterContext): string {
   return `<w:p><w:r><w:drawing>` +
     drawing +
     `</w:drawing></w:r></w:p>`;
+}
+
+function imageSimplePositionXml(floating: NonNullable<ImageNode["floating"]>): string {
+  return floating.simplePosition
+    ? `<wp:simplePos x="${floating.simplePosition.x}" y="${floating.simplePosition.y}"/>`
+    : "";
 }
 
 function imagePositionHXml(floating: NonNullable<ImageNode["floating"]>): string {
