@@ -851,6 +851,7 @@ export type ImageNode = {
 
 export type ImageEffects = {
   outerShadow?: ImageOuterShadowEffect;
+  innerShadow?: ImageInnerShadowEffect;
   glow?: ImageGlowEffect;
   softEdge?: ImageSoftEdgeEffect;
   reflection?: ImageReflectionEffect;
@@ -862,6 +863,14 @@ export type ImageOuterShadowEffect = {
   direction?: number;
   alignment?: "tl" | "t" | "tr" | "l" | "ctr" | "r" | "bl" | "b" | "br";
   rotateWithShape?: boolean;
+  color?: string;
+  alpha?: number;
+};
+
+export type ImageInnerShadowEffect = {
+  blurRadius?: number;
+  distance?: number;
+  direction?: number;
   color?: string;
   alpha?: number;
 };

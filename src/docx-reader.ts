@@ -1639,6 +1639,7 @@ function parseImageEffects(inline: XmlNode): ImageNode["effects"] | undefined {
   const effects = asObject(shapeProperties.effectLst);
   const parsed = {
     ...parseImageOuterShadow(effects.outerShdw),
+    ...parseImageInnerShadow(effects.innerShdw),
     ...parseImageGlow(effects.glow),
     ...parseImageSoftEdge(effects.softEdge),
     ...parseImageReflection(effects.reflection),
@@ -1660,6 +1661,22 @@ function parseImageOuterShadow(value: unknown): Pick<NonNullable<ImageNode["effe
       ...(shadow.dir !== undefined ? { direction: parseNumber(shadow.dir) } : {}),
       ...(parseImageEffectAlignment(shadow.algn) ? { alignment: parseImageEffectAlignment(shadow.algn) } : {}),
       ...(shadow.rotWithShape !== undefined ? { rotateWithShape: parseOnOff(shadow.rotWithShape) } : {}),
+      ...parseImageEffectColor(shadow.srgbClr),
+    },
+  };
+}
+
+function parseImageInnerShadow(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "innerShadow"> | {} {
+  const shadow = asObject(value);
+  if (Object.keys(shadow).length === 0) {
+    return {};
+  }
+
+  return {
+    innerShadow: {
+      ...(shadow.blurRad !== undefined ? { blurRadius: parseNumber(shadow.blurRad) } : {}),
+      ...(shadow.dist !== undefined ? { distance: parseNumber(shadow.dist) } : {}),
+      ...(shadow.dir !== undefined ? { direction: parseNumber(shadow.dir) } : {}),
       ...parseImageEffectColor(shadow.srgbClr),
     },
   };

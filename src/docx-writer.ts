@@ -1558,11 +1558,11 @@ function imageXml(image: ImageNode, context: WriterContext): string {
 }
 
 function imageEffectsXml(effects: ImageNode["effects"]): string {
-  if (!effects?.outerShadow && !effects?.glow && !effects?.softEdge && !effects?.reflection) {
+  if (!effects?.outerShadow && !effects?.innerShadow && !effects?.glow && !effects?.softEdge && !effects?.reflection) {
     return "";
   }
 
-  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}${imageReflectionXml(effects.reflection)}</a:effectLst>`;
+  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageInnerShadowXml(effects.innerShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}${imageReflectionXml(effects.reflection)}</a:effectLst>`;
 }
 
 function imageOuterShadowXml(shadow: NonNullable<ImageNode["effects"]>["outerShadow"]): string {
@@ -1579,6 +1579,20 @@ function imageOuterShadowXml(shadow: NonNullable<ImageNode["effects"]>["outerSha
   ].join("");
 
   return `<a:outerShdw${attributes}>${imageEffectColorXml(shadow.color, shadow.alpha)}</a:outerShdw>`;
+}
+
+function imageInnerShadowXml(shadow: NonNullable<ImageNode["effects"]>["innerShadow"]): string {
+  if (!shadow) {
+    return "";
+  }
+
+  const attributes = [
+    shadow.blurRadius !== undefined ? ` blurRad="${shadow.blurRadius}"` : "",
+    shadow.distance !== undefined ? ` dist="${shadow.distance}"` : "",
+    shadow.direction !== undefined ? ` dir="${shadow.direction}"` : "",
+  ].join("");
+
+  return `<a:innerShdw${attributes}>${imageEffectColorXml(shadow.color, shadow.alpha)}</a:innerShdw>`;
 }
 
 function imageGlowXml(glow: NonNullable<ImageNode["effects"]>["glow"]): string {
