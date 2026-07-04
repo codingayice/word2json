@@ -186,20 +186,20 @@ git diff --check
 
 Expected: Targeted tests, full tests, and build pass. `git diff --check` may print existing LF/CRLF warnings but must exit 0.
 
-- [ ] **Step 2: Commit implementation**
+- [x] **Step 2: Commit implementation**
 
 ```bash
 git add src/docx-writer.ts src/docx-reader.ts tests/docx-core.test.ts docs/superpowers/plans/2026-07-04-phase-146-style-run-explicit-off.md
 git commit -m "feat: add phase 146 style run explicit off"
 ```
 
-- [ ] **Step 3: Push branch**
+- [x] **Step 3: Push branch**
 
 ```bash
 git push -u origin phase-146-style-run-explicit-off
 ```
 
-- [ ] **Step 4: Record push metadata**
+- [x] **Step 4: Record push metadata**
 
 Append the pushed commit hash and remote branch to this plan, then commit the plan update:
 
@@ -211,4 +211,8 @@ git push
 
 ## Push Record
 
-- Pending.
+- Branch: `phase-146-style-run-explicit-off`
+- Remote: `origin`
+- Repository: `https://github.com/codingayice/word2json.git`
+- Implementation commit: `c5afdefcf48b74f630a9e5d4f520e924a2a037ac`
+- Pull request URL: `https://github.com/codingayice/word2json/pull/new/phase-146-style-run-explicit-off`
