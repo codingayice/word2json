@@ -4088,6 +4088,26 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tblOverlap w:val="never"/>');
   });
 
+  it("writes table caption and description", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        caption: "Quarterly revenue",
+        description: "Revenue by region and quarter",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Revenue" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblCaption w:val="Quarterly revenue"/>');
+    expect(xml).toContain('<w:tblDescription w:val="Revenue by region and quarter"/>');
+  });
+
   it("writes percentage table width", async () => {
     const document = createDocumentJson([
       {
@@ -10279,6 +10299,24 @@ describe("DOCX reader", () => {
         overlap: "never",
         rows: [
           { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "No overlap" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table caption and description", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        caption: "Quarterly revenue",
+        description: "Revenue by region and quarter",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Revenue" }] }] }] },
         ],
       },
     ]);

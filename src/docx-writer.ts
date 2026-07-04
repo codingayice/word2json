@@ -1324,6 +1324,8 @@ function tableXml(table: TableNode, context: WriterContext): string {
     table.styleId ? `<w:tblStyle w:val="${escapeAttribute(table.styleId)}"/>` : "",
     table.position ? tablePositionXml(table.position) : "",
     table.overlap ? `<w:tblOverlap w:val="${table.overlap}"/>` : "",
+    table.caption !== undefined ? `<w:tblCaption w:val="${escapeAttribute(table.caption)}"/>` : "",
+    table.description !== undefined ? `<w:tblDescription w:val="${escapeAttribute(table.description)}"/>` : "",
     table.width !== undefined ? `<w:tblW w:w="${table.width}" w:type="${table.widthType ?? "dxa"}"/>` : "",
     table.borders ? tableBordersXml(table.borders) : "",
     table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",

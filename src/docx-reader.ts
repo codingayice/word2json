@@ -3050,6 +3050,8 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const style = asObject(properties.tblStyle);
   const position = parseTablePosition(properties.tblpPr);
   const overlap = parseTableOverlap(properties.tblOverlap);
+  const caption = asObject(properties.tblCaption);
+  const description = asObject(properties.tblDescription);
   const width = asObject(properties.tblW);
   const borders = asObject(properties.tblBorders);
   const alignment = asObject(properties.jc);
@@ -3066,6 +3068,8 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(typeof style.val === "string" ? { styleId: style.val } : {}),
     ...(position ? { position } : {}),
     ...(overlap ? { overlap } : {}),
+    ...(typeof caption.val === "string" ? { caption: caption.val } : {}),
+    ...(typeof description.val === "string" ? { description: description.val } : {}),
     ...(grid ? { grid } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(widthType && widthType !== "dxa" ? { widthType } : {}),
