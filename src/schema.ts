@@ -711,6 +711,7 @@ export type TableNode = {
   type: "table";
   styleId?: string;
   look?: TableLook;
+  layout?: "autofit" | "fixed";
   grid?: number[];
   width?: number;
   borders?: "single";

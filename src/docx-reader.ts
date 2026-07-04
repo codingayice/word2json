@@ -3052,6 +3052,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const borders = asObject(properties.tblBorders);
   const alignment = asObject(properties.jc);
   const cellSpacing = asObject(properties.tblCellSpacing);
+  const layout = parseTableLayout(properties.tblLayout);
   const look = parseTableLook(properties.tblLook);
   const propertyRevision = parsePropertyRevision(properties.tblPrChange);
   const grid = parseTableGrid(table.tblGrid);
@@ -3064,6 +3065,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+    ...(layout ? { layout } : {}),
     ...(look ? { look } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
     rows: asArray(table.tr).map((rowValue) => {
@@ -3083,6 +3085,11 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       };
     }),
   };
+}
+
+function parseTableLayout(value: unknown): TableNode["layout"] | undefined {
+  const type = asObject(value).type;
+  return type === "autofit" || type === "fixed" ? type : undefined;
 }
 
 function parseTableLook(value: unknown): TableNode["look"] | undefined {

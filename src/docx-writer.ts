@@ -1326,6 +1326,7 @@ function tableXml(table: TableNode, context: WriterContext): string {
     table.borders ? tableBordersXml(table.borders) : "",
     table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",
     table.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${table.cellSpacing}" w:type="dxa"/>` : "",
+    table.layout ? `<w:tblLayout w:type="${table.layout}"/>` : "",
     table.look ? tableLookXml(table.look) : "",
     table.propertyRevision ? propertyRevisionXml("tblPr", "tblPrChange", table.propertyRevision) : "",
   ].join("");

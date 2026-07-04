@@ -4051,6 +4051,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tblLook w:val="04A0"/>');
   });
 
+  it("writes fixed table layout", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        layout: "fixed",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Fixed width" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblLayout w:type="fixed"/>');
+  });
+
   it("writes table grid and row height", async () => {
     const document = createDocumentJson([
       {
@@ -10119,6 +10137,23 @@ describe("DOCX reader", () => {
         },
         rows: [
           { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Styled" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips fixed table layout", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        layout: "fixed",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Fixed width" }] }] }] },
         ],
       },
     ]);
