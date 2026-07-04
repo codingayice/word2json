@@ -4852,6 +4852,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:docGrid w:type="linesAndChars" w:linePitch="360" w:charSpace="180"/>');
   });
 
+  it("writes section vertical alignment", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          verticalAlignment: "center" as const,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Centered" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:vAlign w:val="center"/>');
+  });
+
   it("writes section footnote and endnote properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -10567,6 +10585,23 @@ describe("DOCX reader", () => {
             charSpace: 180,
           },
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Grid" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section vertical alignment", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          verticalAlignment: "both" as const,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Distributed" }] }],
         },
       ],
     };

@@ -342,6 +342,9 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const footnoteProperties = notePropertiesXml("footnotePr", section.footnoteProperties);
   const endnoteProperties = notePropertiesXml("endnotePr", section.endnoteProperties);
   const documentGrid = documentGridXml(section.documentGrid);
+  const verticalAlignment = section.verticalAlignment
+    ? `<w:vAlign w:val="${section.verticalAlignment}"/>`
+    : "";
   const columns = section.columns
     ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
     : "";
@@ -359,6 +362,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     endnoteProperties +
     columns +
     documentGrid +
+    verticalAlignment +
     `</w:sectPr>`;
 }
 

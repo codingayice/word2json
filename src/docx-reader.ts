@@ -1023,6 +1023,7 @@ async function parseSections(
     const footnoteProperties = parseNoteProperties(body.sectPr, "footnotePr");
     const endnoteProperties = parseNoteProperties(body.sectPr, "endnotePr");
     const documentGrid = parseDocumentGrid(body.sectPr);
+    const verticalAlignment = parseSectionVerticalAlignment(body.sectPr);
     return [{
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
@@ -1030,6 +1031,7 @@ async function parseSections(
       ...(footnoteProperties ? { footnoteProperties } : {}),
       ...(endnoteProperties ? { endnoteProperties } : {}),
       ...(documentGrid ? { documentGrid } : {}),
+      ...(verticalAlignment ? { verticalAlignment } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
@@ -1046,6 +1048,7 @@ async function parseSections(
     const footnoteProperties = parseNoteProperties(sectPr, "footnotePr");
     const endnoteProperties = parseNoteProperties(sectPr, "endnotePr");
     const documentGrid = parseDocumentGrid(sectPr);
+    const verticalAlignment = parseSectionVerticalAlignment(sectPr);
 
     return {
       ...(breakType ? { breakType } : {}),
@@ -1055,6 +1058,7 @@ async function parseSections(
       ...(footnoteProperties ? { footnoteProperties } : {}),
       ...(endnoteProperties ? { endnoteProperties } : {}),
       ...(documentGrid ? { documentGrid } : {}),
+      ...(verticalAlignment ? { verticalAlignment } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
       blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1629,6 +1633,14 @@ function parseDocumentGrid(sectionPropertiesValue: unknown): SectionNode["docume
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseSectionVerticalAlignment(sectionPropertiesValue: unknown): SectionNode["verticalAlignment"] | undefined {
+  const verticalAlignment = asObject(asObject(sectionPropertiesValue).vAlign);
+
+  return typeof verticalAlignment.val === "string"
+    ? verticalAlignment.val as NonNullable<SectionNode["verticalAlignment"]>
+    : undefined;
 }
 
 function parseColumns(sectionPropertiesValue: unknown): import("./schema.js").ColumnSettings | undefined {

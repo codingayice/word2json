@@ -373,6 +373,7 @@ export type SectionNode = {
   footnoteProperties?: SectionNoteProperties;
   endnoteProperties?: SectionNoteProperties;
   documentGrid?: SectionDocumentGrid;
+  verticalAlignment?: SectionVerticalAlignment;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;
@@ -400,6 +401,8 @@ export type SectionDocumentGrid = {
   linePitch?: number;
   charSpace?: number;
 };
+
+export type SectionVerticalAlignment = "top" | "center" | "both" | "bottom";
 
 export type HeaderFooterContent = {
   default?: ParagraphNode[];
