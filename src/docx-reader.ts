@@ -1025,6 +1025,7 @@ async function parseSections(
     const documentGrid = parseDocumentGrid(body.sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(body.sectPr);
     const textDirection = parseSectionTextDirection(body.sectPr);
+    const bidi = parseSectionBidi(body.sectPr);
     const rtlGutter = parseRtlGutter(body.sectPr);
     const mirrorMargins = parseMirrorMargins(body.sectPr);
     return [{
@@ -1036,6 +1037,7 @@ async function parseSections(
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
       ...(textDirection ? { textDirection } : {}),
+      ...(bidi ? { bidi } : {}),
       ...(rtlGutter ? { rtlGutter } : {}),
       ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
@@ -1056,6 +1058,7 @@ async function parseSections(
     const documentGrid = parseDocumentGrid(sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(sectPr);
     const textDirection = parseSectionTextDirection(sectPr);
+    const bidi = parseSectionBidi(sectPr);
     const rtlGutter = parseRtlGutter(sectPr);
     const mirrorMargins = parseMirrorMargins(sectPr);
 
@@ -1069,6 +1072,7 @@ async function parseSections(
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
       ...(textDirection ? { textDirection } : {}),
+      ...(bidi ? { bidi } : {}),
       ...(rtlGutter ? { rtlGutter } : {}),
       ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
@@ -1661,6 +1665,10 @@ function parseSectionTextDirection(sectionPropertiesValue: unknown): SectionNode
   return typeof textDirection.val === "string"
     ? textDirection.val as NonNullable<SectionNode["textDirection"]>
     : undefined;
+}
+
+function parseSectionBidi(sectionPropertiesValue: unknown): boolean | undefined {
+  return asObject(sectionPropertiesValue).bidi !== undefined ? true : undefined;
 }
 
 function parseRtlGutter(sectionPropertiesValue: unknown): boolean | undefined {

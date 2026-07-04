@@ -4906,6 +4906,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:rtlGutter/>");
   });
 
+  it("writes section bidi layout", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          bidi: true,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Bidi section" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:bidi/>");
+  });
+
   it("writes section mirror margins", async () => {
     const document = {
       version: "1.0" as const,
@@ -10690,6 +10708,23 @@ describe("DOCX reader", () => {
         {
           rtlGutter: true,
           blocks: [{ type: "paragraph" as const, runs: [{ text: "RTL gutter" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section bidi layout", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          bidi: true,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Bidi section" }] }],
         },
       ],
     };

@@ -348,6 +348,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const textDirection = section.textDirection
     ? `<w:textDirection w:val="${section.textDirection}"/>`
     : "";
+  const bidi = section.bidi ? "<w:bidi/>" : "";
   const rtlGutter = section.rtlGutter ? "<w:rtlGutter/>" : "";
   const mirrorMargins = section.mirrorMargins ? "<w:mirrorMargins/>" : "";
   const columns = section.columns
@@ -369,6 +370,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     documentGrid +
     verticalAlignment +
     textDirection +
+    bidi +
     rtlGutter +
     mirrorMargins +
     `</w:sectPr>`;
