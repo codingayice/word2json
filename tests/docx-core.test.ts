@@ -4807,6 +4807,29 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:pgNumType w:start="3" w:fmt="lowerRoman" w:chapStyle="1" w:chapSep="hyphen"/>');
   });
 
+  it("writes section line numbering settings", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          lineNumbering: {
+            start: 5,
+            countBy: 2,
+            distance: 360,
+            restart: "newPage" as const,
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Draft" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:lnNumType w:start="5" w:countBy="2" w:distance="360" w:restart="newPage"/>');
+  });
+
   it("writes section columns", async () => {
     const document = {
       version: "1.0" as const,
@@ -10453,6 +10476,28 @@ describe("DOCX reader", () => {
             chapterSeparator: "hyphen" as const,
           },
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Preface" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section line numbering settings", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          lineNumbering: {
+            start: 5,
+            countBy: 2,
+            distance: 360,
+            restart: "newPage" as const,
+          },
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Draft" }] }],
         },
       ],
     };

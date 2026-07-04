@@ -369,6 +369,7 @@ export type SectionNode = {
   titlePage?: boolean;
   page?: PageSettings;
   pageNumbering?: SectionPageNumbering;
+  lineNumbering?: SectionLineNumbering;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;
@@ -393,6 +394,13 @@ export type SectionPageNumbering = {
   format?: NumberingFormat;
   chapterStyle?: number;
   chapterSeparator?: "colon" | "emDash" | "enDash" | "hyphen" | "period";
+};
+
+export type SectionLineNumbering = {
+  start?: number;
+  countBy?: number;
+  distance?: number;
+  restart?: "continuous" | "newPage" | "newSection";
 };
 
 export type PageSettings = {

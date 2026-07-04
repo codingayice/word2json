@@ -338,6 +338,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     ? `<w:type w:val="${sectionBreakValue(section.breakType)}"/>`
     : "";
   const pageNumbering = pageNumberingXml(section.pageNumbering);
+  const lineNumbering = lineNumberingXml(section.lineNumbering);
   const columns = section.columns
     ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
     : "";
@@ -350,6 +351,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     `<w:pgSz w:w="${page.width}" w:h="${page.height}"${orientation}/>` +
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
     pageNumbering +
+    lineNumbering +
     columns +
     `</w:sectPr>`;
 }
@@ -367,6 +369,21 @@ function pageNumberingXml(pageNumbering?: SectionNode["pageNumbering"]): string 
   ].join("");
 
   return attributes ? `<w:pgNumType${attributes}/>` : "";
+}
+
+function lineNumberingXml(lineNumbering?: SectionNode["lineNumbering"]): string {
+  if (!lineNumbering) {
+    return "";
+  }
+
+  const attributes = [
+    lineNumbering.start !== undefined ? ` w:start="${lineNumbering.start}"` : "",
+    lineNumbering.countBy !== undefined ? ` w:countBy="${lineNumbering.countBy}"` : "",
+    lineNumbering.distance !== undefined ? ` w:distance="${lineNumbering.distance}"` : "",
+    lineNumbering.restart ? ` w:restart="${lineNumbering.restart}"` : "",
+  ].join("");
+
+  return attributes ? `<w:lnNumType${attributes}/>` : "";
 }
 
 function sectionBreakValue(value: SectionNode["breakType"]): string {

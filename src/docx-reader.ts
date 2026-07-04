@@ -1019,9 +1019,11 @@ async function parseSections(
     const page = parsePageSettings(body.sectPr, false);
     const headerFooter = await parseHeaderFooterContent(zip, body.sectPr, relationships, comments);
     const pageNumbering = parsePageNumbering(body.sectPr);
+    const lineNumbering = parseLineNumbering(body.sectPr);
     return [{
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
+      ...(lineNumbering ? { lineNumbering } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
@@ -1034,11 +1036,13 @@ async function parseSections(
     const breakType = parseSectionBreakType(sectPr);
     const columns = parseColumns(sectPr);
     const pageNumbering = parsePageNumbering(sectPr);
+    const lineNumbering = parseLineNumbering(sectPr);
 
     return {
       ...(breakType ? { breakType } : {}),
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
+      ...(lineNumbering ? { lineNumbering } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
       blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1568,6 +1572,18 @@ function parsePageNumbering(sectionPropertiesValue: unknown): SectionNode["pageN
     ...(typeof pageNumbering.fmt === "string" ? { format: pageNumbering.fmt as NonNullable<SectionNode["pageNumbering"]>["format"] } : {}),
     ...(pageNumbering.chapStyle !== undefined ? { chapterStyle: parseNumber(pageNumbering.chapStyle) } : {}),
     ...(typeof pageNumbering.chapSep === "string" ? { chapterSeparator: pageNumbering.chapSep as NonNullable<SectionNode["pageNumbering"]>["chapterSeparator"] } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseLineNumbering(sectionPropertiesValue: unknown): SectionNode["lineNumbering"] | undefined {
+  const lineNumbering = asObject(asObject(sectionPropertiesValue).lnNumType);
+  const parsed = {
+    ...(lineNumbering.start !== undefined ? { start: parseNumber(lineNumbering.start) } : {}),
+    ...(lineNumbering.countBy !== undefined ? { countBy: parseNumber(lineNumbering.countBy) } : {}),
+    ...(lineNumbering.distance !== undefined ? { distance: parseNumber(lineNumbering.distance) } : {}),
+    ...(typeof lineNumbering.restart === "string" ? { restart: lineNumbering.restart as NonNullable<SectionNode["lineNumbering"]>["restart"] } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
