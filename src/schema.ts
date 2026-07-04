@@ -431,7 +431,7 @@ export type MathNode =
   | { type: "accent"; controlProperties?: MathControlProperties; mark: string; content: MathNode[] }
   | { type: "bar"; controlProperties?: MathControlProperties; position: "top" | "bottom"; content: MathNode[] }
   | { type: "function"; controlProperties?: MathControlProperties; name: MathNode[]; argument: MathNode[] }
-  | { type: "limitLower"; base: MathNode[]; limit: MathNode[] }
+  | { type: "limitLower"; controlProperties?: MathControlProperties; base: MathNode[]; limit: MathNode[] }
   | { type: "limitUpper"; base: MathNode[]; limit: MathNode[] }
   | { type: "equationArray"; rows: MathNode[][] }
   | { type: "box"; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
