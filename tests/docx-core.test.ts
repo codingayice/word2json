@@ -286,6 +286,35 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
   });
 
+  it("writes radical hide degree", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "radical" as const,
+                  hideDegree: false,
+                  degree: [{ type: "text" as const, text: "3" }],
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:rad><m:radPr><m:degHide m:val="0"/></m:radPr><m:deg><m:r><m:t>3</m:t></m:r></m:deg><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad>');
+  });
+
   it("writes radical control properties", async () => {
     const document = createDocumentJson([
       {
@@ -4402,6 +4431,34 @@ describe("DOCX reader", () => {
                   lowerLimit: [{ type: "text" as const, text: "i=1" }],
                   upperLimit: [{ type: "text" as const, text: "n" }],
                   body: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips radical hide degree", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "radical" as const,
+                  hideDegree: false,
+                  degree: [{ type: "text" as const, text: "3" }],
+                  content: [{ type: "text" as const, text: "x" }],
                 },
               ],
             },

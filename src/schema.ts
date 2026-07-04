@@ -424,7 +424,7 @@ export type MathNode =
   | { type: "subSup"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "sPre"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "preSubSup"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
-  | { type: "radical"; controlProperties?: MathControlProperties; degree?: MathNode[]; content: MathNode[] }
+  | { type: "radical"; controlProperties?: MathControlProperties; hideDegree?: boolean; degree?: MathNode[]; content: MathNode[] }
   | { type: "nary"; controlProperties?: MathControlProperties; operator: "sum" | "integral" | "product" | "coproduct" | "intersection" | "union"; limitLocation?: "underOver" | "subSup"; hideLowerLimit?: boolean; hideUpperLimit?: boolean; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
   | { type: "matrix"; controlProperties?: MathControlProperties; baseJustification?: "top" | "center" | "bottom"; rowSpacing?: number; rowSpacingRule?: "single" | "oneAndHalf" | "double" | "exactly" | "multiple"; columnSpacing?: number; columnSpacingRule?: "single" | "oneAndHalf" | "double" | "exactly" | "multiple"; columnJustifications?: ("left" | "center" | "right")[]; columnCounts?: number[]; rows: MathNode[][][] }
   | { type: "delimiter"; controlProperties?: MathControlProperties; begin?: string; end?: string; grow?: boolean; separator?: string; content: MathNode[] }

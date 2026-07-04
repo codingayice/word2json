@@ -725,8 +725,12 @@ function mathNodeXml(node: MathNode): string {
 
   if (node.type === "radical") {
     const properties = mathControlPropertiesXml(node.controlProperties);
+    const radicalProperties = [
+      node.hideDegree !== undefined ? `<m:degHide m:val="${node.hideDegree ? "1" : "0"}"/>` : "",
+      properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
+    ].join("");
     const degree = node.degree ? `<m:deg>${node.degree.map((child) => mathNodeXml(child)).join("")}</m:deg>` : "";
-    return `<m:rad>${properties ? `<m:radPr><m:ctrlPr>${properties}</m:ctrlPr></m:radPr>` : ""}${degree}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:rad>`;
+    return `<m:rad>${radicalProperties ? `<m:radPr>${radicalProperties}</m:radPr>` : ""}${degree}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:rad>`;
   }
 
   if (node.type === "matrix") {
