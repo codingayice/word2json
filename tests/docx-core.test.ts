@@ -514,6 +514,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:snapToGrid w:val="0"/></w:rPr><w:t>Free</w:t>');
   });
 
+  it("writes text run no proof on", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Unchecked", noProof: true }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:rPr><w:noProof/></w:rPr><w:t>Unchecked</w:t>");
+  });
+
+  it("writes text run no proof off", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Checked", noProof: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:noProof w:val="0"/></w:rPr><w:t>Checked</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5466,6 +5496,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Free", snapToGrid: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run no proof on", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Unchecked", noProof: true }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run no proof off", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Checked", noProof: false }],
       },
     ]);
 

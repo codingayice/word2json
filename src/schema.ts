@@ -270,6 +270,7 @@ export type StyleRunProperties = {
   hidden?: boolean;
   webHidden?: boolean;
   snapToGrid?: boolean;
+  noProof?: boolean;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
