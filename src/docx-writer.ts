@@ -2300,11 +2300,12 @@ function styleRunFontsXml(run: StyleRunProperties): string {
 }
 
 function tableStylePropertiesXml(properties: StyleTableProperties | undefined): string {
-  if (!properties || (!tableStyleBasePropertiesXml(properties) && !properties.conditionalStyles?.length)) {
+  if (!properties || (!tableStyleBasePropertiesXml(properties) && !properties.cell && !properties.conditionalStyles?.length)) {
     return "";
   }
 
   return tableStyleBasePropertiesXml(properties) +
+    tableConditionalCellStyleXml(properties.cell) +
     (properties.conditionalStyles ?? []).map(tableConditionalStyleXml).join("");
 }
 

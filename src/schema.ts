@@ -423,6 +423,7 @@ export type StyleTableProperties = {
   layout?: "autofit" | "fixed";
   look?: TableLook;
   cellMargins?: TableCellMargins;
+  cell?: TableConditionalCellStyle;
   conditionalStyles?: TableConditionalStyle[];
 };
 

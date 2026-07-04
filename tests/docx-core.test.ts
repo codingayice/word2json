@@ -7172,6 +7172,37 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:tblPr><w:tblStyleRowBandSize w:val="2"/><w:tblStyleColBandSize w:val="3"/><w:tblW w:w="5000" w:type="pct"/><w:tblCellSpacing w:w="120" w:type="dxa"/><w:tblInd w:w="360" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblLook w:val="0220"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:right w:w="144" w:type="dxa"/><w:bottom w:w="0" w:type="nil"/><w:left w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr>');
   });
 
+  it("writes table style base cell properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "BaseCellTable",
+            name: "Base Cell Table",
+            table: {
+              cell: {
+                shading: {
+                  color: "auto",
+                  fill: "E6E6E6",
+                  themeFill: "text1",
+                  themeFillTint: "19",
+                },
+              },
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="table" w:styleId="BaseCellTable"><w:name w:val="Base Cell Table"/><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="E6E6E6" w:themeFill="text1" w:themeFillTint="19"/></w:tcPr></w:style>');
+  });
+
   it("writes extended table conditional style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -14242,6 +14273,42 @@ describe("DOCX reader", () => {
                 right: 144,
                 bottom: { width: 0, type: "nil" as const },
                 left: 108,
+              },
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table style base cell properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "BaseCellTable",
+            name: "Base Cell Table",
+            table: {
+              cell: {
+                width: 1440,
+                widthType: "pct" as const,
+                shading: {
+                  color: "auto",
+                  fill: "E6E6E6",
+                  themeFill: "text1",
+                  themeFillTint: "19",
+                },
+                noWrap: true,
+                fitText: true,
+                verticalAlignment: "center" as const,
+                textDirection: "tbRl" as const,
               },
             },
           },
