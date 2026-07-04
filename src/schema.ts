@@ -385,7 +385,34 @@ export type TableStyleDefinition = StyleDefinition & {
 
 export type StyleTableProperties = {
   borders?: TableBorders;
+  conditionalStyles?: TableConditionalStyle[];
 };
+
+export type TableConditionalStyle = {
+  type: TableConditionalStyleType;
+  table?: StyleTableProperties;
+  cell?: TableConditionalCellStyle;
+  run?: StyleRunProperties;
+};
+
+export type TableConditionalCellStyle = {
+  shading?: TableCellShading;
+};
+
+export type TableConditionalStyleType =
+  | "wholeTable"
+  | "firstRow"
+  | "lastRow"
+  | "firstCol"
+  | "lastCol"
+  | "band1Vert"
+  | "band2Vert"
+  | "band1Horz"
+  | "band2Horz"
+  | "neCell"
+  | "nwCell"
+  | "seCell"
+  | "swCell";
 
 export type SectionNode = {
   breakType?: SectionBreakType;

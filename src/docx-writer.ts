@@ -13,6 +13,8 @@ import type {
   SectionNode,
   StyleParagraphProperties,
   StyleRunProperties,
+  StyleTableProperties,
+  TableConditionalStyle,
   TableCellNode,
   TableNode,
   TextRun,
@@ -2224,12 +2226,27 @@ function styleRunFontsXml(run: StyleRunProperties): string {
   return attributes ? `<w:rFonts${attributes}/>` : "";
 }
 
-function tableStylePropertiesXml(properties: NonNullable<NonNullable<DocumentJson["styles"]>["table"]>[number]["table"]): string {
-  if (!properties?.borders) {
+function tableStylePropertiesXml(properties: StyleTableProperties | undefined): string {
+  if (!properties?.borders && !properties?.conditionalStyles?.length) {
     return "";
   }
 
-  return `<w:tblPr>${tableBordersXml(properties.borders)}</w:tblPr>`;
+  return tableStyleBasePropertiesXml(properties) +
+    (properties.conditionalStyles ?? []).map(tableConditionalStyleXml).join("");
+}
+
+function tableStyleBasePropertiesXml(properties?: StyleTableProperties): string {
+  return properties?.borders ? `<w:tblPr>${tableBordersXml(properties.borders)}</w:tblPr>` : "";
+}
+
+function tableConditionalStyleXml(style: TableConditionalStyle): string {
+  const table = tableStyleBasePropertiesXml(style.table);
+  const cell = style.cell?.shading ? `<w:tcPr>${shadingXml(style.cell.shading)}</w:tcPr>` : "";
+  const run = styleRunPropertiesXml(style.run);
+
+  return table || cell || run
+    ? `<w:tblStylePr w:type="${style.type}">${table}${cell}${run}</w:tblStylePr>`
+    : "";
 }
 
 function numberingXml(document: DocumentJson): string {

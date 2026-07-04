@@ -780,7 +780,7 @@ function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
       const run = parseStyleRunProperties(style.rPr);
-      const table = parseStyleTableProperties(style.tblPr);
+      const table = parseStyleTableProperties(style);
 
       return {
         id: String(style.styleId),
@@ -980,11 +980,61 @@ function parseRunColor(color: XmlNode): Pick<StyleRunProperties, "color" | "colo
   };
 }
 
-function parseStyleTableProperties(value: unknown): TableStyleDefinition["table"] | undefined {
-  const properties = asObject(value);
+function parseStyleTableProperties(style: XmlNode): TableStyleDefinition["table"] | undefined {
+  const properties = asObject(style.tblPr);
   const borders = parseTableBorders(properties.tblBorders);
+  const conditionalStyles = asArray(style.tblStylePr)
+    .map(parseTableConditionalStyle)
+    .filter((conditionalStyle): conditionalStyle is NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number] => conditionalStyle !== undefined);
+  const parsed = {
+    ...(borders ? { borders } : {}),
+    ...(conditionalStyles.length > 0 ? { conditionalStyles } : {}),
+  };
 
-  return borders ? { borders } : undefined;
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseTableConditionalStyle(value: unknown): NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number] | undefined {
+  const style = asObject(value);
+  if (!isTableConditionalStyleType(style.type)) {
+    return undefined;
+  }
+
+  const table = parseStyleTableProperties({ tblPr: style.tblPr });
+  const cell = parseTableConditionalCellStyle(style.tcPr);
+  const run = parseStyleRunProperties(style.rPr);
+
+  return table || cell || run
+    ? {
+      type: style.type,
+      ...(table ? { table } : {}),
+      ...(cell ? { cell } : {}),
+      ...(run ? { run } : {}),
+    }
+    : undefined;
+}
+
+function parseTableConditionalCellStyle(value: unknown): NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]> | undefined {
+  const properties = asObject(value);
+  const shading = parseShading(properties.shd);
+
+  return shading ? { shading } : undefined;
+}
+
+function isTableConditionalStyleType(value: unknown): value is NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["type"] {
+  return value === "wholeTable" ||
+    value === "firstRow" ||
+    value === "lastRow" ||
+    value === "firstCol" ||
+    value === "lastCol" ||
+    value === "band1Vert" ||
+    value === "band2Vert" ||
+    value === "band1Horz" ||
+    value === "band2Horz" ||
+    value === "neCell" ||
+    value === "nwCell" ||
+    value === "seCell" ||
+    value === "swCell";
 }
 
 async function parseSections(
