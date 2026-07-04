@@ -755,11 +755,18 @@ export type TableLook = {
 };
 
 export type TableRowNode = {
+  propertyExceptions?: TablePropertyExceptions;
   revision?: RunRevision;
   height?: TableRowHeight;
   repeatHeader?: boolean;
   cantSplit?: boolean;
   cells: TableCellNode[];
+};
+
+export type TablePropertyExceptions = {
+  width?: number;
+  widthType?: "auto" | "dxa" | "nil" | "pct";
+  cellSpacing?: number;
 };
 
 export type TableRowHeight = {

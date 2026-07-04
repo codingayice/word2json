@@ -4196,6 +4196,26 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:trPr><w:trHeight w:val="480" w:hRule="exact"/></w:trPr>');
   });
 
+  it("writes row table property exceptions", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            propertyExceptions: { width: 5000, widthType: "pct", cellSpacing: 120 },
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Exception row" }] }] }],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:trPr><w:tblPrEx><w:tblW w:w="5000" w:type="pct"/><w:tblCellSpacing w:w="120" w:type="dxa"/></w:tblPrEx></w:trPr>');
+  });
+
   it("writes repeating table header rows", async () => {
     const document = createDocumentJson([
       {
@@ -10399,6 +10419,25 @@ describe("DOCX reader", () => {
               { blocks: [{ type: "paragraph", runs: [{ text: "A" }] }] },
               { blocks: [{ type: "paragraph", runs: [{ text: "B" }] }] },
             ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips row table property exceptions", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            propertyExceptions: { width: 5000, widthType: "pct", cellSpacing: 120 },
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Exception row" }] }] }],
           },
         ],
       },

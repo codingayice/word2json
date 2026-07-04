@@ -3083,12 +3083,14 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     rows: asArray(table.tr).map((rowValue) => {
       const row = asObject(rowValue);
       const rowProperties = asObject(row.trPr);
+      const propertyExceptions = parseTablePropertyExceptions(rowProperties.tblPrEx);
       const revision = parseTableRowRevision(rowProperties);
       const height = parseTableRowHeight(rowProperties);
       const repeatHeader = parseTableRowRepeatHeader(rowProperties);
       const cantSplit = parseTableRowCantSplit(rowProperties);
 
       return {
+        ...(propertyExceptions ? { propertyExceptions } : {}),
         ...(revision ? { revision } : {}),
         ...(height ? { height } : {}),
         ...(repeatHeader ? { repeatHeader } : {}),
@@ -3097,6 +3099,20 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       };
     }),
   };
+}
+
+function parseTablePropertyExceptions(value: unknown): TableNode["rows"][number]["propertyExceptions"] | undefined {
+  const properties = asObject(value);
+  const width = asObject(properties.tblW);
+  const cellSpacing = asObject(properties.tblCellSpacing);
+  const widthType = parseTableWidthType(width.type);
+  const parsed = {
+    ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
+    ...(widthType && widthType !== "dxa" ? { widthType } : {}),
+    ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parseTableOverlap(value: unknown): TableNode["overlap"] | undefined {

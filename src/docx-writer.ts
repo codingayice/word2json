@@ -1337,6 +1337,7 @@ function tableXml(table: TableNode, context: WriterContext): string {
   ].join("");
   const rows = table.rows
     .map((row) => {
+      const propertyExceptions = row.propertyExceptions ? tablePropertyExceptionsXml(row.propertyExceptions) : "";
       const rowRevision = row.revision
         ? `<w:${revisionElement(row.revision.type)}${revisionAttributes(row.revision)}/>`
         : "";
@@ -1345,7 +1346,7 @@ function tableXml(table: TableNode, context: WriterContext): string {
         : "";
       const repeatHeader = row.repeatHeader ? "<w:tblHeader/>" : "";
       const cantSplit = row.cantSplit ? "<w:cantSplit/>" : "";
-      const rowProperties = rowRevision || repeatHeader || cantSplit || rowHeight ? `<w:trPr>${rowRevision}${repeatHeader}${cantSplit}${rowHeight}</w:trPr>` : "";
+      const rowProperties = propertyExceptions || rowRevision || repeatHeader || cantSplit || rowHeight ? `<w:trPr>${propertyExceptions}${rowRevision}${repeatHeader}${cantSplit}${rowHeight}</w:trPr>` : "";
 
       return `<w:tr>${rowProperties}${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`;
     })
@@ -1355,6 +1356,15 @@ function tableXml(table: TableNode, context: WriterContext): string {
     : "";
 
   return `<w:tbl>${properties ? `<w:tblPr>${properties}</w:tblPr>` : ""}${grid}${rows}</w:tbl>`;
+}
+
+function tablePropertyExceptionsXml(exceptions: NonNullable<TableNode["rows"][number]["propertyExceptions"]>): string {
+  const properties = [
+    exceptions.width !== undefined ? `<w:tblW w:w="${exceptions.width}" w:type="${exceptions.widthType ?? "dxa"}"/>` : "",
+    exceptions.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${exceptions.cellSpacing}" w:type="dxa"/>` : "",
+  ].join("");
+
+  return properties ? `<w:tblPrEx>${properties}</w:tblPrEx>` : "";
 }
 
 function tablePositionXml(position: NonNullable<TableNode["position"]>): string {
