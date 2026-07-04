@@ -262,6 +262,7 @@ export type StyleRunProperties = {
   allCaps?: boolean;
   shadow?: boolean;
   outline?: boolean;
+  emboss?: boolean;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
