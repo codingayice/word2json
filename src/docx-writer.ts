@@ -341,6 +341,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const lineNumbering = lineNumberingXml(section.lineNumbering);
   const footnoteProperties = notePropertiesXml("footnotePr", section.footnoteProperties);
   const endnoteProperties = notePropertiesXml("endnotePr", section.endnoteProperties);
+  const documentGrid = documentGridXml(section.documentGrid);
   const columns = section.columns
     ? `<w:cols w:num="${section.columns.count}"${section.columns.space ? ` w:space="${section.columns.space}"` : ""}/>`
     : "";
@@ -357,6 +358,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     footnoteProperties +
     endnoteProperties +
     columns +
+    documentGrid +
     `</w:sectPr>`;
 }
 
@@ -403,6 +405,20 @@ function notePropertiesXml(root: "footnotePr" | "endnotePr", properties?: Sectio
   ].join("");
 
   return children ? `<w:${root}>${children}</w:${root}>` : "";
+}
+
+function documentGridXml(documentGrid?: SectionNode["documentGrid"]): string {
+  if (!documentGrid) {
+    return "";
+  }
+
+  const attributes = [
+    documentGrid.type ? ` w:type="${documentGrid.type}"` : "",
+    documentGrid.linePitch !== undefined ? ` w:linePitch="${documentGrid.linePitch}"` : "",
+    documentGrid.charSpace !== undefined ? ` w:charSpace="${documentGrid.charSpace}"` : "",
+  ].join("");
+
+  return attributes ? `<w:docGrid${attributes}/>` : "";
 }
 
 function sectionBreakValue(value: SectionNode["breakType"]): string {

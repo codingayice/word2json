@@ -372,6 +372,7 @@ export type SectionNode = {
   lineNumbering?: SectionLineNumbering;
   footnoteProperties?: SectionNoteProperties;
   endnoteProperties?: SectionNoteProperties;
+  documentGrid?: SectionDocumentGrid;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
   columns?: ColumnSettings;
@@ -392,6 +393,12 @@ export type SectionNoteProperties = {
     start?: number;
     restart?: "continuous" | "eachSect" | "eachPage";
   };
+};
+
+export type SectionDocumentGrid = {
+  type?: "default" | "lines" | "linesAndChars" | "snapToChars";
+  linePitch?: number;
+  charSpace?: number;
 };
 
 export type HeaderFooterContent = {

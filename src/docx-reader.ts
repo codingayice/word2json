@@ -1022,12 +1022,14 @@ async function parseSections(
     const lineNumbering = parseLineNumbering(body.sectPr);
     const footnoteProperties = parseNoteProperties(body.sectPr, "footnotePr");
     const endnoteProperties = parseNoteProperties(body.sectPr, "endnotePr");
+    const documentGrid = parseDocumentGrid(body.sectPr);
     return [{
       ...(page ? { page } : {}),
       ...(pageNumbering ? { pageNumbering } : {}),
       ...(lineNumbering ? { lineNumbering } : {}),
       ...(footnoteProperties ? { footnoteProperties } : {}),
       ...(endnoteProperties ? { endnoteProperties } : {}),
+      ...(documentGrid ? { documentGrid } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
     }];
@@ -1043,6 +1045,7 @@ async function parseSections(
     const lineNumbering = parseLineNumbering(sectPr);
     const footnoteProperties = parseNoteProperties(sectPr, "footnotePr");
     const endnoteProperties = parseNoteProperties(sectPr, "endnotePr");
+    const documentGrid = parseDocumentGrid(sectPr);
 
     return {
       ...(breakType ? { breakType } : {}),
@@ -1051,6 +1054,7 @@ async function parseSections(
       ...(lineNumbering ? { lineNumbering } : {}),
       ...(footnoteProperties ? { footnoteProperties } : {}),
       ...(endnoteProperties ? { endnoteProperties } : {}),
+      ...(documentGrid ? { documentGrid } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
       blocks: extractBlockXmlFromContent(part.content).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1611,6 +1615,17 @@ function parseNoteProperties(sectionPropertiesValue: unknown, key: "footnotePr" 
   const parsed = {
     ...(typeof position.val === "string" ? { position: position.val as NonNullable<SectionNode["footnoteProperties"]>["position"] } : {}),
     ...(Object.keys(numbering).length > 0 ? { numbering } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseDocumentGrid(sectionPropertiesValue: unknown): SectionNode["documentGrid"] | undefined {
+  const documentGrid = asObject(asObject(sectionPropertiesValue).docGrid);
+  const parsed = {
+    ...(typeof documentGrid.type === "string" ? { type: documentGrid.type as NonNullable<SectionNode["documentGrid"]>["type"] } : {}),
+    ...(documentGrid.linePitch !== undefined ? { linePitch: parseNumber(documentGrid.linePitch) } : {}),
+    ...(documentGrid.charSpace !== undefined ? { charSpace: parseNumber(documentGrid.charSpace) } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
