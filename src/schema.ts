@@ -374,6 +374,7 @@ export type SectionNode = {
   endnoteProperties?: SectionNoteProperties;
   documentGrid?: SectionDocumentGrid;
   verticalAlignment?: SectionVerticalAlignment;
+  textDirection?: SectionTextDirection;
   mirrorMargins?: boolean;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;
@@ -404,6 +405,8 @@ export type SectionDocumentGrid = {
 };
 
 export type SectionVerticalAlignment = "top" | "center" | "both" | "bottom";
+
+export type SectionTextDirection = "lrTb" | "tbRl" | "btLr";
 
 export type HeaderFooterContent = {
   default?: ParagraphNode[];

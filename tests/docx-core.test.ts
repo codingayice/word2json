@@ -4870,6 +4870,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:vAlign w:val="center"/>');
   });
 
+  it("writes section text direction", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          textDirection: "tbRl" as const,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Vertical" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:textDirection w:val="tbRl"/>');
+  });
+
   it("writes section mirror margins", async () => {
     const document = {
       version: "1.0" as const,
@@ -10620,6 +10638,23 @@ describe("DOCX reader", () => {
         {
           verticalAlignment: "both" as const,
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Distributed" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section text direction", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          textDirection: "btLr" as const,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "Rotated" }] }],
         },
       ],
     };

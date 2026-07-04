@@ -1024,6 +1024,7 @@ async function parseSections(
     const endnoteProperties = parseNoteProperties(body.sectPr, "endnotePr");
     const documentGrid = parseDocumentGrid(body.sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(body.sectPr);
+    const textDirection = parseSectionTextDirection(body.sectPr);
     const mirrorMargins = parseMirrorMargins(body.sectPr);
     return [{
       ...(page ? { page } : {}),
@@ -1033,6 +1034,7 @@ async function parseSections(
       ...(endnoteProperties ? { endnoteProperties } : {}),
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
+      ...(textDirection ? { textDirection } : {}),
       ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1051,6 +1053,7 @@ async function parseSections(
     const endnoteProperties = parseNoteProperties(sectPr, "endnotePr");
     const documentGrid = parseDocumentGrid(sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(sectPr);
+    const textDirection = parseSectionTextDirection(sectPr);
     const mirrorMargins = parseMirrorMargins(sectPr);
 
     return {
@@ -1062,6 +1065,7 @@ async function parseSections(
       ...(endnoteProperties ? { endnoteProperties } : {}),
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
+      ...(textDirection ? { textDirection } : {}),
       ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
@@ -1644,6 +1648,14 @@ function parseSectionVerticalAlignment(sectionPropertiesValue: unknown): Section
 
   return typeof verticalAlignment.val === "string"
     ? verticalAlignment.val as NonNullable<SectionNode["verticalAlignment"]>
+    : undefined;
+}
+
+function parseSectionTextDirection(sectionPropertiesValue: unknown): SectionNode["textDirection"] | undefined {
+  const textDirection = asObject(asObject(sectionPropertiesValue).textDirection);
+
+  return typeof textDirection.val === "string"
+    ? textDirection.val as NonNullable<SectionNode["textDirection"]>
     : undefined;
 }
 
