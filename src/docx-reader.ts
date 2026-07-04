@@ -2477,7 +2477,7 @@ function parseRun(value: unknown): TextRun {
     text: parseText(run.t ?? run.delText),
     ...parseRunStyle(properties),
     ...parseOnOffRunProperty(properties.b, "bold"),
-    ...(properties.i !== undefined ? { italic: true } : {}),
+    ...parseOnOffRunProperty(properties.i, "italic"),
     ...parseUnderline(properties.u),
     ...parseRunFont(properties),
   };
