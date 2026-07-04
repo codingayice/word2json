@@ -5196,6 +5196,31 @@ describe("DOCX writer", () => {
     expect(xml).toContain('distT="10" distB="20" distL="30" distR="40"');
   });
 
+  it("writes floating image effect extent", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          effectExtent: { top: 12, bottom: 34, left: 56, right: 78 },
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<wp:effectExtent t="12" b="34" l="56" r="78"/>');
+  });
+
   it("writes floating image anchor controls", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11642,6 +11667,30 @@ describe("DOCX reader", () => {
           behindDoc: true,
           allowOverlap: false,
           layoutInCell: false,
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image effect extent", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 1440,
+          verticalOffset: 720,
+          effectExtent: { top: 12, bottom: 34, left: 56, right: 78 },
         },
       },
     ]);

@@ -1495,6 +1495,7 @@ function parseImageFloating(drawing: XmlNode, simplePositionFromXml?: NonNullabl
   const simplePosition = simplePositionFromXml ?? parseImageSimplePosition(anchor.simplePos);
   const wrapText = parseImageWrapText(anchor);
   const wrapPolygon = parseImageWrapPolygon(anchor);
+  const effectExtent = parseImageEffectExtent(anchor.effectExtent);
 
   return {
     wrap: parseImageWrap(anchor),
@@ -1509,6 +1510,7 @@ function parseImageFloating(drawing: XmlNode, simplePositionFromXml?: NonNullabl
     ...(simplePosition ? { simplePosition } : {}),
     ...(anchor.relativeHeight !== undefined && parseNumber(anchor.relativeHeight) !== 0 ? { relativeHeight: parseNumber(anchor.relativeHeight) } : {}),
     ...(parseOnOff(anchor.locked) ? { locked: true } : {}),
+    ...(effectExtent ? { effectExtent } : {}),
     ...(anchor.distT !== undefined ? { distanceTop: parseNumber(anchor.distT) } : {}),
     ...(anchor.distB !== undefined ? { distanceBottom: parseNumber(anchor.distB) } : {}),
     ...(anchor.distL !== undefined ? { distanceLeft: parseNumber(anchor.distL) } : {}),
@@ -1517,6 +1519,13 @@ function parseImageFloating(drawing: XmlNode, simplePositionFromXml?: NonNullabl
     ...(anchor.allowOverlap !== undefined && !parseOnOff(anchor.allowOverlap) ? { allowOverlap: false } : {}),
     ...(anchor.layoutInCell !== undefined && !parseOnOff(anchor.layoutInCell) ? { layoutInCell: false } : {}),
   };
+}
+
+function parseImageEffectExtent(value: unknown): NonNullable<NonNullable<ImageNode["floating"]>["effectExtent"]> | undefined {
+  const extent = asObject(value);
+  return extent.t !== undefined || extent.b !== undefined || extent.l !== undefined || extent.r !== undefined
+    ? { top: parseNumber(extent.t), bottom: parseNumber(extent.b), left: parseNumber(extent.l), right: parseNumber(extent.r) }
+    : undefined;
 }
 
 function parseImageSimplePosition(value: unknown): NonNullable<NonNullable<ImageNode["floating"]>["simplePosition"]> | undefined {

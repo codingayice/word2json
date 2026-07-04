@@ -1546,6 +1546,7 @@ function imageXml(image: ImageNode, context: WriterContext): string {
       imageSimplePositionXml(image.floating) +
       imagePositionHXml(image.floating) +
       imagePositionVXml(image.floating) +
+      imageEffectExtentXml(image.floating) +
       imageWrapXml(image.floating) +
       graphic +
       `</wp:anchor>`
@@ -1554,6 +1555,12 @@ function imageXml(image: ImageNode, context: WriterContext): string {
   return `<w:p><w:r><w:drawing>` +
     drawing +
     `</w:drawing></w:r></w:p>`;
+}
+
+function imageEffectExtentXml(floating: NonNullable<ImageNode["floating"]>): string {
+  return floating.effectExtent
+    ? `<wp:effectExtent t="${floating.effectExtent.top}" b="${floating.effectExtent.bottom}" l="${floating.effectExtent.left}" r="${floating.effectExtent.right}"/>`
+    : "";
 }
 
 function imageSimplePositionXml(floating: NonNullable<ImageNode["floating"]>): string {

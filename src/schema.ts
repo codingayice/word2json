@@ -868,6 +868,7 @@ export type ImageFloatingLayout = {
   simplePosition?: { x: number; y: number };
   relativeHeight?: number;
   locked?: boolean;
+  effectExtent?: ImageEffectExtent;
   distanceTop?: number;
   distanceBottom?: number;
   distanceLeft?: number;
@@ -881,6 +882,13 @@ export type ImageWrapPolygon = {
   edited?: boolean;
   start: { x: number; y: number };
   points: Array<{ x: number; y: number }>;
+};
+
+export type ImageEffectExtent = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
 };
 
 export function createDocumentJson(blocks: DocumentBlock[]): DocumentJson {
