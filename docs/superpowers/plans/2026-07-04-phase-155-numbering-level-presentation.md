@@ -182,7 +182,7 @@ git diff --check
 
 Expected: all commands exit 0. Existing LF/CRLF warnings from `git diff --check` are acceptable if the exit code is 0.
 
-- [ ] **Step 3: Commit feature**
+- [x] **Step 3: Commit feature**
 
 Run:
 
@@ -192,7 +192,7 @@ git commit -m "feat: add phase 155 numbering level presentation"
 git push -u origin phase-155-numbering-level-presentation
 ```
 
-- [ ] **Step 4: Record push**
+- [x] **Step 4: Record push**
 
 Append a Push Record with the branch, commit hash, verification commands, and PR URL:
 
@@ -200,7 +200,7 @@ Append a Push Record with the branch, commit hash, verification commands, and PR
 https://github.com/codingayice/word2json/pull/new/phase-155-numbering-level-presentation
 ```
 
-- [ ] **Step 5: Commit push record**
+- [x] **Step 5: Commit push record**
 
 Run:
 
@@ -215,3 +215,14 @@ git push
 - Spec coverage: Covers numbering level paragraph style binding, numbering alignment, numbering symbol run properties, writer, reader, tests, verification, commit, push, and push record.
 - Placeholder scan: No placeholders or deferred implementation notes remain.
 - Type consistency: Uses `styleId`, `alignment`, and `run` consistently across schema, writer, reader, and tests.
+
+## Push Record
+
+- Branch: `phase-155-numbering-level-presentation`
+- Feature commit: `5868410 feat: add phase 155 numbering level presentation`
+- PR URL: `https://github.com/codingayice/word2json/pull/new/phase-155-numbering-level-presentation`
+- RED verification: `npm test -- tests/docx-core.test.ts -t "numbering level style alignment and run properties"` failed with 2 expected failures before implementation.
+- GREEN targeted verification: `npm test -- tests/docx-core.test.ts -t "numbering level style alignment and run properties"` passed with 2 tests.
+- Full verification: `npm test` passed with 452 tests.
+- Build verification: `npm run build` exited 0.
+- Whitespace verification: `git diff --check` exited 0 with existing LF/CRLF warnings.
