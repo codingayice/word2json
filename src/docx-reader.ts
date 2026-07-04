@@ -2560,6 +2560,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...parseOnOffRunProperty(properties.outline, "outline"),
     ...parseOnOffRunProperty(properties.emboss, "emboss"),
     ...parseOnOffRunProperty(properties.imprint, "imprint"),
+    ...parseOnOffRunProperty(properties.rtl, "rtl"),
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
