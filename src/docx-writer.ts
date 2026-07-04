@@ -1439,6 +1439,8 @@ function tableCellBordersXml(borders: NonNullable<TableCellNode["borders"]>): st
     borders.left ? borderSideXml("left", borders.left) : "",
     borders.bottom ? borderSideXml("bottom", borders.bottom) : "",
     borders.right ? borderSideXml("right", borders.right) : "",
+    borders.insideH ? borderSideXml("insideH", borders.insideH) : "",
+    borders.insideV ? borderSideXml("insideV", borders.insideV) : "",
   ].join("");
 
   return sides ? `<w:tcBorders>${sides}</w:tcBorders>` : "";

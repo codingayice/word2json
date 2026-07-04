@@ -1908,6 +1908,26 @@ function parseTableBorderSide(value: unknown, side: keyof Exclude<NonNullable<Ta
   return border ? { [side]: border } : {};
 }
 
+function parseTableCellBorders(value: unknown): TableCellNode["borders"] | undefined {
+  const borders = asObject(value);
+  const parsed = {
+    ...parseTableCellBorderSide(borders.top, "top"),
+    ...parseTableCellBorderSide(borders.left, "left"),
+    ...parseTableCellBorderSide(borders.bottom, "bottom"),
+    ...parseTableCellBorderSide(borders.right, "right"),
+    ...parseTableCellBorderSide(borders.insideH, "insideH"),
+    ...parseTableCellBorderSide(borders.insideV, "insideV"),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseTableCellBorderSide(value: unknown, side: keyof NonNullable<TableCellNode["borders"]>): Partial<NonNullable<TableCellNode["borders"]>> {
+  const border = parseBorder(value);
+
+  return border ? { [side]: border } : {};
+}
+
 function isDefaultSingleTableBorders(borders: Exclude<NonNullable<TableNode["borders"]>, string>): boolean {
   const sides: (keyof typeof borders)[] = ["top", "left", "bottom", "right", "insideH", "insideV"];
   return sides.every((side) => {
@@ -3319,7 +3339,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   const verticalMerge = asObject(properties.vMerge);
   const verticalAlignment = asObject(properties.vAlign);
   const shading = parseTableCellShading(properties.shd);
-  const borders = parseParagraphBorders(properties.tcBorders);
+  const borders = parseTableCellBorders(properties.tcBorders);
   const noWrap = parseTableCellOnOff(properties.noWrap);
   const textDirection = asObject(properties.textDirection);
   const fitText = parseTableCellOnOff(properties.tcFitText);

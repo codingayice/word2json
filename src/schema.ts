@@ -358,6 +358,11 @@ export type ParagraphBorders = {
   right?: BorderDefinition;
 };
 
+export type TableCellBorders = ParagraphBorders & {
+  insideH?: BorderDefinition;
+  insideV?: BorderDefinition;
+};
+
 export type TableStyleDefinition = StyleDefinition & {
   table?: StyleTableProperties;
 };
@@ -795,7 +800,7 @@ export type TableCellNode = {
   verticalMerge?: "restart" | "continue";
   verticalAlignment?: "top" | "center" | "bottom";
   shading?: TableCellShading;
-  borders?: ParagraphBorders;
+  borders?: TableCellBorders;
   noWrap?: boolean;
   textDirection?: "lrTb" | "tbRl" | "btLr";
   fitText?: boolean;

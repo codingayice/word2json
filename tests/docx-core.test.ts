@@ -4473,6 +4473,37 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:bottom w:val="single" w:sz="8" w:space="0" w:color="4472C4"/>');
   });
 
+  it("writes detailed cell borders", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                borders: {
+                  top: { style: "double", size: 12, color: "4472C4", space: 2 },
+                  left: { style: "dashed", size: 6, color: "70AD47", space: 1 },
+                  bottom: { style: "dotted", size: 4, color: "C00000", space: 0 },
+                  right: { style: "single", size: 8, color: "7030A0", space: 0 },
+                  insideH: { style: "single", size: 4, color: "808080", space: 0 },
+                  insideV: { style: "nil" },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Detailed cell borders" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tcBorders><w:top w:val="double" w:sz="12" w:space="2" w:color="4472C4"/><w:left w:val="dashed" w:sz="6" w:space="1" w:color="70AD47"/><w:bottom w:val="dotted" w:sz="4" w:space="0" w:color="C00000"/><w:right w:val="single" w:sz="8" w:space="0" w:color="7030A0"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="808080"/><w:insideV w:val="nil"/></w:tcBorders>');
+  });
+
   it("writes cell text direction", async () => {
     const document = createDocumentJson([
       {
@@ -10722,6 +10753,36 @@ describe("DOCX reader", () => {
                   bottom: { style: "single", size: 8, color: "4472C4", space: 0 },
                 },
                 blocks: [{ type: "paragraph", runs: [{ text: "Bordered cell" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips detailed cell borders", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                borders: {
+                  top: { style: "double", size: 12, color: "4472C4", space: 2 },
+                  left: { style: "dashed", size: 6, color: "70AD47", space: 1 },
+                  bottom: { style: "dotted", size: 4, color: "C00000", space: 0 },
+                  right: { style: "single", size: 8, color: "7030A0", space: 0 },
+                  insideH: { style: "single", size: 4, color: "808080", space: 0 },
+                  insideV: { style: "nil" },
+                },
+                blocks: [{ type: "paragraph", runs: [{ text: "Detailed cell borders" }] }],
               },
             ],
           },
