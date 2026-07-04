@@ -268,6 +268,7 @@ export type StyleRunProperties = {
   complexScript?: boolean;
   specVanish?: boolean;
   hidden?: boolean;
+  webHidden?: boolean;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;
