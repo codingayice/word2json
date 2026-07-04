@@ -604,6 +604,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:lang w:val="en-US" w:eastAsia="zh-CN" w:bidi="ar-SA"/></w:rPr><w:t>Mixed</w:t>');
   });
 
+  it("writes text run character position raised", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Raised", characterPosition: 4 }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:position w:val="4"/></w:rPr><w:t>Raised</w:t>');
+  });
+
+  it("writes text run character position lowered", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Lowered", characterPosition: -4 }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:position w:val="-4"/></w:rPr><w:t>Lowered</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5640,6 +5670,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Mixed", language: { value: "en-US", eastAsia: "zh-CN", bidi: "ar-SA" } }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run character position raised", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Raised", characterPosition: 4 }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run character position lowered", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Lowered", characterPosition: -4 }],
       },
     ]);
 

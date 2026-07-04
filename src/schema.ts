@@ -273,6 +273,7 @@ export type StyleRunProperties = {
   noProof?: boolean;
   officeMath?: boolean;
   language?: RunLanguage;
+  characterPosition?: number;
   verticalAlign?: RunVerticalAlign;
   characterSpacing?: number;
   scale?: number;

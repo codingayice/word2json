@@ -1090,6 +1090,7 @@ function runPropertiesXml(run: TextRun): string {
     run.noProof !== undefined ? (run.noProof ? "<w:noProof/>" : '<w:noProof w:val="0"/>') : "",
     run.officeMath !== undefined ? (run.officeMath ? "<w:oMath/>" : '<w:oMath w:val="0"/>') : "",
     run.language ? runLanguageXml(run.language) : "",
+    run.characterPosition !== undefined ? `<w:position w:val="${run.characterPosition}"/>` : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
