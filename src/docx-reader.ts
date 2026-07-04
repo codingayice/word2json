@@ -1082,6 +1082,7 @@ function parseStyleTableProperties(style: XmlNode): TableStyleDefinition["table"
   const layout = parseTableLayout(properties.tblLayout);
   const look = parseTableLook(properties.tblLook);
   const cellMargins = parseTableCellMargins(properties.tblCellMar);
+  const paragraph = parseStyleParagraphProperties(style.pPr);
   const cell = parseTableConditionalCellStyle(style.tcPr);
   const conditionalStyles = asArray(style.tblStylePr)
     .map(parseTableConditionalStyle)
@@ -1097,6 +1098,7 @@ function parseStyleTableProperties(style: XmlNode): TableStyleDefinition["table"
     ...(layout ? { layout } : {}),
     ...(look ? { look } : {}),
     ...(cellMargins ? { cellMargins } : {}),
+    ...(paragraph ? { paragraph } : {}),
     ...(cell ? { cell } : {}),
     ...(conditionalStyles.length > 0 ? { conditionalStyles } : {}),
   };

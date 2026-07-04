@@ -7203,6 +7203,33 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:style w:type="table" w:styleId="BaseCellTable"><w:name w:val="Base Cell Table"/><w:tcPr><w:shd w:val="clear" w:color="auto" w:fill="E6E6E6" w:themeFill="text1" w:themeFillTint="19"/></w:tcPr></w:style>');
   });
 
+  it("writes table style base paragraph properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "BaseParagraphTable",
+            name: "Base Paragraph Table",
+            table: {
+              paragraph: {
+                alignment: "center" as const,
+                spacing: { after: 0, line: 240, lineRule: "auto" as const },
+              },
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="table" w:styleId="BaseParagraphTable"><w:name w:val="Base Paragraph Table"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:style>');
+  });
+
   it("writes extended table conditional style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -14309,6 +14336,33 @@ describe("DOCX reader", () => {
                 fitText: true,
                 verticalAlignment: "center" as const,
                 textDirection: "tbRl" as const,
+              },
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table style base paragraph properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "BaseParagraphTable",
+            name: "Base Paragraph Table",
+            table: {
+              paragraph: {
+                alignment: "center" as const,
+                spacing: { after: 0, line: 240, lineRule: "auto" as const },
+                indent: { left: 120, right: 80 },
               },
             },
           },
