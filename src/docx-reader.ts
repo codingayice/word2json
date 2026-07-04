@@ -3069,10 +3069,12 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       const rowProperties = asObject(row.trPr);
       const revision = parseTableRowRevision(rowProperties);
       const height = parseTableRowHeight(rowProperties);
+      const repeatHeader = parseTableRowRepeatHeader(rowProperties);
 
       return {
         ...(revision ? { revision } : {}),
         ...(height ? { height } : {}),
+        ...(repeatHeader ? { repeatHeader } : {}),
         cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes, numberingContext)),
       };
     }),
@@ -3101,6 +3103,16 @@ function parseTableRowHeight(value: unknown): TableNode["rows"][number]["height"
     value: parseNumber(height.val),
     ...(typeof height.hRule === "string" ? { rule: height.hRule as NonNullable<TableNode["rows"][number]["height"]>["rule"] } : {}),
   };
+}
+
+function parseTableRowRepeatHeader(value: unknown): boolean | undefined {
+  const tableHeader = asObject(value).tblHeader;
+  if (tableHeader === undefined) {
+    return undefined;
+  }
+
+  const val = asObject(tableHeader).val;
+  return val === "0" || val === false || val === "false" ? undefined : true;
 }
 
 function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap, numberingContext: NumberingContext): TableCellNode {

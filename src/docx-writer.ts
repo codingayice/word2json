@@ -1336,7 +1336,8 @@ function tableXml(table: TableNode, context: WriterContext): string {
       const rowHeight = row.height
         ? `<w:trHeight w:val="${row.height.value}"${row.height.rule ? ` w:hRule="${row.height.rule}"` : ""}/>`
         : "";
-      const rowProperties = rowRevision || rowHeight ? `<w:trPr>${rowRevision}${rowHeight}</w:trPr>` : "";
+      const repeatHeader = row.repeatHeader ? "<w:tblHeader/>" : "";
+      const rowProperties = rowRevision || repeatHeader || rowHeight ? `<w:trPr>${rowRevision}${repeatHeader}${rowHeight}</w:trPr>` : "";
 
       return `<w:tr>${rowProperties}${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`;
     })

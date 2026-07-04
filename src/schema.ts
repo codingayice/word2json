@@ -722,6 +722,7 @@ export type TableNode = {
 export type TableRowNode = {
   revision?: RunRevision;
   height?: TableRowHeight;
+  repeatHeader?: boolean;
   cells: TableCellNode[];
 };
 

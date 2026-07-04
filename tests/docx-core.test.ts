@@ -4050,6 +4050,29 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:trPr><w:trHeight w:val="480" w:hRule="exact"/></w:trPr>');
   });
 
+  it("writes repeating table header rows", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            repeatHeader: true,
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Header" }] }] }],
+          },
+          {
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Body" }] }] }],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:trPr><w:tblHeader/></w:trPr>");
+  });
+
   it("writes cell vertical merge and alignment", async () => {
     const document = createDocumentJson([
       {
@@ -10018,6 +10041,28 @@ describe("DOCX reader", () => {
               { blocks: [{ type: "paragraph", runs: [{ text: "A" }] }] },
               { blocks: [{ type: "paragraph", runs: [{ text: "B" }] }] },
             ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips repeating table header rows", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            repeatHeader: true,
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Header" }] }] }],
+          },
+          {
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Body" }] }] }],
           },
         ],
       },
