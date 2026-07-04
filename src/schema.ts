@@ -437,7 +437,7 @@ export type MathNode =
   | { type: "box"; controlProperties?: MathControlProperties; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
   | { type: "borderBox"; controlProperties?: MathControlProperties; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
   | { type: "phantom"; controlProperties?: MathControlProperties; show?: boolean; zeroWidth?: boolean; zeroAscent?: boolean; zeroDescent?: boolean; transparent?: boolean; content: MathNode[] }
-  | { type: "groupCharacter"; character?: string; position?: "top" | "bottom"; verticalJustification?: "top" | "bottom"; content: MathNode[] };
+  | { type: "groupCharacter"; controlProperties?: MathControlProperties; character?: string; position?: "top" | "bottom"; verticalJustification?: "top" | "bottom"; content: MathNode[] };
 
 export type RunRevision = {
   type: "insert" | "delete" | "moveFrom" | "moveTo";

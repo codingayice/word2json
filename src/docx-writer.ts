@@ -807,10 +807,12 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "groupCharacter") {
+    const controlProperties = mathControlPropertiesXml(node.controlProperties);
     const properties = [
       node.character !== undefined ? `<m:chr m:val="${escapeAttribute(node.character)}"/>` : "",
       node.position !== undefined ? `<m:pos m:val="${node.position}"/>` : "",
       node.verticalJustification !== undefined ? `<m:vertJc m:val="${node.verticalJustification}"/>` : "",
+      controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:groupChr>${properties ? `<m:groupChrPr>${properties}</m:groupChrPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:groupChr>`;
   }

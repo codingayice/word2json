@@ -1855,11 +1855,13 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const character = asObject(groupCharacterProperties.chr).val;
         const position = groupCharacterPositionValue(asObject(groupCharacterProperties.pos).val);
         const verticalJustification = groupCharacterVerticalJustificationValue(asObject(groupCharacterProperties.vertJc).val);
+        const controlProperties = parseMathControlProperties(asObject(groupCharacterProperties.ctrlPr).rPr);
         return {
           type: "groupCharacter" as const,
           ...(typeof character === "string" ? { character } : {}),
           ...(position ? { position } : {}),
           ...(verticalJustification ? { verticalJustification } : {}),
+          ...(controlProperties ? { controlProperties } : {}),
           content: parseMathNodes(asObject(groupCharacterNode.e)),
         };
       }),

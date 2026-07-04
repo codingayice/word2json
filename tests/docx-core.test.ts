@@ -1090,6 +1090,45 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:groupChr><m:groupChrPr><m:chr m:val="⏞"/><m:pos m:val="top"/><m:vertJc m:val="bottom"/></m:groupChrPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:groupChr>');
   });
 
+  it("writes group character control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "groupCharacter" as const,
+                  character: "⏞",
+                  position: "top",
+                  verticalJustification: "bottom",
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:groupChr><m:groupChrPr><m:chr m:val="⏞"/><m:pos m:val="top"/><m:vertJc m:val="bottom"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:groupChrPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:groupChr>');
+  });
+
   it("writes pre sub sup office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4544,6 +4583,44 @@ describe("DOCX reader", () => {
                       denominator: [{ type: "text" as const, text: "b" }],
                     },
                   ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips group character control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "groupCharacter" as const,
+                  character: "⏟",
+                  position: "bottom" as const,
+                  verticalJustification: "top" as const,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x+y" }],
                 },
               ],
             },
