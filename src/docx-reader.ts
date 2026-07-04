@@ -3070,11 +3070,13 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       const revision = parseTableRowRevision(rowProperties);
       const height = parseTableRowHeight(rowProperties);
       const repeatHeader = parseTableRowRepeatHeader(rowProperties);
+      const cantSplit = parseTableRowCantSplit(rowProperties);
 
       return {
         ...(revision ? { revision } : {}),
         ...(height ? { height } : {}),
         ...(repeatHeader ? { repeatHeader } : {}),
+        ...(cantSplit ? { cantSplit } : {}),
         cells: asArray(row.tc).map((cell) => parseTableCell(cell, relationships, comments, footnotes, endnotes, numberingContext)),
       };
     }),
@@ -3113,6 +3115,16 @@ function parseTableRowRepeatHeader(value: unknown): boolean | undefined {
 
   const val = asObject(tableHeader).val;
   return val === "0" || val === false || val === "false" ? undefined : true;
+}
+
+function parseTableRowCantSplit(value: unknown): boolean | undefined {
+  const cantSplit = asObject(value).cantSplit;
+  if (cantSplit === undefined) {
+    return undefined;
+  }
+
+  const val = asObject(cantSplit).val;
+  return val === undefined || parseOnOff(val) ? true : undefined;
 }
 
 function parseTableCell(value: unknown, relationships: RelationshipMap, comments: CommentMap, footnotes: NoteMap, endnotes: NoteMap, numberingContext: NumberingContext): TableCellNode {

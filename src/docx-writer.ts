@@ -1337,7 +1337,8 @@ function tableXml(table: TableNode, context: WriterContext): string {
         ? `<w:trHeight w:val="${row.height.value}"${row.height.rule ? ` w:hRule="${row.height.rule}"` : ""}/>`
         : "";
       const repeatHeader = row.repeatHeader ? "<w:tblHeader/>" : "";
-      const rowProperties = rowRevision || repeatHeader || rowHeight ? `<w:trPr>${rowRevision}${repeatHeader}${rowHeight}</w:trPr>` : "";
+      const cantSplit = row.cantSplit ? "<w:cantSplit/>" : "";
+      const rowProperties = rowRevision || repeatHeader || cantSplit || rowHeight ? `<w:trPr>${rowRevision}${repeatHeader}${cantSplit}${rowHeight}</w:trPr>` : "";
 
       return `<w:tr>${rowProperties}${row.cells.map((cell) => tableCellXml(cell, context)).join("")}</w:tr>`;
     })

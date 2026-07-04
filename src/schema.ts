@@ -723,6 +723,7 @@ export type TableRowNode = {
   revision?: RunRevision;
   height?: TableRowHeight;
   repeatHeader?: boolean;
+  cantSplit?: boolean;
   cells: TableCellNode[];
 };
 

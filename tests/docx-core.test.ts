@@ -4073,6 +4073,29 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:trPr><w:tblHeader/></w:trPr>");
   });
 
+  it("writes table rows that cannot split across pages", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cantSplit: true,
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Keep together" }] }] }],
+          },
+          {
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Next row" }] }] }],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:trPr><w:cantSplit/></w:trPr>");
+  });
+
   it("writes cell vertical merge and alignment", async () => {
     const document = createDocumentJson([
       {
@@ -10063,6 +10086,28 @@ describe("DOCX reader", () => {
           },
           {
             cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Body" }] }] }],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips table rows that cannot split across pages", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cantSplit: true,
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Keep together" }] }] }],
+          },
+          {
+            cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Next row" }] }] }],
           },
         ],
       },
