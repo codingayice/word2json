@@ -375,6 +375,7 @@ export type SectionNode = {
   documentGrid?: SectionDocumentGrid;
   verticalAlignment?: SectionVerticalAlignment;
   textDirection?: SectionTextDirection;
+  rtlGutter?: boolean;
   mirrorMargins?: boolean;
   headers?: HeaderFooterContent;
   footers?: HeaderFooterContent;

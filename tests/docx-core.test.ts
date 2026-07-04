@@ -4888,6 +4888,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:textDirection w:val="tbRl"/>');
   });
 
+  it("writes section rtl gutter", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          rtlGutter: true,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "RTL gutter" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:rtlGutter/>");
+  });
+
   it("writes section mirror margins", async () => {
     const document = {
       version: "1.0" as const,
@@ -10655,6 +10673,23 @@ describe("DOCX reader", () => {
         {
           textDirection: "btLr" as const,
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Rotated" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section rtl gutter", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          rtlGutter: true,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "RTL gutter" }] }],
         },
       ],
     };

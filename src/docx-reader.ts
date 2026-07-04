@@ -1025,6 +1025,7 @@ async function parseSections(
     const documentGrid = parseDocumentGrid(body.sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(body.sectPr);
     const textDirection = parseSectionTextDirection(body.sectPr);
+    const rtlGutter = parseRtlGutter(body.sectPr);
     const mirrorMargins = parseMirrorMargins(body.sectPr);
     return [{
       ...(page ? { page } : {}),
@@ -1035,6 +1036,7 @@ async function parseSections(
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
       ...(textDirection ? { textDirection } : {}),
+      ...(rtlGutter ? { rtlGutter } : {}),
       ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
       blocks: extractBlockXml(documentXml).map((blockXml) => parseBlockXml(blockXml, relationships, comments, media, footnotes, endnotes, numberingContext)),
@@ -1054,6 +1056,7 @@ async function parseSections(
     const documentGrid = parseDocumentGrid(sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(sectPr);
     const textDirection = parseSectionTextDirection(sectPr);
+    const rtlGutter = parseRtlGutter(sectPr);
     const mirrorMargins = parseMirrorMargins(sectPr);
 
     return {
@@ -1066,6 +1069,7 @@ async function parseSections(
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
       ...(textDirection ? { textDirection } : {}),
+      ...(rtlGutter ? { rtlGutter } : {}),
       ...(mirrorMargins ? { mirrorMargins } : {}),
       ...headerFooter,
       ...(columns ? { columns } : {}),
@@ -1657,6 +1661,10 @@ function parseSectionTextDirection(sectionPropertiesValue: unknown): SectionNode
   return typeof textDirection.val === "string"
     ? textDirection.val as NonNullable<SectionNode["textDirection"]>
     : undefined;
+}
+
+function parseRtlGutter(sectionPropertiesValue: unknown): boolean | undefined {
+  return asObject(sectionPropertiesValue).rtlGutter !== undefined ? true : undefined;
 }
 
 function parseMirrorMargins(sectionPropertiesValue: unknown): boolean | undefined {
