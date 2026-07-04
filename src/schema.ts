@@ -767,6 +767,9 @@ export type TablePropertyExceptions = {
   width?: number;
   widthType?: "auto" | "dxa" | "nil" | "pct";
   cellSpacing?: number;
+  indent?: TableIndent;
+  layout?: "autofit" | "fixed";
+  look?: TableLook;
 };
 
 export type TableRowHeight = {

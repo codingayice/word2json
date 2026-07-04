@@ -4202,7 +4202,21 @@ describe("DOCX writer", () => {
         type: "table",
         rows: [
           {
-            propertyExceptions: { width: 5000, widthType: "pct", cellSpacing: 120 },
+            propertyExceptions: {
+              width: 5000,
+              widthType: "pct",
+              cellSpacing: 120,
+              indent: { width: 360 },
+              layout: "fixed",
+              look: {
+                firstRow: true,
+                lastRow: false,
+                firstColumn: true,
+                lastColumn: false,
+                bandedRows: true,
+                bandedColumns: false,
+              },
+            },
             cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Exception row" }] }] }],
           },
         ],
@@ -4213,7 +4227,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<w:trPr><w:tblPrEx><w:tblW w:w="5000" w:type="pct"/><w:tblCellSpacing w:w="120" w:type="dxa"/></w:tblPrEx></w:trPr>');
+    expect(xml).toContain('<w:trPr><w:tblPrEx><w:tblW w:w="5000" w:type="pct"/><w:tblCellSpacing w:w="120" w:type="dxa"/><w:tblInd w:w="360" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblLook w:val="04A0"/></w:tblPrEx></w:trPr>');
   });
 
   it("writes repeating table header rows", async () => {
@@ -10436,7 +10450,21 @@ describe("DOCX reader", () => {
         type: "table",
         rows: [
           {
-            propertyExceptions: { width: 5000, widthType: "pct", cellSpacing: 120 },
+            propertyExceptions: {
+              width: 5000,
+              widthType: "pct",
+              cellSpacing: 120,
+              indent: { width: 360 },
+              layout: "fixed",
+              look: {
+                firstRow: true,
+                lastRow: false,
+                firstColumn: true,
+                lastColumn: false,
+                bandedRows: true,
+                bandedColumns: false,
+              },
+            },
             cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Exception row" }] }] }],
           },
         ],

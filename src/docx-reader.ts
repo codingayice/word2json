@@ -3105,11 +3105,17 @@ function parseTablePropertyExceptions(value: unknown): TableNode["rows"][number]
   const properties = asObject(value);
   const width = asObject(properties.tblW);
   const cellSpacing = asObject(properties.tblCellSpacing);
+  const indent = parseTableIndent(properties.tblInd);
+  const layout = parseTableLayout(properties.tblLayout);
+  const look = parseTableLook(properties.tblLook);
   const widthType = parseTableWidthType(width.type);
   const parsed = {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
     ...(widthType && widthType !== "dxa" ? { widthType } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+    ...(indent ? { indent } : {}),
+    ...(layout ? { layout } : {}),
+    ...(look ? { look } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;

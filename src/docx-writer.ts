@@ -1362,6 +1362,9 @@ function tablePropertyExceptionsXml(exceptions: NonNullable<TableNode["rows"][nu
   const properties = [
     exceptions.width !== undefined ? `<w:tblW w:w="${exceptions.width}" w:type="${exceptions.widthType ?? "dxa"}"/>` : "",
     exceptions.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${exceptions.cellSpacing}" w:type="dxa"/>` : "",
+    exceptions.indent ? `<w:tblInd w:w="${exceptions.indent.width}" w:type="${exceptions.indent.type ?? "dxa"}"/>` : "",
+    exceptions.layout ? `<w:tblLayout w:type="${exceptions.layout}"/>` : "",
+    exceptions.look ? tableLookXml(exceptions.look) : "",
   ].join("");
 
   return properties ? `<w:tblPrEx>${properties}</w:tblPrEx>` : "";
