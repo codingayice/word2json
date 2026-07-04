@@ -720,6 +720,40 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:m><m:mPr><m:cSp m:val="4"/></m:mPr><m:mr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:mr></m:m>');
   });
 
+  it("writes matrix column spacing rule", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "matrix" as const,
+                  columnSpacing: 4,
+                  columnSpacingRule: "multiple",
+                  rows: [
+                    [
+                      [{ type: "text" as const, text: "a" }],
+                      [{ type: "text" as const, text: "b" }],
+                    ],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:m><m:mPr><m:cSp m:val="4"/><m:cSpRule m:val="multiple"/></m:mPr><m:mr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:mr></m:m>');
+  });
+
   it("writes delimiter office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4565,6 +4599,39 @@ describe("DOCX reader", () => {
                 {
                   type: "matrix" as const,
                   columnSpacing: 4,
+                  rows: [
+                    [
+                      [{ type: "text" as const, text: "a" }],
+                      [{ type: "text" as const, text: "b" }],
+                    ],
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips matrix column spacing rule", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "matrix" as const,
+                  columnSpacing: 4,
+                  columnSpacingRule: "multiple",
                   rows: [
                     [
                       [{ type: "text" as const, text: "a" }],

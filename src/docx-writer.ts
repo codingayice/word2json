@@ -737,6 +737,7 @@ function mathNodeXml(node: MathNode): string {
       node.rowSpacing !== undefined ? `<m:rSp m:val="${node.rowSpacing}"/>` : "",
       node.rowSpacingRule !== undefined ? `<m:rSpRule m:val="${node.rowSpacingRule}"/>` : "",
       node.columnSpacing !== undefined ? `<m:cSp m:val="${node.columnSpacing}"/>` : "",
+      node.columnSpacingRule !== undefined ? `<m:cSpRule m:val="${node.columnSpacingRule}"/>` : "",
       columnProperties,
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
