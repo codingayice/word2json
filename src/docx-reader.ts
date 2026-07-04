@@ -2540,6 +2540,7 @@ function parseTocField(instruction: string): TextRun["field"] {
 function parseRunFont(properties: XmlNode): Partial<TextRun> {
   const fonts = asObject(properties.rFonts);
   const size = asObject(properties.sz);
+  const complexScriptSize = asObject(properties.szCs);
   const color = asObject(properties.color);
   const highlight = asObject(properties.highlight);
   const verticalAlign = asObject(properties.vertAlign);
@@ -2556,6 +2557,8 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
     ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
+    ...(typeof complexScriptSize.val === "number" ? { complexScriptFontSize: complexScriptSize.val / 2 } : {}),
+    ...(typeof complexScriptSize.val === "string" ? { complexScriptFontSize: Number.parseInt(complexScriptSize.val, 10) / 2 } : {}),
     ...(typeof color.val === "string" ? { color: color.val } : {}),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<TextRun["highlight"]> } : {}),
     ...parseOnOffRunProperty(properties.strike, "strike"),

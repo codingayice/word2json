@@ -664,6 +664,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:kern w:val="48"/></w:rPr><w:t>Display</w:t>');
   });
 
+  it("writes text run complex script font size", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "مرحبا", complexScriptFontSize: 14 }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:szCs w:val="28"/></w:rPr><w:t>مرحبا</w:t>');
+  });
+
+  it("writes text run complex script font size with latin size", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", fontSize: 12, complexScriptFontSize: 16 }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:sz w:val="24"/><w:szCs w:val="32"/></w:rPr><w:t>Mixed</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5756,6 +5786,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Display", kerning: 48 }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run complex script font size", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "مرحبا", complexScriptFontSize: 14 }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run complex script font size with latin size", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", fontSize: 12, complexScriptFontSize: 16 }],
       },
     ]);
 

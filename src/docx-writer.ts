@@ -1071,6 +1071,7 @@ function runPropertiesXml(run: TextRun): string {
     run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
     run.fontFamily ? `<w:rFonts w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"/>` : "",
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
+    run.complexScriptFontSize ? `<w:szCs w:val="${run.complexScriptFontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
     run.strike !== undefined ? (run.strike ? "<w:strike/>" : '<w:strike w:val="0"/>') : "",

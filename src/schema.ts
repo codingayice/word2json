@@ -254,6 +254,7 @@ export type StyleRunProperties = {
   underline?: boolean;
   fontFamily?: string;
   fontSize?: number;
+  complexScriptFontSize?: number;
   color?: string;
   highlight?: HighlightColor;
   strike?: boolean;
