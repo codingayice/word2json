@@ -419,7 +419,7 @@ export type MathControlProperties = Pick<StyleRunProperties, "bold" | "italic" |
 export type MathNode =
   | { type: "text"; text: string }
   | { type: "fraction"; numerator: MathNode[]; denominator: MathNode[] }
-  | { type: "superscript"; base: MathNode[]; superscript: MathNode[] }
+  | { type: "superscript"; controlProperties?: MathControlProperties; base: MathNode[]; superscript: MathNode[] }
   | { type: "subscript"; base: MathNode[]; subscript: MathNode[] }
   | { type: "subSup"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "sPre"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
