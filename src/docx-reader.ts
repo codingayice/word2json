@@ -1826,10 +1826,12 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const equationArrayNode = asObject(equationArray);
         const equationArrayProperties = asObject(equationArrayNode.eqArrPr);
         const rowSpacing = asObject(equationArrayProperties.rSp).val;
+        const rowSpacingRule = matrixSpacingRuleValue(asObject(equationArrayProperties.rSpRule).val);
         const controlProperties = parseMathControlProperties(asObject(equationArrayProperties.ctrlPr).rPr);
         return {
           type: "equationArray" as const,
           ...(rowSpacing !== undefined ? { rowSpacing: parseNumber(rowSpacing) } : {}),
+          ...(rowSpacingRule ? { rowSpacingRule } : {}),
           ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(equationArrayNode.e).map((row) => parseMathNodes(asObject(row))),
         };

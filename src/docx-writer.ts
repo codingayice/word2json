@@ -785,6 +785,7 @@ function mathNodeXml(node: MathNode): string {
     const properties = mathControlPropertiesXml(node.controlProperties);
     const equationArrayProperties = [
       node.rowSpacing !== undefined ? `<m:rSp m:val="${node.rowSpacing}"/>` : "",
+      node.rowSpacingRule !== undefined ? `<m:rSpRule m:val="${node.rowSpacingRule}"/>` : "",
       properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:eqArr>${equationArrayProperties ? `<m:eqArrPr>${equationArrayProperties}</m:eqArrPr>` : ""}${node.rows.map((row) => `<m:e>${row.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:eqArr>`;
