@@ -929,7 +929,7 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
     ...(typeof complexScriptSize.val === "number" ? { complexScriptFontSize: complexScriptSize.val / 2 } : {}),
     ...(typeof complexScriptSize.val === "string" ? { complexScriptFontSize: Number.parseInt(complexScriptSize.val, 10) / 2 } : {}),
-    ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...parseRunColor(color),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<StyleRunProperties["highlight"]> } : {}),
     ...parseStyleOnOffRunProperty(properties.strike, "strike"),
     ...parseStyleOnOffRunProperty(properties.dstrike, "doubleStrike"),
@@ -969,6 +969,15 @@ function parseStyleOnOffRunProperty<K extends keyof StyleRunProperties>(value: u
   }
   const val = asObject(value).val;
   return { [key]: !(val === "0" || val === false || val === "false") } as Partial<Pick<StyleRunProperties, K>>;
+}
+
+function parseRunColor(color: XmlNode): Pick<StyleRunProperties, "color" | "colorTheme" | "colorThemeTint" | "colorThemeShade"> {
+  return {
+    ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...(typeof color.themeColor === "string" ? { colorTheme: color.themeColor } : {}),
+    ...(typeof color.themeTint === "string" ? { colorThemeTint: color.themeTint } : {}),
+    ...(typeof color.themeShade === "string" ? { colorThemeShade: color.themeShade } : {}),
+  };
 }
 
 function parseStyleTableProperties(value: unknown): TableStyleDefinition["table"] | undefined {
@@ -3440,7 +3449,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
     ...(typeof complexScriptSize.val === "number" ? { complexScriptFontSize: complexScriptSize.val / 2 } : {}),
     ...(typeof complexScriptSize.val === "string" ? { complexScriptFontSize: Number.parseInt(complexScriptSize.val, 10) / 2 } : {}),
-    ...(typeof color.val === "string" ? { color: color.val } : {}),
+    ...parseRunColor(color),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<TextRun["highlight"]> } : {}),
     ...parseOnOffRunProperty(properties.strike, "strike"),
     ...parseOnOffRunProperty(properties.dstrike, "doubleStrike"),

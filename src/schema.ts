@@ -280,6 +280,9 @@ export type StyleRunProperties = {
   fontSize?: number;
   complexScriptFontSize?: number;
   color?: string;
+  colorTheme?: string;
+  colorThemeTint?: string;
+  colorThemeShade?: string;
   highlight?: HighlightColor;
   strike?: boolean;
   doubleStrike?: boolean;

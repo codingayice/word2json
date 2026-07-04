@@ -1307,7 +1307,7 @@ function runPropertiesXml(run: TextRun): string {
     run.snapToGrid !== undefined ? (run.snapToGrid ? "<w:snapToGrid/>" : '<w:snapToGrid w:val="0"/>') : "",
     run.hidden !== undefined ? (run.hidden ? "<w:vanish/>" : '<w:vanish w:val="0"/>') : "",
     run.webHidden !== undefined ? (run.webHidden ? "<w:webHidden/>" : '<w:webHidden w:val="0"/>') : "",
-    run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
+    runColorXml(run),
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
     run.kerning !== undefined ? `<w:kern w:val="${run.kerning}"/>` : "",
@@ -1342,6 +1342,19 @@ function runFontsXml(run: TextRun): string {
   ].join("");
 
   return attributes ? `<w:rFonts${attributes}/>` : "";
+}
+
+function runColorXml(run: Pick<StyleRunProperties, "color" | "colorTheme" | "colorThemeTint" | "colorThemeShade">): string {
+  if (!run.color && !run.colorTheme && !run.colorThemeTint && !run.colorThemeShade) {
+    return "";
+  }
+
+  return `<w:color` +
+    (run.color ? ` w:val="${escapeAttribute(run.color)}"` : "") +
+    (run.colorTheme ? ` w:themeColor="${escapeAttribute(run.colorTheme)}"` : "") +
+    (run.colorThemeTint ? ` w:themeTint="${escapeAttribute(run.colorThemeTint)}"` : "") +
+    (run.colorThemeShade ? ` w:themeShade="${escapeAttribute(run.colorThemeShade)}"` : "") +
+    `/>`;
 }
 
 function runLanguageXml(language: RunLanguage): string {
@@ -2161,7 +2174,7 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
     styleRunFontsXml(run),
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.complexScriptFontSize ? `<w:szCs w:val="${run.complexScriptFontSize * 2}"/>` : "",
-    run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
+    runColorXml(run),
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
     styleOnOffXml("strike", run.strike),
     styleOnOffXml("dstrike", run.doubleStrike),

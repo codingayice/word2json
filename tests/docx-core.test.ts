@@ -2993,6 +2993,29 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:color w:val="C00000"/>');
   });
 
+  it("writes run color theme attributes", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Themed",
+            color: "4472C4",
+            colorTheme: "accent1",
+            colorThemeTint: "66",
+            colorThemeShade: "33",
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:color w:val="4472C4" w:themeColor="accent1" w:themeTint="66" w:themeShade="33"/>');
+  });
+
   it("writes run highlight and strike", async () => {
     const document = createDocumentJson([
       {
@@ -6238,6 +6261,28 @@ describe("DOCX writer", () => {
 
     expect(styles).toContain("<w:docDefaults>");
     expect(styles).toContain('<w:rPrDefault><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:color w:val="1F1F1F"/></w:rPr></w:rPrDefault>');
+  });
+
+  it("writes style run color theme attributes", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        defaults: {
+          run: {
+            color: "1F4E79",
+            colorTheme: "accent1",
+            colorThemeShade: "80",
+          },
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Defaults" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:color w:val="1F4E79" w:themeColor="accent1" w:themeShade="80"/>');
   });
 
   it("writes paragraph document defaults", async () => {
@@ -13084,6 +13129,49 @@ describe("DOCX reader", () => {
       styles: {
         defaults: {
           run: { fontFamily: "Aptos", fontSize: 11, color: "1F1F1F" },
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Defaults" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips run color theme attributes", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "Themed",
+            color: "4472C4",
+            colorTheme: "accent1",
+            colorThemeTint: "66",
+            colorThemeShade: "33",
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run color theme attributes", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        defaults: {
+          run: {
+            color: "1F4E79",
+            colorTheme: "accent1",
+            colorThemeShade: "80",
+          },
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Defaults" }] }] }],
