@@ -391,12 +391,15 @@ export type StyleTableProperties = {
 export type TableConditionalStyle = {
   type: TableConditionalStyleType;
   table?: StyleTableProperties;
+  paragraph?: StyleParagraphProperties;
   cell?: TableConditionalCellStyle;
   run?: StyleRunProperties;
 };
 
 export type TableConditionalCellStyle = {
   shading?: TableCellShading;
+  borders?: TableCellBorders;
+  margins?: TableCellMargins;
 };
 
 export type TableConditionalStyleType =

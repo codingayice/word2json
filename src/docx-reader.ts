@@ -1001,13 +1001,15 @@ function parseTableConditionalStyle(value: unknown): NonNullable<NonNullable<Tab
   }
 
   const table = parseStyleTableProperties({ tblPr: style.tblPr });
+  const paragraph = parseStyleParagraphProperties(style.pPr);
   const cell = parseTableConditionalCellStyle(style.tcPr);
   const run = parseStyleRunProperties(style.rPr);
 
-  return table || cell || run
+  return table || paragraph || cell || run
     ? {
       type: style.type,
       ...(table ? { table } : {}),
+      ...(paragraph ? { paragraph } : {}),
       ...(cell ? { cell } : {}),
       ...(run ? { run } : {}),
     }
@@ -1016,9 +1018,16 @@ function parseTableConditionalStyle(value: unknown): NonNullable<NonNullable<Tab
 
 function parseTableConditionalCellStyle(value: unknown): NonNullable<NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["cell"]> | undefined {
   const properties = asObject(value);
+  const borders = parseTableCellBorders(properties.tcBorders);
   const shading = parseShading(properties.shd);
+  const margins = parseTableCellMargins(properties.tcMar);
+  const parsed = {
+    ...(borders ? { borders } : {}),
+    ...(shading ? { shading } : {}),
+    ...(margins ? { margins } : {}),
+  };
 
-  return shading ? { shading } : undefined;
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function isTableConditionalStyleType(value: unknown): value is NonNullable<NonNullable<TableStyleDefinition["table"]>["conditionalStyles"]>[number]["type"] {

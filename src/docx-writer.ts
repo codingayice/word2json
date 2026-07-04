@@ -2240,13 +2240,28 @@ function tableStyleBasePropertiesXml(properties?: StyleTableProperties): string 
 }
 
 function tableConditionalStyleXml(style: TableConditionalStyle): string {
+  const paragraph = paragraphStylePropertiesXml(style.paragraph);
   const table = tableStyleBasePropertiesXml(style.table);
-  const cell = style.cell?.shading ? `<w:tcPr>${shadingXml(style.cell.shading)}</w:tcPr>` : "";
+  const cell = tableConditionalCellStyleXml(style.cell);
   const run = styleRunPropertiesXml(style.run);
 
-  return table || cell || run
-    ? `<w:tblStylePr w:type="${style.type}">${table}${cell}${run}</w:tblStylePr>`
+  return paragraph || table || cell || run
+    ? `<w:tblStylePr w:type="${style.type}">${paragraph}${table}${cell}${run}</w:tblStylePr>`
     : "";
+}
+
+function tableConditionalCellStyleXml(cell: TableConditionalStyle["cell"]): string {
+  if (!cell) {
+    return "";
+  }
+
+  const properties = [
+    cell.borders ? tableCellBordersXml(cell.borders) : "",
+    cell.shading ? shadingXml(cell.shading) : "",
+    cell.margins ? tableCellMarginsXml(cell.margins) : "",
+  ].join("");
+
+  return properties ? `<w:tcPr>${properties}</w:tcPr>` : "";
 }
 
 function numberingXml(document: DocumentJson): string {

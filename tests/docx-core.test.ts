@@ -6951,6 +6951,47 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:tblStylePr w:type="firstRow"><w:tblPr><w:tblBorders><w:bottom w:val="single" w:sz="12" w:color="4472C4"/></w:tblBorders></w:tblPr><w:tcPr><w:shd w:val="clear" w:fill="D9EAF7" w:themeFill="accent5" w:themeFillTint="99"/></w:tcPr><w:rPr><w:b/><w:color w:val="1F4E79" w:themeColor="accent1"/></w:rPr></w:tblStylePr>');
   });
 
+  it("writes extended table conditional style properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "DetailedTable",
+            name: "Detailed Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "band1Horz" as const,
+                  paragraph: { alignment: "center" as const, spacing: { after: 80 } },
+                  cell: {
+                    borders: {
+                      top: { style: "single" as const, size: 8, color: "70AD47" },
+                      bottom: { style: "dashed" as const, size: 6, color: "C00000", space: 1 },
+                    },
+                    margins: {
+                      top: 120,
+                      right: { width: 240, type: "pct" as const },
+                      bottom: { width: 0, type: "nil" as const },
+                      left: 180,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:tblStylePr w:type="band1Horz"><w:pPr><w:jc w:val="center"/><w:spacing w:after="80"/></w:pPr><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="8" w:color="70AD47"/><w:bottom w:val="dashed" w:sz="6" w:space="1" w:color="C00000"/></w:tcBorders><w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="240" w:type="pct"/><w:bottom w:w="0" w:type="nil"/><w:left w:w="180" w:type="dxa"/></w:tcMar></w:tcPr></w:tblStylePr>');
+  });
+
   it("writes theme part", async () => {
     const document = {
       version: "1.0" as const,
@@ -13692,6 +13733,46 @@ describe("DOCX reader", () => {
                     shading: { fill: "D9EAF7", themeFill: "accent5", themeFillTint: "99" },
                   },
                   run: { bold: true, color: "1F4E79", colorTheme: "accent1" },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips extended table conditional style properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        table: [
+          {
+            id: "DetailedTable",
+            name: "Detailed Table",
+            table: {
+              conditionalStyles: [
+                {
+                  type: "band1Horz" as const,
+                  paragraph: { alignment: "center" as const, spacing: { after: 80 } },
+                  cell: {
+                    borders: {
+                      top: { style: "single" as const, size: 8, color: "70AD47" },
+                      bottom: { style: "dashed" as const, size: 6, color: "C00000", space: 1 },
+                    },
+                    margins: {
+                      top: 120,
+                      right: { width: 240, type: "pct" as const },
+                      bottom: { width: 0, type: "nil" as const },
+                      left: 180,
+                    },
+                  },
                 },
               ],
             },
