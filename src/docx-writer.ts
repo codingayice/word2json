@@ -770,11 +770,13 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "box") {
+    const controlProperties = mathControlPropertiesXml(node.controlProperties);
     const properties = [
       node.hideTop ? '<m:hideTop m:val="1"/>' : "",
       node.hideBottom ? '<m:hideBot m:val="1"/>' : "",
       node.hideLeft ? '<m:hideLeft m:val="1"/>' : "",
       node.hideRight ? '<m:hideRight m:val="1"/>' : "",
+      controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:box>${properties ? `<m:boxPr>${properties}</m:boxPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:box>`;
   }

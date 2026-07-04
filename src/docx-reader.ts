@@ -1806,12 +1806,14 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
       .map((box) => {
         const boxNode = asObject(box);
         const boxProperties = asObject(boxNode.boxPr);
+        const controlProperties = parseMathControlProperties(asObject(boxProperties.ctrlPr).rPr);
         return {
           type: "box" as const,
           ...mathBooleanProperty(boxProperties.hideTop, "hideTop"),
           ...mathBooleanProperty(boxProperties.hideBot, "hideBottom"),
           ...mathBooleanProperty(boxProperties.hideLeft, "hideLeft"),
           ...mathBooleanProperty(boxProperties.hideRight, "hideRight"),
+          ...(controlProperties ? { controlProperties } : {}),
           content: parseMathNodes(asObject(boxNode.e)),
         };
       }),
