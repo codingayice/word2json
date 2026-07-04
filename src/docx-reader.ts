@@ -1697,9 +1697,11 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const naryNode = asObject(nary);
         const lowerLimit = parseMathNodes(asObject(naryNode.sub));
         const upperLimit = parseMathNodes(asObject(naryNode.sup));
+        const controlProperties = parseMathControlProperties(asObject(asObject(naryNode.naryPr).ctrlPr).rPr);
         return {
           type: "nary" as const,
           operator: naryOperatorValue(asObject(asObject(naryNode.naryPr).chr).val),
+          ...(controlProperties ? { controlProperties } : {}),
           ...(lowerLimit.length > 0 ? { lowerLimit } : {}),
           ...(upperLimit.length > 0 ? { upperLimit } : {}),
           body: parseMathNodes(asObject(naryNode.e)),

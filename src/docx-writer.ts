@@ -799,7 +799,8 @@ function mathNodeXml(node: MathNode): string {
     return `<m:groupChr>${properties ? `<m:groupChrPr>${properties}</m:groupChrPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:groupChr>`;
   }
 
-  return `<m:nary><m:naryPr><m:chr m:val="∑"/></m:naryPr>` +
+  const properties = mathControlPropertiesXml(node.controlProperties);
+  return `<m:nary><m:naryPr><m:chr m:val="∑"/>${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
     `<m:e>${node.body.map((child) => mathNodeXml(child)).join("")}</m:e></m:nary>`;

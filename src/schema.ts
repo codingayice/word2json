@@ -425,7 +425,7 @@ export type MathNode =
   | { type: "sPre"; controlProperties?: MathControlProperties; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "preSubSup"; base: MathNode[]; subscript: MathNode[]; superscript: MathNode[] }
   | { type: "radical"; controlProperties?: MathControlProperties; degree?: MathNode[]; content: MathNode[] }
-  | { type: "nary"; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
+  | { type: "nary"; controlProperties?: MathControlProperties; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
   | { type: "matrix"; rows: MathNode[][][] }
   | { type: "delimiter"; begin?: string; end?: string; content: MathNode[] }
   | { type: "accent"; mark: string; content: MathNode[] }
