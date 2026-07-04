@@ -1741,9 +1741,7 @@ function tableStylePropertiesXml(properties: NonNullable<NonNullable<DocumentJso
 
 function numberingXml(document: DocumentJson): string {
   const customAbstractNums = (document.numbering?.abstractNums ?? [])
-    .map((abstractNum) => `<w:abstractNum w:abstractNumId="${abstractNum.id}">` +
-      abstractNum.levels.map((level) => numberingLevelXml(level)).join("") +
-      `</w:abstractNum>`)
+    .map((abstractNum) => abstractNumberingXml(abstractNum))
     .join("");
   const customNums = (document.numbering?.nums ?? [])
     .map((num) => `<w:num w:numId="${num.id}"><w:abstractNumId w:val="${num.abstractId}"/></w:num>`)
@@ -1759,6 +1757,21 @@ function numberingXml(document: DocumentJson): string {
       customNums +
       `</w:numbering>`,
   );
+}
+
+function abstractNumberingXml(abstractNum: NonNullable<DocumentJson["numbering"]>["abstractNums"][number]): string {
+  const metadata = [
+    abstractNum.nsid ? `<w:nsid w:val="${escapeAttribute(abstractNum.nsid)}"/>` : "",
+    abstractNum.multiLevelType ? `<w:multiLevelType w:val="${abstractNum.multiLevelType}"/>` : "",
+    abstractNum.templateCode ? `<w:tmpl w:val="${escapeAttribute(abstractNum.templateCode)}"/>` : "",
+    abstractNum.styleLink ? `<w:styleLink w:val="${escapeAttribute(abstractNum.styleLink)}"/>` : "",
+    abstractNum.numberingStyleLink ? `<w:numStyleLink w:val="${escapeAttribute(abstractNum.numberingStyleLink)}"/>` : "",
+  ].join("");
+
+  return `<w:abstractNum w:abstractNumId="${abstractNum.id}">` +
+    metadata +
+    abstractNum.levels.map((level) => numberingLevelXml(level)).join("") +
+    `</w:abstractNum>`;
 }
 
 function numberingLevelXml(level: NonNullable<DocumentJson["numbering"]>["abstractNums"][number]["levels"][number]): string {

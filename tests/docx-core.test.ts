@@ -4297,6 +4297,35 @@ describe("DOCX writer", () => {
     expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="1"/><w:pStyle w:val="LegalClause"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="right"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:rPr><w:b/><w:i w:val="0"/><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:color w:val="C00000"/></w:rPr></w:lvl>');
   });
 
+  it("writes abstract numbering identity and style links", async () => {
+    const document = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 40,
+            nsid: "5E2A1C9B",
+            multiLevelType: "hybridMultilevel" as const,
+            templateCode: "03A54D6C",
+            styleLink: "LegalList",
+            numberingStyleLink: "LegalListNumbering",
+            levels: [
+              { level: 0, format: "decimal" as const, text: "%1.", start: 1 },
+            ],
+          },
+        ],
+        nums: [{ id: 40, abstractId: 40 }],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const numbering = await zip.file("word/numbering.xml")!.async("string");
+
+    expect(numbering).toContain('<w:abstractNum w:abstractNumId="40"><w:nsid w:val="5E2A1C9B"/><w:multiLevelType w:val="hybridMultilevel"/><w:tmpl w:val="03A54D6C"/><w:styleLink w:val="LegalList"/><w:numStyleLink w:val="LegalListNumbering"/><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl></w:abstractNum>');
+  });
+
   it("writes hyperlinks with external relationships", async () => {
     const document = createDocumentJson([
       {
@@ -9896,6 +9925,34 @@ describe("DOCX reader", () => {
           },
         ],
         nums: [{ id: 30, abstractId: 30 }],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips abstract numbering identity and style links", async () => {
+    const source = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 40,
+            nsid: "5E2A1C9B",
+            multiLevelType: "hybridMultilevel" as const,
+            templateCode: "03A54D6C",
+            styleLink: "LegalList",
+            numberingStyleLink: "LegalListNumbering",
+            levels: [
+              { level: 0, format: "decimal" as const, text: "%1.", start: 1 },
+            ],
+          },
+        ],
+        nums: [{ id: 40, abstractId: 40 }],
       },
       sections: [{ blocks: [] }],
     };

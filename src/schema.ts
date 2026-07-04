@@ -159,6 +159,11 @@ export type DocumentNumbering = {
 
 export type AbstractNumberingDefinition = {
   id: number;
+  nsid?: string;
+  multiLevelType?: "singleLevel" | "multilevel" | "hybridMultilevel";
+  templateCode?: string;
+  styleLink?: string;
+  numberingStyleLink?: string;
   levels: NumberingLevelDefinition[];
 };
 

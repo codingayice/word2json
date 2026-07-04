@@ -467,8 +467,19 @@ async function parseNumbering(zip: JSZip): Promise<NumberingContext> {
 }
 
 function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefinition {
+  const nsid = asObject(value.nsid);
+  const multiLevelType = asObject(value.multiLevelType);
+  const template = asObject(value.tmpl);
+  const styleLink = asObject(value.styleLink);
+  const numberingStyleLink = asObject(value.numStyleLink);
+
   return {
     id: parseNumber(value.abstractNumId),
+    ...(typeof nsid.val === "string" ? { nsid: nsid.val } : {}),
+    ...(isMultiLevelType(multiLevelType.val) ? { multiLevelType: multiLevelType.val } : {}),
+    ...(typeof template.val === "string" ? { templateCode: template.val } : {}),
+    ...(typeof styleLink.val === "string" ? { styleLink: styleLink.val } : {}),
+    ...(typeof numberingStyleLink.val === "string" ? { numberingStyleLink: numberingStyleLink.val } : {}),
     levels: asArray(value.lvl).map((levelValue) => {
       const level = asObject(levelValue);
       const start = asObject(level.start);
@@ -498,6 +509,10 @@ function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefi
       };
     }),
   };
+}
+
+function isMultiLevelType(value: unknown): value is NonNullable<AbstractNumberingDefinition["multiLevelType"]> {
+  return value === "singleLevel" || value === "multilevel" || value === "hybridMultilevel";
 }
 
 function parseNumberingFormat(value: unknown): NumberingFormat {
