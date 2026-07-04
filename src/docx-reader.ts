@@ -736,6 +736,7 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
   const shading = parseShading(properties.shd);
   const borders = parseParagraphBorders(properties.pBdr);
   const pagination = parseParagraphPagination(properties);
+  const frame = parseParagraphFrame(properties.framePr);
   const parsed = {
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
     ...(spacing ? { spacing } : {}),
@@ -743,6 +744,7 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
     ...(shading ? { shading } : {}),
     ...(borders ? { borders } : {}),
     ...(pagination ? { pagination } : {}),
+    ...(frame ? { frame } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -790,6 +792,27 @@ function parsePaginationToggle(value: unknown): boolean | undefined {
 
   const rawValue = asObject(value).val;
   return rawValue === "0" || rawValue === false || rawValue === "false" || rawValue === "off" ? false : true;
+}
+
+function parseParagraphFrame(value: unknown): ParagraphNode["frame"] | undefined {
+  const frame = asObject(value);
+  const parsed = {
+    ...(frame.w !== undefined ? { width: parseNumber(frame.w) } : {}),
+    ...(frame.h !== undefined ? { height: parseNumber(frame.h) } : {}),
+    ...(frame.x !== undefined ? { x: parseNumber(frame.x) } : {}),
+    ...(frame.y !== undefined ? { y: parseNumber(frame.y) } : {}),
+    ...(typeof frame.hAnchor === "string" ? { horizontalAnchor: frame.hAnchor as NonNullable<ParagraphNode["frame"]>["horizontalAnchor"] } : {}),
+    ...(typeof frame.vAnchor === "string" ? { verticalAnchor: frame.vAnchor as NonNullable<ParagraphNode["frame"]>["verticalAnchor"] } : {}),
+    ...(typeof frame.xAlign === "string" ? { xAlign: frame.xAlign as NonNullable<ParagraphNode["frame"]>["xAlign"] } : {}),
+    ...(typeof frame.yAlign === "string" ? { yAlign: frame.yAlign as NonNullable<ParagraphNode["frame"]>["yAlign"] } : {}),
+    ...(typeof frame.wrap === "string" ? { wrap: frame.wrap as NonNullable<ParagraphNode["frame"]>["wrap"] } : {}),
+    ...(typeof frame.dropCap === "string" ? { dropCap: frame.dropCap as NonNullable<ParagraphNode["frame"]>["dropCap"] } : {}),
+    ...(frame.lines !== undefined ? { lines: parseNumber(frame.lines) } : {}),
+    ...(frame.anchorLock !== undefined ? { anchorLock: parseOnOff(frame.anchorLock) } : {}),
+    ...(typeof frame.hRule === "string" ? { heightRule: frame.hRule as NonNullable<ParagraphNode["frame"]>["heightRule"] } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
 }
 
 function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined {
@@ -1456,6 +1479,7 @@ function parseParagraph(
   const borders = parseParagraphBorders(properties.pBdr);
   const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
+  const frame = parseParagraphFrame(properties.framePr);
   const propertyRevision = parsePropertyRevision(properties.pPrChange);
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
@@ -1478,6 +1502,7 @@ function parseParagraph(
     ...(borders ? { borders } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
+    ...(frame ? { frame } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
     runs: parseParagraphRuns(paragraph, relationships, comments, footnotes, endnotes, paragraphInnerXml(paragraphXml)),
   };

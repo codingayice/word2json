@@ -4705,6 +4705,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:autoSpaceDN/>");
   });
 
+  it("writes paragraph frame properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        frame: {
+          width: 2880,
+          height: 1440,
+          x: 720,
+          y: 360,
+          horizontalAnchor: "margin",
+          verticalAnchor: "page",
+          xAlign: "center",
+          yAlign: "top",
+          wrap: "around",
+          dropCap: "drop",
+          lines: 3,
+          anchorLock: true,
+          heightRule: "exact",
+        },
+        runs: [{ text: "Framed paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:framePr w:w="2880" w:h="1440" w:x="720" w:y="360" w:hAnchor="margin" w:vAnchor="page" w:xAlign="center" w:yAlign="top" w:wrap="around" w:dropCap="drop" w:lines="3" w:anchorLock="1" w:hRule="exact"/>');
+  });
+
   it("writes paragraph spacing", async () => {
     const document = createDocumentJson([
       {
@@ -5157,6 +5187,36 @@ describe("DOCX writer", () => {
 
     expect(styles).toContain('<w:shd w:fill="E2F0D9"/>');
     expect(styles).toContain('<w:left w:val="single" w:sz="12" w:space="4" w:color="70AD47"/>');
+  });
+
+  it("writes paragraph style frame properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "Sidebar",
+          name: "Sidebar",
+          paragraph: {
+            frame: {
+              width: 2160,
+              horizontalAnchor: "page",
+              verticalAnchor: "margin",
+              xAlign: "right",
+              yAlign: "bottom",
+              wrap: "notBeside",
+              anchorLock: false,
+            },
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "Sidebar", runs: [{ text: "Sidebar" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="Sidebar"><w:name w:val="Sidebar"/><w:pPr><w:framePr w:w="2160" w:hAnchor="page" w:vAnchor="margin" w:xAlign="right" w:yAlign="bottom" w:wrap="notBeside" w:anchorLock="0"/></w:pPr></w:style>');
   });
 
   it("writes character and table styles", async () => {
@@ -10087,6 +10147,56 @@ describe("DOCX reader", () => {
             autoSpaceDN: true,
           },
           runs: [{ text: "Vertical paragraph" }],
+        }],
+      }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph frame properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "Sidebar",
+          name: "Sidebar",
+          paragraph: {
+            frame: {
+              width: 2160,
+              horizontalAnchor: "page",
+              verticalAnchor: "margin",
+              xAlign: "right",
+              yAlign: "bottom",
+              wrap: "notBeside",
+              anchorLock: false,
+            },
+          },
+        }],
+      },
+      sections: [{
+        blocks: [{
+          type: "paragraph" as const,
+          styleId: "Sidebar",
+          frame: {
+            width: 2880,
+            height: 1440,
+            x: 720,
+            y: 360,
+            horizontalAnchor: "margin",
+            verticalAnchor: "page",
+            xAlign: "center",
+            yAlign: "top",
+            wrap: "around",
+            dropCap: "drop",
+            lines: 3,
+            anchorLock: true,
+            heightRule: "exact",
+          },
+          runs: [{ text: "Framed paragraph" }],
         }],
       }],
     };

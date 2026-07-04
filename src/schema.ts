@@ -316,6 +316,7 @@ export type StyleParagraphProperties = {
   shading?: ShadingDefinition;
   borders?: ParagraphBorders;
   pagination?: ParagraphPagination;
+  frame?: ParagraphFrameProperties;
 };
 
 export type ShadingDefinition = {
@@ -397,6 +398,7 @@ export type ParagraphNode = {
   borders?: ParagraphBorders;
   list?: ListSettings;
   pagination?: ParagraphPagination;
+  frame?: ParagraphFrameProperties;
   commentRangeStart?: Comment;
   commentRangeEnd?: CommentRangeEnd;
   runs: TextRun[];
@@ -432,6 +434,22 @@ export type ParagraphPagination = {
   adjustRightInd?: boolean;
   autoSpaceDE?: boolean;
   autoSpaceDN?: boolean;
+};
+
+export type ParagraphFrameProperties = {
+  width?: number;
+  height?: number;
+  x?: number;
+  y?: number;
+  horizontalAnchor?: "text" | "margin" | "page";
+  verticalAnchor?: "text" | "margin" | "page";
+  xAlign?: "left" | "center" | "right" | "inside" | "outside";
+  yAlign?: "top" | "center" | "bottom" | "inside" | "outside";
+  wrap?: "around" | "auto" | "none" | "notBeside" | "through" | "tight";
+  dropCap?: "drop" | "margin" | "none";
+  lines?: number;
+  anchorLock?: boolean;
+  heightRule?: "auto" | "atLeast" | "exact";
 };
 
 export type ListSettings = {

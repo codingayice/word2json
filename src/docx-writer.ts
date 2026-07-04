@@ -576,10 +576,11 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
   const pagination = paragraphPaginationXml(paragraph.pagination);
+  const frame = paragraphFrameXml(paragraph.frame);
   const propertyRevision = paragraph.propertyRevision
     ? propertyRevisionXml("pPr", "pPrChange", paragraph.propertyRevision)
     : "";
-  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}${propertyRevision}`;
+  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}${frame}${propertyRevision}`;
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }
@@ -622,6 +623,26 @@ function paragraphIndentXml(indent: NonNullable<ParagraphNode["indent"]>): strin
     (indent.right !== undefined ? ` w:right="${indent.right}"` : "") +
     (indent.firstLine !== undefined ? ` w:firstLine="${indent.firstLine}"` : "") +
     (indent.hanging !== undefined ? ` w:hanging="${indent.hanging}"` : "") +
+    `/>`;
+}
+
+function paragraphFrameXml(frame?: ParagraphNode["frame"]): string {
+  if (!frame) return "";
+
+  return `<w:framePr` +
+    (frame.width !== undefined ? ` w:w="${frame.width}"` : "") +
+    (frame.height !== undefined ? ` w:h="${frame.height}"` : "") +
+    (frame.x !== undefined ? ` w:x="${frame.x}"` : "") +
+    (frame.y !== undefined ? ` w:y="${frame.y}"` : "") +
+    (frame.horizontalAnchor ? ` w:hAnchor="${frame.horizontalAnchor}"` : "") +
+    (frame.verticalAnchor ? ` w:vAnchor="${frame.verticalAnchor}"` : "") +
+    (frame.xAlign ? ` w:xAlign="${frame.xAlign}"` : "") +
+    (frame.yAlign ? ` w:yAlign="${frame.yAlign}"` : "") +
+    (frame.wrap ? ` w:wrap="${frame.wrap}"` : "") +
+    (frame.dropCap ? ` w:dropCap="${frame.dropCap}"` : "") +
+    (frame.lines !== undefined ? ` w:lines="${frame.lines}"` : "") +
+    (frame.anchorLock !== undefined ? ` w:anchorLock="${frame.anchorLock ? 1 : 0}"` : "") +
+    (frame.heightRule ? ` w:hRule="${frame.heightRule}"` : "") +
     `/>`;
 }
 
@@ -1632,6 +1653,7 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
     properties.shading ? shadingXml(properties.shading) : "",
     properties.borders ? paragraphBordersXml(properties.borders) : "",
     paragraphPaginationXml(properties.pagination),
+    paragraphFrameXml(properties.frame),
   ].join("");
 
   return paragraphProperties ? `<w:pPr>${paragraphProperties}</w:pPr>` : "";
