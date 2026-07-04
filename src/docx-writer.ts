@@ -1546,7 +1546,7 @@ function imageXml(image: ImageNode, context: WriterContext): string {
       imageSimplePositionXml(image.floating) +
       imagePositionHXml(image.floating) +
       imagePositionVXml(image.floating) +
-      imageWrapXml(image.floating.wrap) +
+      imageWrapXml(image.floating) +
       graphic +
       `</wp:anchor>`
     : `<wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">${graphic}</wp:inline>`;
@@ -1578,7 +1578,9 @@ function imagePositionVXml(floating: NonNullable<ImageNode["floating"]>): string
   return `<wp:positionV relativeFrom="${floating.verticalRelativeFrom ?? "page"}">${position}</wp:positionV>`;
 }
 
-function imageWrapXml(wrap: NonNullable<ImageNode["floating"]>["wrap"]): string {
+function imageWrapXml(floating: NonNullable<ImageNode["floating"]>): string {
+  const wrap = floating.wrap;
+
   if (wrap === "none") {
     return "<wp:wrapNone/>";
   }
@@ -1587,7 +1589,21 @@ function imageWrapXml(wrap: NonNullable<ImageNode["floating"]>["wrap"]): string 
     return "<wp:wrapTopAndBottom/>";
   }
 
-  return "<wp:wrapSquare/>";
+  if (wrap === "tight") {
+    return imagePolygonWrapXml("wrapTight", floating.wrapText ?? "bothSides");
+  }
+
+  if (wrap === "through") {
+    return imagePolygonWrapXml("wrapThrough", floating.wrapText ?? "bothSides");
+  }
+
+  return floating.wrapText
+    ? `<wp:wrapSquare wrapText="${floating.wrapText}"/>`
+    : "<wp:wrapSquare/>";
+}
+
+function imagePolygonWrapXml(tag: "wrapTight" | "wrapThrough", wrapText: NonNullable<NonNullable<ImageNode["floating"]>["wrapText"]>): string {
+  return `<wp:${tag} wrapText="${wrapText}"><wp:wrapPolygon edited="0"><wp:start x="0" y="0"/><wp:lineTo x="0" y="0"/></wp:wrapPolygon></wp:${tag}>`;
 }
 
 function contentTypesXml(context: WriterContext): string {

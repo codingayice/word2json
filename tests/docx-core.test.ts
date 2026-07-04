@@ -5048,6 +5048,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<wp:wrapNone/>");
   });
 
+  it("writes floating image tight and through wrap variants", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: { wrap: "tight", wrapText: "bothSides", horizontalOffset: 1440, verticalOffset: 720 },
+      },
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: { wrap: "through", wrapText: "largest", horizontalOffset: 2880, verticalOffset: 1440 },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<wp:wrapTight wrapText="bothSides">');
+    expect(xml).toContain('<wp:wrapThrough wrapText="largest">');
+    expect(xml).toContain('<wp:wrapPolygon edited="0"><wp:start x="0" y="0"/><wp:lineTo x="0" y="0"/></wp:wrapPolygon>');
+  });
+
   it("writes floating image anchor references", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11445,6 +11475,33 @@ describe("DOCX reader", () => {
         width: 120,
         height: 80,
         floating: { wrap: "none", horizontalOffset: 2880, verticalOffset: 1440 },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image tight and through wrap variants", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: { wrap: "tight", wrapText: "bothSides", horizontalOffset: 1440, verticalOffset: 720 },
+      },
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: { wrap: "through", wrapText: "largest", horizontalOffset: 2880, verticalOffset: 1440 },
       },
     ]);
 

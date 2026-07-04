@@ -1493,9 +1493,11 @@ function parseImageFloating(drawing: XmlNode, simplePositionFromXml?: NonNullabl
   const horizontalAlign = parseImageHorizontalAlign(positionH.align);
   const verticalAlign = parseImageVerticalAlign(positionV.align);
   const simplePosition = simplePositionFromXml ?? parseImageSimplePosition(anchor.simplePos);
+  const wrapText = parseImageWrapText(anchor);
 
   return {
     wrap: parseImageWrap(anchor),
+    ...(wrapText ? { wrapText } : {}),
     horizontalOffset: horizontalAlign ? 0 : parseNumber(positionH.posOffset),
     verticalOffset: verticalAlign ? 0 : parseNumber(positionV.posOffset),
     ...parseImageHorizontalRelativeFrom(positionH.relativeFrom),
@@ -1562,7 +1564,25 @@ function parseImageWrap(anchor: XmlNode): NonNullable<NonNullable<ImageNode["flo
     return "topAndBottom";
   }
 
+  if (anchor.wrapTight !== undefined) {
+    return "tight";
+  }
+
+  if (anchor.wrapThrough !== undefined) {
+    return "through";
+  }
+
   return "square";
+}
+
+function parseImageWrapText(anchor: XmlNode): NonNullable<NonNullable<ImageNode["floating"]>["wrapText"]> | undefined {
+  const wrap = asObject(anchor.wrapSquare).wrapText
+    ?? asObject(anchor.wrapTight).wrapText
+    ?? asObject(anchor.wrapThrough).wrapText;
+
+  return wrap === "bothSides" || wrap === "left" || wrap === "right" || wrap === "largest"
+    ? wrap
+    : undefined;
 }
 
 function parseImageRotation(inline: XmlNode): number | undefined {
