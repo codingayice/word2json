@@ -2154,6 +2154,8 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
     properties.alignment ? `<w:jc w:val="${properties.alignment}"/>` : "",
     properties.spacing ? paragraphSpacingXml(properties.spacing) : "",
     properties.indent ? paragraphIndentXml(properties.indent) : "",
+    properties.list ? `<w:numPr><w:ilvl w:val="${properties.list.level}"/><w:numId w:val="${properties.list.numberingId ?? (properties.list.type === "bullet" ? 1 : 2)}"/></w:numPr>` : "",
+    properties.outlineLevel !== undefined ? `<w:outlineLvl w:val="${properties.outlineLevel}"/>` : "",
     properties.shading ? shadingXml(properties.shading) : "",
     properties.borders ? paragraphBordersXml(properties.borders) : "",
     paragraphTabsXml(properties.tabs),

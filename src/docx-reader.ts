@@ -63,7 +63,7 @@ export async function parseDocx(buffer: Buffer | Uint8Array): Promise<DocumentJs
   const footnotes = await parseNotes(zip, "footnotes", "footnote");
   const endnotes = await parseNotes(zip, "endnotes", "endnote");
   const numberingContext = await parseNumbering(zip);
-  const styles = await parseStyles(zip);
+  const styles = await parseStyles(zip, numberingContext);
   const theme = await parseTheme(zip);
   const settings = await parseSettings(zip);
   const properties = await parseDocumentProperties(zip);
@@ -702,7 +702,7 @@ function themeColors(colorScheme: XmlNode, accent1: string): DocumentTheme["colo
   };
 }
 
-async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
+async function parseStyles(zip: JSZip, numberingContext: NumberingContext): Promise<DocumentStyles | undefined> {
   const stylesFile = zip.file("word/styles.xml");
 
   if (!stylesFile) {
@@ -713,14 +713,14 @@ async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
   const parsed = parser.parse(xml) as XmlNode;
   const stylesRoot = asObject(parsed.styles);
   const styleNodes = asArray(stylesRoot.style).map((styleValue) => asObject(styleValue));
-  const defaults = parseDocDefaults(stylesRoot.docDefaults);
+  const defaults = parseDocDefaults(stylesRoot.docDefaults, numberingContext);
   const paragraph = styleNodes
     .filter((style) => style.type === "paragraph" && typeof style.styleId === "string" && !isBuiltInParagraphStyleId(style.styleId))
     .map((style) => {
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
       const next = asObject(style.next);
-      const paragraph = parseStyleParagraphProperties(style.pPr);
+      const paragraph = parseStyleParagraphProperties(style.pPr, numberingContext);
       const run = parseStyleRunProperties(style.rPr);
 
       return {
@@ -744,10 +744,10 @@ async function parseStyles(zip: JSZip): Promise<DocumentStyles | undefined> {
   return Object.keys(styles).length > 0 ? styles : undefined;
 }
 
-function parseDocDefaults(value: unknown): DocumentStyles["defaults"] | undefined {
+function parseDocDefaults(value: unknown, numberingContext: NumberingContext): DocumentStyles["defaults"] | undefined {
   const defaults = asObject(value);
   const run = parseStyleRunProperties(asObject(defaults.rPrDefault).rPr);
-  const paragraph = parseStyleParagraphProperties(asObject(defaults.pPrDefault).pPr);
+  const paragraph = parseStyleParagraphProperties(asObject(defaults.pPrDefault).pPr, numberingContext);
   const parsed = {
     ...(run ? { run } : {}),
     ...(paragraph ? { paragraph } : {}),
@@ -792,11 +792,13 @@ function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition
     });
 }
 
-function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties | undefined {
+function parseStyleParagraphProperties(value: unknown, numberingContext: NumberingContext = { listTypes: new Map([[1, "bullet"], [2, "ordered"]]) }): StyleParagraphProperties | undefined {
   const properties = asObject(value);
   const alignment = asObject(properties.jc);
   const spacing = parseParagraphSpacing(properties.spacing);
   const indent = parseParagraphIndent(properties.ind);
+  const list = parseListSettings(properties.numPr, numberingContext);
+  const outlineLevel = asObject(properties.outlineLvl);
   const shading = parseShading(properties.shd);
   const borders = parseParagraphBorders(properties.pBdr);
   const pagination = parseParagraphPagination(properties);
@@ -806,6 +808,8 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
     ...(spacing ? { spacing } : {}),
     ...(indent ? { indent } : {}),
+    ...(list ? { list } : {}),
+    ...(outlineLevel.val !== undefined ? { outlineLevel: parseNumber(outlineLevel.val) } : {}),
     ...(shading ? { shading } : {}),
     ...(borders ? { borders } : {}),
     ...(pagination ? { pagination } : {}),

@@ -334,6 +334,8 @@ export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
   spacing?: ParagraphSpacing;
   indent?: ParagraphIndent;
+  list?: ListSettings;
+  outlineLevel?: number;
   shading?: ShadingDefinition;
   borders?: ParagraphBorders;
   pagination?: ParagraphPagination;

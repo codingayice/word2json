@@ -6391,6 +6391,36 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="KeepHeading"><w:name w:val="Keep Heading"/><w:pPr><w:keepNext/><w:keepLines/><w:pageBreakBefore/></w:pPr></w:style>');
   });
 
+  it("writes paragraph style outline and numbering properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "ListedHeading",
+          name: "Listed Heading",
+          paragraph: {
+            list: { type: "ordered" as const, level: 1, numberingId: 10 },
+            outlineLevel: 2,
+          },
+        }],
+      },
+      numbering: {
+        abstractNums: [{
+          id: 9,
+          levels: [{ level: 1, format: "decimal" as const, text: "%2.", start: 1, left: 720, hanging: 360 }],
+        }],
+        nums: [{ id: 10, abstractId: 9 }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "ListedHeading", runs: [{ text: "Heading" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ListedHeading"><w:name w:val="Listed Heading"/><w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="10"/></w:numPr><w:outlineLvl w:val="2"/></w:pPr></w:style>');
+  });
+
   it("writes explicit off paragraph style pagination properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -13434,6 +13464,35 @@ describe("DOCX reader", () => {
         }],
       },
       sections: [{ blocks: [{ type: "paragraph" as const, styleId: "KeepHeading", runs: [{ text: "Heading" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph style outline and numbering properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "ListedHeading",
+          name: "Listed Heading",
+          paragraph: {
+            list: { type: "ordered" as const, level: 1, numberingId: 10 },
+            outlineLevel: 2,
+          },
+        }],
+      },
+      numbering: {
+        abstractNums: [{
+          id: 9,
+          levels: [{ level: 1, format: "decimal" as const, text: "%2.", start: 1, left: 720, hanging: 360 }],
+        }],
+        nums: [{ id: 10, abstractId: 9 }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "ListedHeading", runs: [{ text: "Heading" }] }] }],
     };
 
     const docx = await buildDocx(source);
