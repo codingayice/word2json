@@ -6306,6 +6306,33 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/><w:ind w:firstLine="420"/></w:pPr></w:pPrDefault>');
   });
 
+  it("writes latent style metadata", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        latentStyles: {
+          defaultLocked: false,
+          defaultUiPriority: 99,
+          defaultSemiHidden: true,
+          defaultUnhideWhenUsed: true,
+          defaultQFormat: false,
+          count: 276,
+          exceptions: [
+            { name: "Normal", semiHidden: false, uiPriority: 0, unhideWhenUsed: false, qFormat: true },
+            { name: "heading 1", uiPriority: 9, qFormat: true },
+          ],
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:latentStyles w:defLockedState="0" w:defUIPriority="99" w:defSemiHidden="1" w:defUnhideWhenUsed="1" w:defQFormat="0" w:count="276"><w:lsdException w:name="Normal" w:semiHidden="0" w:uiPriority="0" w:unhideWhenUsed="0" w:qFormat="1"/><w:lsdException w:name="heading 1" w:uiPriority="9" w:qFormat="1"/></w:latentStyles>');
+  });
+
   it("writes paragraph style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -13498,6 +13525,32 @@ describe("DOCX reader", () => {
         },
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Paragraph defaults" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips latent style metadata", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        latentStyles: {
+          defaultLocked: false,
+          defaultUiPriority: 99,
+          defaultSemiHidden: true,
+          defaultUnhideWhenUsed: true,
+          defaultQFormat: false,
+          count: 276,
+          exceptions: [
+            { name: "Normal", semiHidden: false, uiPriority: 0, unhideWhenUsed: false, qFormat: true },
+            { name: "heading 1", uiPriority: 9, qFormat: true },
+          ],
+        },
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Styles" }] }] }],
     };
 
     const docx = await buildDocx(source);

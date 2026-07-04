@@ -715,6 +715,7 @@ async function parseStyles(zip: JSZip, numberingContext: NumberingContext): Prom
   const stylesRoot = asObject(parsed.styles);
   const styleNodes = asArray(stylesRoot.style).map((styleValue) => asObject(styleValue));
   const defaults = parseDocDefaults(stylesRoot.docDefaults, numberingContext);
+  const latentStyles = parseLatentStyles(stylesRoot.latentStyles);
   const paragraph = styleNodes
     .filter((style) => style.type === "paragraph" && typeof style.styleId === "string" && shouldImportParagraphStyle(style))
     .map((style) => {
@@ -739,12 +740,47 @@ async function parseStyles(zip: JSZip, numberingContext: NumberingContext): Prom
   const table = parseTableStyleDefinitions(styleNodes);
   const styles: DocumentStyles = {
     ...(defaults ? { defaults } : {}),
+    ...(latentStyles ? { latentStyles } : {}),
     ...(paragraph.length > 0 ? { paragraph } : {}),
     ...(character.length > 0 ? { character } : {}),
     ...(table.length > 0 ? { table } : {}),
   };
 
   return Object.keys(styles).length > 0 ? styles : undefined;
+}
+
+function parseLatentStyles(value: unknown): DocumentStyles["latentStyles"] | undefined {
+  const latentStyles = asObject(value);
+  const exceptions = asArray(latentStyles.lsdException)
+    .map(parseLatentStyleException)
+    .filter((exception): exception is NonNullable<NonNullable<DocumentStyles["latentStyles"]>["exceptions"]>[number] => exception !== undefined);
+  const parsed = {
+    ...(latentStyles.defLockedState !== undefined ? { defaultLocked: parseOnOff(latentStyles.defLockedState) } : {}),
+    ...(latentStyles.defUIPriority !== undefined ? { defaultUiPriority: parseNumber(latentStyles.defUIPriority) } : {}),
+    ...(latentStyles.defSemiHidden !== undefined ? { defaultSemiHidden: parseOnOff(latentStyles.defSemiHidden) } : {}),
+    ...(latentStyles.defUnhideWhenUsed !== undefined ? { defaultUnhideWhenUsed: parseOnOff(latentStyles.defUnhideWhenUsed) } : {}),
+    ...(latentStyles.defQFormat !== undefined ? { defaultQFormat: parseOnOff(latentStyles.defQFormat) } : {}),
+    ...(latentStyles.count !== undefined ? { count: parseNumber(latentStyles.count) } : {}),
+    ...(exceptions.length > 0 ? { exceptions } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseLatentStyleException(value: unknown): NonNullable<NonNullable<DocumentStyles["latentStyles"]>["exceptions"]>[number] | undefined {
+  const exception = asObject(value);
+  if (typeof exception.name !== "string") {
+    return undefined;
+  }
+
+  return {
+    name: exception.name,
+    ...(exception.locked !== undefined ? { locked: parseOnOff(exception.locked) } : {}),
+    ...(exception.uiPriority !== undefined ? { uiPriority: parseNumber(exception.uiPriority) } : {}),
+    ...(exception.semiHidden !== undefined ? { semiHidden: parseOnOff(exception.semiHidden) } : {}),
+    ...(exception.unhideWhenUsed !== undefined ? { unhideWhenUsed: parseOnOff(exception.unhideWhenUsed) } : {}),
+    ...(exception.qFormat !== undefined ? { qFormat: parseOnOff(exception.qFormat) } : {}),
+  };
 }
 
 function parseDocDefaults(value: unknown, numberingContext: NumberingContext): DocumentStyles["defaults"] | undefined {

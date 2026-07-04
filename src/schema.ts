@@ -244,9 +244,29 @@ export type ThemeFormatScheme = {
 
 export type DocumentStyles = {
   defaults?: DocumentStyleDefaults;
+  latentStyles?: LatentStyles;
   paragraph?: ParagraphStyleDefinition[];
   character?: StyleDefinition[];
   table?: TableStyleDefinition[];
+};
+
+export type LatentStyles = {
+  defaultLocked?: boolean;
+  defaultUiPriority?: number;
+  defaultSemiHidden?: boolean;
+  defaultUnhideWhenUsed?: boolean;
+  defaultQFormat?: boolean;
+  count?: number;
+  exceptions?: LatentStyleException[];
+};
+
+export type LatentStyleException = {
+  name: string;
+  locked?: boolean;
+  uiPriority?: number;
+  semiHidden?: boolean;
+  unhideWhenUsed?: boolean;
+  qFormat?: boolean;
 };
 
 export type DocumentStyleDefaults = {

@@ -4,6 +4,7 @@ import type {
   DocumentBlock,
   DocumentJson,
   ImageNode,
+  LatentStyleException,
   MathControlProperties,
   MathNode,
   PageSettings,
@@ -2096,6 +2097,7 @@ function padThemeColors(colors: string[] | undefined, defaults: string[]): strin
 
 function stylesXml(document: DocumentJson): string {
   const defaults = document.styles?.defaults ? docDefaultsXml(document.styles.defaults) : "";
+  const latentStyles = document.styles?.latentStyles ? latentStylesXml(document.styles.latentStyles) : "";
   const customParagraphStyleIds = new Set((document.styles?.paragraph ?? []).map((style) => style.id));
   const builtInParagraphStyles = builtInParagraphStyleXml()
     .filter((style) => !customParagraphStyleIds.has(style.id))
@@ -2122,11 +2124,44 @@ function stylesXml(document: DocumentJson): string {
     `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
       builtInParagraphStyles +
       defaults +
+      latentStyles +
       paragraphStyles +
       characterStyles +
       tableStyles +
       `</w:styles>`,
   );
+}
+
+function latentStylesXml(latentStyles: NonNullable<DocumentJson["styles"]>["latentStyles"]): string {
+  if (!latentStyles) {
+    return "";
+  }
+
+  const attributes = [
+    latentStyles.defaultLocked !== undefined ? ` w:defLockedState="${onOffValue(latentStyles.defaultLocked)}"` : "",
+    latentStyles.defaultUiPriority !== undefined ? ` w:defUIPriority="${latentStyles.defaultUiPriority}"` : "",
+    latentStyles.defaultSemiHidden !== undefined ? ` w:defSemiHidden="${onOffValue(latentStyles.defaultSemiHidden)}"` : "",
+    latentStyles.defaultUnhideWhenUsed !== undefined ? ` w:defUnhideWhenUsed="${onOffValue(latentStyles.defaultUnhideWhenUsed)}"` : "",
+    latentStyles.defaultQFormat !== undefined ? ` w:defQFormat="${onOffValue(latentStyles.defaultQFormat)}"` : "",
+    latentStyles.count !== undefined ? ` w:count="${latentStyles.count}"` : "",
+  ].join("");
+  const exceptions = (latentStyles.exceptions ?? []).map(latentStyleExceptionXml).join("");
+
+  return attributes || exceptions ? `<w:latentStyles${attributes}>${exceptions}</w:latentStyles>` : "";
+}
+
+function latentStyleExceptionXml(exception: LatentStyleException): string {
+  return `<w:lsdException w:name="${escapeAttribute(exception.name)}"` +
+    (exception.locked !== undefined ? ` w:locked="${onOffValue(exception.locked)}"` : "") +
+    (exception.semiHidden !== undefined ? ` w:semiHidden="${onOffValue(exception.semiHidden)}"` : "") +
+    (exception.uiPriority !== undefined ? ` w:uiPriority="${exception.uiPriority}"` : "") +
+    (exception.unhideWhenUsed !== undefined ? ` w:unhideWhenUsed="${onOffValue(exception.unhideWhenUsed)}"` : "") +
+    (exception.qFormat !== undefined ? ` w:qFormat="${onOffValue(exception.qFormat)}"` : "") +
+    "/>";
+}
+
+function onOffValue(value: boolean): "0" | "1" {
+  return value ? "1" : "0";
 }
 
 function builtInParagraphStyleXml(): { id: string; xml: string }[] {
