@@ -861,6 +861,8 @@ export type ImageFloatingLayout = {
   verticalOffset: number;
   horizontalRelativeFrom?: "page" | "margin" | "column" | "character";
   verticalRelativeFrom?: "page" | "margin" | "paragraph" | "line";
+  horizontalAlign?: "left" | "center" | "right" | "inside" | "outside";
+  verticalAlign?: "top" | "center" | "bottom" | "inside" | "outside";
   distanceTop?: number;
   distanceBottom?: number;
   distanceLeft?: number;

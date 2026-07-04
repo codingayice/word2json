@@ -5075,6 +5075,34 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<wp:positionV relativeFrom="paragraph"><wp:posOffset>720</wp:posOffset></wp:positionV>');
   });
 
+  it("writes floating image alignment positioning", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const document = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 0,
+          verticalOffset: 0,
+          horizontalRelativeFrom: "margin",
+          horizontalAlign: "center",
+          verticalAlign: "bottom",
+        },
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<wp:positionH relativeFrom="margin"><wp:align>center</wp:align></wp:positionH>');
+    expect(xml).toContain('<wp:positionV relativeFrom="page"><wp:align>bottom</wp:align></wp:positionV>');
+  });
+
   it("writes floating image distances and layout flags", async () => {
     const imageData = Buffer.from("fake-png").toString("base64");
     const document = createDocumentJson([
@@ -11412,6 +11440,32 @@ describe("DOCX reader", () => {
           verticalOffset: 720,
           horizontalRelativeFrom: "margin",
           verticalRelativeFrom: "paragraph",
+        },
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating image alignment positioning", async () => {
+    const imageData = Buffer.from("fake-png").toString("base64");
+    const source = createDocumentJson([
+      {
+        type: "image",
+        data: imageData,
+        contentType: "image/png",
+        width: 120,
+        height: 80,
+        floating: {
+          wrap: "square",
+          horizontalOffset: 0,
+          verticalOffset: 0,
+          horizontalRelativeFrom: "margin",
+          horizontalAlign: "center",
+          verticalAlign: "bottom",
         },
       },
     ]);

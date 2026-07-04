@@ -1543,8 +1543,8 @@ function imageXml(image: ImageNode, context: WriterContext): string {
       (image.floating.distanceLeft !== undefined ? ` distL="${image.floating.distanceLeft}"` : "") +
       (image.floating.distanceRight !== undefined ? ` distR="${image.floating.distanceRight}"` : "") +
       ` behindDoc="${image.floating.behindDoc ? "1" : "0"}" locked="0" layoutInCell="${image.floating.layoutInCell === false ? "0" : "1"}" allowOverlap="${image.floating.allowOverlap === false ? "0" : "1"}">` +
-      `<wp:positionH relativeFrom="${image.floating.horizontalRelativeFrom ?? "page"}"><wp:posOffset>${image.floating.horizontalOffset}</wp:posOffset></wp:positionH>` +
-      `<wp:positionV relativeFrom="${image.floating.verticalRelativeFrom ?? "page"}"><wp:posOffset>${image.floating.verticalOffset}</wp:posOffset></wp:positionV>` +
+      imagePositionHXml(image.floating) +
+      imagePositionVXml(image.floating) +
       imageWrapXml(image.floating.wrap) +
       graphic +
       `</wp:anchor>`
@@ -1553,6 +1553,22 @@ function imageXml(image: ImageNode, context: WriterContext): string {
   return `<w:p><w:r><w:drawing>` +
     drawing +
     `</w:drawing></w:r></w:p>`;
+}
+
+function imagePositionHXml(floating: NonNullable<ImageNode["floating"]>): string {
+  const position = floating.horizontalAlign
+    ? `<wp:align>${floating.horizontalAlign}</wp:align>`
+    : `<wp:posOffset>${floating.horizontalOffset}</wp:posOffset>`;
+
+  return `<wp:positionH relativeFrom="${floating.horizontalRelativeFrom ?? "page"}">${position}</wp:positionH>`;
+}
+
+function imagePositionVXml(floating: NonNullable<ImageNode["floating"]>): string {
+  const position = floating.verticalAlign
+    ? `<wp:align>${floating.verticalAlign}</wp:align>`
+    : `<wp:posOffset>${floating.verticalOffset}</wp:posOffset>`;
+
+  return `<wp:positionV relativeFrom="${floating.verticalRelativeFrom ?? "page"}">${position}</wp:positionV>`;
 }
 
 function imageWrapXml(wrap: NonNullable<ImageNode["floating"]>["wrap"]): string {

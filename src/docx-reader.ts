@@ -1487,12 +1487,19 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
     return undefined;
   }
 
+  const positionH = asObject(anchor.positionH);
+  const positionV = asObject(anchor.positionV);
+  const horizontalAlign = parseImageHorizontalAlign(positionH.align);
+  const verticalAlign = parseImageVerticalAlign(positionV.align);
+
   return {
     wrap: parseImageWrap(anchor),
-    horizontalOffset: parseNumber(asObject(anchor.positionH).posOffset),
-    verticalOffset: parseNumber(asObject(anchor.positionV).posOffset),
-    ...parseImageHorizontalRelativeFrom(asObject(anchor.positionH).relativeFrom),
-    ...parseImageVerticalRelativeFrom(asObject(anchor.positionV).relativeFrom),
+    horizontalOffset: horizontalAlign ? 0 : parseNumber(positionH.posOffset),
+    verticalOffset: verticalAlign ? 0 : parseNumber(positionV.posOffset),
+    ...parseImageHorizontalRelativeFrom(positionH.relativeFrom),
+    ...parseImageVerticalRelativeFrom(positionV.relativeFrom),
+    ...(horizontalAlign ? { horizontalAlign } : {}),
+    ...(verticalAlign ? { verticalAlign } : {}),
     ...(anchor.distT !== undefined ? { distanceTop: parseNumber(anchor.distT) } : {}),
     ...(anchor.distB !== undefined ? { distanceBottom: parseNumber(anchor.distB) } : {}),
     ...(anchor.distL !== undefined ? { distanceLeft: parseNumber(anchor.distL) } : {}),
@@ -1501,6 +1508,18 @@ function parseImageFloating(drawing: XmlNode): ImageNode["floating"] | undefined
     ...(anchor.allowOverlap !== undefined && !parseOnOff(anchor.allowOverlap) ? { allowOverlap: false } : {}),
     ...(anchor.layoutInCell !== undefined && !parseOnOff(anchor.layoutInCell) ? { layoutInCell: false } : {}),
   };
+}
+
+function parseImageHorizontalAlign(value: unknown): NonNullable<NonNullable<ImageNode["floating"]>["horizontalAlign"]> | undefined {
+  return value === "left" || value === "center" || value === "right" || value === "inside" || value === "outside"
+    ? value
+    : undefined;
+}
+
+function parseImageVerticalAlign(value: unknown): NonNullable<NonNullable<ImageNode["floating"]>["verticalAlign"]> | undefined {
+  return value === "top" || value === "center" || value === "bottom" || value === "inside" || value === "outside"
+    ? value
+    : undefined;
 }
 
 function parseImageHorizontalRelativeFrom(value: unknown): Pick<NonNullable<ImageNode["floating"]>, "horizontalRelativeFrom"> | {} {
