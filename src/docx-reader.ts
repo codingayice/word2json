@@ -763,8 +763,8 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const emphasis = asObject(properties.em);
   const border = parseBorder(properties.bdr);
   const parsed = {
-    ...(properties.b !== undefined ? { bold: true } : {}),
-    ...(properties.i !== undefined ? { italic: true } : {}),
+    ...parseStyleOnOffRunProperty(properties.b, "bold"),
+    ...parseStyleOnOffRunProperty(properties.i, "italic"),
     ...parseUnderline(properties.u),
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
     ...(typeof fonts.eastAsia === "string" ? { eastAsiaFontFamily: fonts.eastAsia } : {}),
@@ -779,22 +779,22 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
     ...(typeof complexScriptSize.val === "string" ? { complexScriptFontSize: Number.parseInt(complexScriptSize.val, 10) / 2 } : {}),
     ...(typeof color.val === "string" ? { color: color.val } : {}),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<StyleRunProperties["highlight"]> } : {}),
-    ...(properties.strike !== undefined ? { strike: true } : {}),
-    ...(properties.dstrike !== undefined ? { doubleStrike: true } : {}),
-    ...(properties.smallCaps !== undefined ? { smallCaps: true } : {}),
-    ...(properties.caps !== undefined ? { allCaps: true } : {}),
-    ...(properties.shadow !== undefined ? { shadow: true } : {}),
-    ...(properties.outline !== undefined ? { outline: true } : {}),
-    ...(properties.emboss !== undefined ? { emboss: true } : {}),
-    ...(properties.imprint !== undefined ? { imprint: true } : {}),
-    ...(properties.rtl !== undefined ? { rtl: true } : {}),
-    ...(properties.cs !== undefined ? { complexScript: true } : {}),
-    ...(properties.specVanish !== undefined ? { specVanish: true } : {}),
-    ...(properties.vanish !== undefined ? { hidden: true } : {}),
-    ...(properties.webHidden !== undefined ? { webHidden: true } : {}),
-    ...(properties.snapToGrid !== undefined ? { snapToGrid: true } : {}),
-    ...(properties.noProof !== undefined ? { noProof: true } : {}),
-    ...(properties.oMath !== undefined ? { officeMath: true } : {}),
+    ...parseStyleOnOffRunProperty(properties.strike, "strike"),
+    ...parseStyleOnOffRunProperty(properties.dstrike, "doubleStrike"),
+    ...parseStyleOnOffRunProperty(properties.smallCaps, "smallCaps"),
+    ...parseStyleOnOffRunProperty(properties.caps, "allCaps"),
+    ...parseStyleOnOffRunProperty(properties.shadow, "shadow"),
+    ...parseStyleOnOffRunProperty(properties.outline, "outline"),
+    ...parseStyleOnOffRunProperty(properties.emboss, "emboss"),
+    ...parseStyleOnOffRunProperty(properties.imprint, "imprint"),
+    ...parseStyleOnOffRunProperty(properties.rtl, "rtl"),
+    ...parseStyleOnOffRunProperty(properties.cs, "complexScript"),
+    ...parseStyleOnOffRunProperty(properties.specVanish, "specVanish"),
+    ...parseStyleOnOffRunProperty(properties.vanish, "hidden"),
+    ...parseStyleOnOffRunProperty(properties.webHidden, "webHidden"),
+    ...parseStyleOnOffRunProperty(properties.snapToGrid, "snapToGrid"),
+    ...parseStyleOnOffRunProperty(properties.noProof, "noProof"),
+    ...parseStyleOnOffRunProperty(properties.oMath, "officeMath"),
     ...(language ? { language } : {}),
     ...(characterPosition.val !== undefined ? { characterPosition: parseNumber(characterPosition.val) } : {}),
     ...(kerning.val !== undefined ? { kerning: parseNumber(kerning.val) } : {}),
@@ -809,6 +809,14 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseStyleOnOffRunProperty<K extends keyof StyleRunProperties>(value: unknown, key: K): Partial<Pick<StyleRunProperties, K>> {
+  if (value === undefined) {
+    return {};
+  }
+  const val = asObject(value).val;
+  return { [key]: !(val === "0" || val === false || val === "false") } as Partial<Pick<StyleRunProperties, K>>;
 }
 
 function parseStyleTableProperties(value: unknown): TableStyleDefinition["table"] | undefined {

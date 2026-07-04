@@ -1621,30 +1621,30 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
   }
 
   const properties = [
-    run.bold ? "<w:b/>" : "",
-    run.italic ? "<w:i/>" : "",
+    styleOnOffXml("b", run.bold),
+    styleOnOffXml("i", run.italic),
     run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
     styleRunFontsXml(run),
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.complexScriptFontSize ? `<w:szCs w:val="${run.complexScriptFontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
-    run.strike ? "<w:strike/>" : "",
-    run.doubleStrike ? "<w:dstrike/>" : "",
-    run.smallCaps ? "<w:smallCaps/>" : "",
-    run.allCaps ? "<w:caps/>" : "",
-    run.shadow ? "<w:shadow/>" : "",
-    run.outline ? "<w:outline/>" : "",
-    run.emboss ? "<w:emboss/>" : "",
-    run.imprint ? "<w:imprint/>" : "",
-    run.rtl ? "<w:rtl/>" : "",
-    run.complexScript ? "<w:cs/>" : "",
-    run.specVanish ? "<w:specVanish/>" : "",
-    run.hidden ? "<w:vanish/>" : "",
-    run.webHidden ? "<w:webHidden/>" : "",
-    run.snapToGrid ? "<w:snapToGrid/>" : "",
-    run.noProof ? "<w:noProof/>" : "",
-    run.officeMath ? "<w:oMath/>" : "",
+    styleOnOffXml("strike", run.strike),
+    styleOnOffXml("dstrike", run.doubleStrike),
+    styleOnOffXml("smallCaps", run.smallCaps),
+    styleOnOffXml("caps", run.allCaps),
+    styleOnOffXml("shadow", run.shadow),
+    styleOnOffXml("outline", run.outline),
+    styleOnOffXml("emboss", run.emboss),
+    styleOnOffXml("imprint", run.imprint),
+    styleOnOffXml("rtl", run.rtl),
+    styleOnOffXml("cs", run.complexScript),
+    styleOnOffXml("specVanish", run.specVanish),
+    styleOnOffXml("vanish", run.hidden),
+    styleOnOffXml("webHidden", run.webHidden),
+    styleOnOffXml("snapToGrid", run.snapToGrid),
+    styleOnOffXml("noProof", run.noProof),
+    styleOnOffXml("oMath", run.officeMath),
     run.language ? runLanguageXml(run.language) : "",
     run.characterPosition !== undefined ? `<w:position w:val="${run.characterPosition}"/>` : "",
     run.kerning !== undefined ? `<w:kern w:val="${run.kerning}"/>` : "",
@@ -1657,6 +1657,10 @@ function styleRunPropertiesXml(run?: StyleRunProperties): string {
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
+}
+
+function styleOnOffXml(tag: string, value: boolean | undefined): string {
+  return value !== undefined ? (value ? `<w:${tag}/>` : `<w:${tag} w:val="0"/>`) : "";
 }
 
 function styleRunFontsXml(run: StyleRunProperties): string {

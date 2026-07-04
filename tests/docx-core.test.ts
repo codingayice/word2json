@@ -5227,6 +5227,45 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:fitText w:val="1440" w:id="11"/><w:em w:val="underDot"/></w:rPr>');
   });
 
+  it("writes style run explicit off boolean properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "ExplicitOffText",
+          name: "Explicit Off Text",
+          run: {
+            bold: false,
+            italic: false,
+            strike: false,
+            doubleStrike: false,
+            smallCaps: false,
+            allCaps: false,
+            shadow: false,
+            outline: false,
+            emboss: false,
+            imprint: false,
+            rtl: false,
+            complexScript: false,
+            specVanish: false,
+            hidden: false,
+            webHidden: false,
+            snapToGrid: false,
+            noProof: false,
+            officeMath: false,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Off", styleId: "ExplicitOffText" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:rPr><w:b w:val="0"/><w:i w:val="0"/><w:strike w:val="0"/><w:dstrike w:val="0"/><w:smallCaps w:val="0"/><w:caps w:val="0"/><w:shadow w:val="0"/><w:outline w:val="0"/><w:emboss w:val="0"/><w:imprint w:val="0"/><w:rtl w:val="0"/><w:cs w:val="0"/><w:specVanish w:val="0"/><w:vanish w:val="0"/><w:webHidden w:val="0"/><w:snapToGrid w:val="0"/><w:noProof w:val="0"/><w:oMath w:val="0"/></w:rPr>');
+  });
+
   it("writes table style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -10271,6 +10310,44 @@ describe("DOCX reader", () => {
         }],
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Fit", styleId: "CompressedText" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run explicit off boolean properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "ExplicitOffText",
+          name: "Explicit Off Text",
+          run: {
+            bold: false,
+            italic: false,
+            strike: false,
+            doubleStrike: false,
+            smallCaps: false,
+            allCaps: false,
+            shadow: false,
+            outline: false,
+            emboss: false,
+            imprint: false,
+            rtl: false,
+            complexScript: false,
+            specVanish: false,
+            hidden: false,
+            webHidden: false,
+            snapToGrid: false,
+            noProof: false,
+            officeMath: false,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Off", styleId: "ExplicitOffText" }] }] }],
     };
 
     const docx = await buildDocx(source);
