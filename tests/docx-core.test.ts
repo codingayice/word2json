@@ -6846,6 +6846,26 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:style w:type="character" w:styleId="DefinedTerm"><w:name w:val="Defined Term"/><w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="SimSun" w:cs="Arial" w:asciiTheme="majorHAnsi" w:hAnsiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:cstheme="majorBidi" w:hint="eastAsia"/></w:rPr></w:style>');
   });
 
+  it("writes style revision ids", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "ReviewedText",
+          name: "Reviewed Text",
+          revisionId: "00FC693F",
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Reviewed" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="character" w:styleId="ReviewedText"><w:name w:val="Reviewed Text"/><w:rsid w:val="00FC693F"/></w:style>');
+  });
+
   it("writes character style underline none", async () => {
     const document = {
       version: "1.0" as const,
@@ -13582,6 +13602,29 @@ describe("DOCX reader", () => {
           ],
         },
       ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style revision ids", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          { id: "Normal", name: "Normal", revisionId: "00FC693F" },
+        ],
+        character: [
+          { id: "ReviewedText", name: "Reviewed Text", revisionId: "00E618BF" },
+        ],
+        table: [
+          { id: "ReviewedTable", name: "Reviewed Table", revisionId: "00FC693F" },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Reviewed" }] }] }],
     };
 
     const docx = await buildDocx(source);

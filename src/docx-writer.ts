@@ -2196,13 +2196,14 @@ function styleDefinitionXml(type: "character" | "table", style: StyleDefinition,
     `</w:style>`;
 }
 
-function styleMetadataXml(style: Pick<StyleDefinition, "linkedStyle" | "uiPriority" | "semiHidden" | "unhideWhenUsed" | "qFormat">): string {
+function styleMetadataXml(style: Pick<StyleDefinition, "linkedStyle" | "uiPriority" | "semiHidden" | "unhideWhenUsed" | "qFormat" | "revisionId">): string {
   return [
     style.linkedStyle ? `<w:link w:val="${escapeAttribute(style.linkedStyle)}"/>` : "",
     style.uiPriority !== undefined ? `<w:uiPriority w:val="${style.uiPriority}"/>` : "",
     style.semiHidden ? "<w:semiHidden/>" : "",
     style.unhideWhenUsed ? "<w:unhideWhenUsed/>" : "",
     style.qFormat ? "<w:qFormat/>" : "",
+    style.revisionId ? `<w:rsid w:val="${escapeAttribute(style.revisionId)}"/>` : "",
   ].join("");
 }
 

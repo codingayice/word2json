@@ -806,6 +806,7 @@ function shouldImportParagraphStyle(style: XmlNode): boolean {
   return style.pPr !== undefined ||
     style.rPr !== undefined ||
     style.next !== undefined ||
+    style.rsid !== undefined ||
     hasNonDefaultBase;
 }
 
@@ -852,6 +853,7 @@ function parseTableStyleDefinitions(styleNodes: XmlNode[]): TableStyleDefinition
 function parseStyleMetadata(style: XmlNode): Partial<StyleDefinition> {
   const link = asObject(style.link);
   const uiPriority = asObject(style.uiPriority);
+  const revisionId = asObject(style.rsid);
 
   return {
     ...(typeof link.val === "string" ? { linkedStyle: link.val } : {}),
@@ -859,6 +861,7 @@ function parseStyleMetadata(style: XmlNode): Partial<StyleDefinition> {
     ...(style.semiHidden !== undefined ? { semiHidden: true } : {}),
     ...(style.unhideWhenUsed !== undefined ? { unhideWhenUsed: true } : {}),
     ...(style.qFormat !== undefined ? { qFormat: true } : {}),
+    ...(typeof revisionId.val === "string" ? { revisionId: revisionId.val } : {}),
   };
 }
 

@@ -283,6 +283,7 @@ export type StyleDefinition = {
   semiHidden?: boolean;
   unhideWhenUsed?: boolean;
   qFormat?: boolean;
+  revisionId?: string;
   run?: StyleRunProperties;
 };
 
