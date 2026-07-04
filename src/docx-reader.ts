@@ -1724,11 +1724,13 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const matrixProperties = asObject(matrixNode.mPr);
         const baseJustification = matrixBaseJustificationValue(asObject(matrixProperties.baseJc).val);
         const columnJustifications = matrixColumnJustificationValues(matrixProperties.mcs);
+        const columnCounts = matrixColumnCountValues(matrixProperties.mcs);
         const controlProperties = parseMathControlProperties(asObject(matrixProperties.ctrlPr).rPr);
         return {
           type: "matrix" as const,
           ...(baseJustification ? { baseJustification } : {}),
           ...(columnJustifications.length > 0 ? { columnJustifications } : {}),
+          ...(columnCounts.length > 0 ? { columnCounts } : {}),
           ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(matrixNode.mr).map((row) =>
             asArray(asObject(row).e).map((cell) => parseMathNodes(asObject(cell))),
@@ -1982,6 +1984,16 @@ function matrixColumnJustificationValues(node: unknown): NonNullable<Extract<Mat
 function matrixColumnJustificationValue(node: unknown): "left" | "center" | "right" | undefined {
   const value = asObject(node).val;
   return value === "left" || value === "center" || value === "right" ? value : undefined;
+}
+
+function matrixColumnCountValues(node: unknown): number[] {
+  return asArray(asObject(node).mc)
+    .map((column) => {
+      const count = asObject(asObject(column).mcPr).count;
+      const value = asObject(count).val;
+      return value !== undefined ? parseNumber(value) : undefined;
+    })
+    .filter((value): value is number => value !== undefined);
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {

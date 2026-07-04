@@ -731,10 +731,10 @@ function mathNodeXml(node: MathNode): string {
 
   if (node.type === "matrix") {
     const controlProperties = mathControlPropertiesXml(node.controlProperties);
-    const columnJustifications = matrixColumnJustificationsXml(node.columnJustifications);
+    const columnProperties = matrixColumnPropertiesXml(node.columnJustifications, node.columnCounts);
     const properties = [
       node.baseJustification !== undefined ? `<m:baseJc m:val="${matrixBaseJustificationXml(node.baseJustification)}"/>` : "",
-      columnJustifications,
+      columnProperties,
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:m>${properties ? `<m:mPr>${properties}</m:mPr>` : ""}${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
@@ -879,11 +879,23 @@ function matrixBaseJustificationXml(value: Extract<MathNode, { type: "matrix" }>
   return value === "bottom" ? "bot" : value ?? "center";
 }
 
-function matrixColumnJustificationsXml(values: Extract<MathNode, { type: "matrix" }>["columnJustifications"]): string {
-  if (!values || values.length === 0) {
+function matrixColumnPropertiesXml(
+  justifications: Extract<MathNode, { type: "matrix" }>["columnJustifications"],
+  counts: Extract<MathNode, { type: "matrix" }>["columnCounts"],
+): string {
+  const columnCount = Math.max(justifications?.length ?? 0, counts?.length ?? 0);
+  if (columnCount === 0) {
     return "";
   }
-  return `<m:mcs>${values.map((value) => `<m:mc><m:mcPr><m:mcJc m:val="${value}"/></m:mcPr></m:mc>`).join("")}</m:mcs>`;
+  return `<m:mcs>${Array.from({ length: columnCount }, (_, index) => {
+    const count = counts?.[index];
+    const justification = justifications?.[index];
+    const properties = [
+      count !== undefined ? `<m:count m:val="${count}"/>` : "",
+      justification !== undefined ? `<m:mcJc m:val="${justification}"/>` : "",
+    ].join("");
+    return `<m:mc><m:mcPr>${properties}</m:mcPr></m:mc>`;
+  }).join("")}</m:mcs>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
