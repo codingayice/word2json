@@ -1931,8 +1931,16 @@ function barPositionValue(value: unknown): "top" | "bottom" {
   return value === "bottom" ? "bottom" : "top";
 }
 
-function naryOperatorValue(value: unknown): "sum" {
-  return value === "∑" ? "sum" : "sum";
+function naryOperatorValue(value: unknown): Extract<MathNode, { type: "nary" }>["operator"] {
+  const values = {
+    "∑": "sum",
+    "∫": "integral",
+    "∏": "product",
+    "∐": "coproduct",
+    "⋂": "intersection",
+    "⋃": "union",
+  } as const;
+  return typeof value === "string" && value in values ? values[value as keyof typeof values] : "sum";
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {

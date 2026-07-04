@@ -823,7 +823,7 @@ function mathNodeXml(node: MathNode): string {
   }
 
   const properties = mathControlPropertiesXml(node.controlProperties);
-  return `<m:nary><m:naryPr><m:chr m:val="∑"/>${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:naryPr>` +
+  return `<m:nary><m:naryPr>${naryOperatorXml(node.operator)}${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:naryPr>` +
     (node.lowerLimit ? `<m:sub>${node.lowerLimit.map((child) => mathNodeXml(child)).join("")}</m:sub>` : "") +
     (node.upperLimit ? `<m:sup>${node.upperLimit.map((child) => mathNodeXml(child)).join("")}</m:sup>` : "") +
     `<m:e>${node.body.map((child) => mathNodeXml(child)).join("")}</m:e></m:nary>`;
@@ -839,6 +839,18 @@ function fractionTypeXml(type: Extract<MathNode, { type: "fraction" }>["fraction
   }
   const value = type === "skewed" ? "skw" : type === "linear" ? "lin" : type;
   return `<m:type m:val="${value}"/>`;
+}
+
+function naryOperatorXml(operator: Extract<MathNode, { type: "nary" }>["operator"]): string {
+  const values = {
+    sum: "∑",
+    integral: "∫",
+    product: "∏",
+    coproduct: "∐",
+    intersection: "⋂",
+    union: "⋃",
+  } satisfies Record<Extract<MathNode, { type: "nary" }>["operator"], string>;
+  return `<m:chr m:val="${values[operator]}"/>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {
