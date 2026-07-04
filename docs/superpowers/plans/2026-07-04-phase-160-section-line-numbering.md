@@ -135,7 +135,7 @@ git diff --check
 
 Expected: all commands exit 0. Existing LF/CRLF warnings from `git diff --check` are acceptable if the exit code is 0.
 
-- [ ] **Step 3: Commit feature**
+- [x] **Step 3: Commit feature**
 
 Run:
 
@@ -145,7 +145,7 @@ git commit -m "feat: add phase 160 section line numbering"
 git push -u origin phase-160-section-line-numbering
 ```
 
-- [ ] **Step 4: Record push**
+- [x] **Step 4: Record push**
 
 Append a Push Record with the branch, commit hash, verification commands, and PR URL:
 
@@ -153,7 +153,7 @@ Append a Push Record with the branch, commit hash, verification commands, and PR
 https://github.com/codingayice/word2json/pull/new/phase-160-section-line-numbering
 ```
 
-- [ ] **Step 5: Commit push record**
+- [x] **Step 5: Commit push record**
 
 Run:
 
@@ -168,3 +168,14 @@ git push
 - Spec coverage: Covers line numbering start, count interval, text distance, restart mode, writer, reader, tests, verification, commit, push, and push record.
 - Placeholder scan: No placeholders or deferred implementation notes remain.
 - Type consistency: Uses `lineNumbering`, `start`, `countBy`, `distance`, and `restart` consistently across schema, writer, reader, and tests.
+
+## Push Record
+
+- Branch: `phase-160-section-line-numbering`
+- Feature commit: `a04b128 feat: add phase 160 section line numbering`
+- PR URL: `https://github.com/codingayice/word2json/pull/new/phase-160-section-line-numbering`
+- RED verification: `npm test -- tests/docx-core.test.ts -t "section line numbering settings"` failed with 2 expected failures before implementation.
+- GREEN targeted verification: `npm test -- tests/docx-core.test.ts -t "section line numbering settings"` passed with 2 tests.
+- Full verification: `npm test` passed with 462 tests.
+- Build verification: `npm run build` exited 0.
+- Whitespace verification: `git diff --check` exited 0 with existing LF/CRLF warnings.
