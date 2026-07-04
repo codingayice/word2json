@@ -433,7 +433,7 @@ export type MathNode =
   | { type: "function"; controlProperties?: MathControlProperties; name: MathNode[]; argument: MathNode[] }
   | { type: "limitLower"; controlProperties?: MathControlProperties; base: MathNode[]; limit: MathNode[] }
   | { type: "limitUpper"; controlProperties?: MathControlProperties; base: MathNode[]; limit: MathNode[] }
-  | { type: "equationArray"; controlProperties?: MathControlProperties; baseJustification?: "top" | "center" | "bottom"; rowSpacing?: number; rowSpacingRule?: "single" | "oneAndHalf" | "double" | "exactly" | "multiple"; objectDistribution?: boolean; maxDistribution?: boolean; rows: MathNode[][] }
+  | { type: "equationArray"; controlProperties?: MathControlProperties; baseJustification?: "top" | "center" | "bottom"; verticalJustification?: "top" | "bottom"; rowSpacing?: number; rowSpacingRule?: "single" | "oneAndHalf" | "double" | "exactly" | "multiple"; objectDistribution?: boolean; maxDistribution?: boolean; rows: MathNode[][] }
   | { type: "box"; controlProperties?: MathControlProperties; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
   | { type: "borderBox"; controlProperties?: MathControlProperties; hideTop?: boolean; hideBottom?: boolean; hideLeft?: boolean; hideRight?: boolean; content: MathNode[] }
   | { type: "phantom"; controlProperties?: MathControlProperties; show?: boolean; zeroWidth?: boolean; zeroAscent?: boolean; zeroDescent?: boolean; transparent?: boolean; content: MathNode[] }
