@@ -731,8 +731,10 @@ function mathNodeXml(node: MathNode): string {
 
   if (node.type === "matrix") {
     const controlProperties = mathControlPropertiesXml(node.controlProperties);
+    const columnJustifications = matrixColumnJustificationsXml(node.columnJustifications);
     const properties = [
       node.baseJustification !== undefined ? `<m:baseJc m:val="${matrixBaseJustificationXml(node.baseJustification)}"/>` : "",
+      columnJustifications,
       controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:m>${properties ? `<m:mPr>${properties}</m:mPr>` : ""}${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
@@ -875,6 +877,13 @@ function naryLimitLocationXml(location: Extract<MathNode, { type: "nary" }>["lim
 
 function matrixBaseJustificationXml(value: Extract<MathNode, { type: "matrix" }>["baseJustification"]): string {
   return value === "bottom" ? "bot" : value ?? "center";
+}
+
+function matrixColumnJustificationsXml(values: Extract<MathNode, { type: "matrix" }>["columnJustifications"]): string {
+  if (!values || values.length === 0) {
+    return "";
+  }
+  return `<m:mcs>${values.map((value) => `<m:mc><m:mcPr><m:mcJc m:val="${value}"/></m:mcPr></m:mc>`).join("")}</m:mcs>`;
 }
 
 function wrapRevisionIfNeeded(run: TextRun, runContent: string): string {

@@ -1723,10 +1723,12 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const matrixNode = asObject(matrix);
         const matrixProperties = asObject(matrixNode.mPr);
         const baseJustification = matrixBaseJustificationValue(asObject(matrixProperties.baseJc).val);
+        const columnJustifications = matrixColumnJustificationValues(matrixProperties.mcs);
         const controlProperties = parseMathControlProperties(asObject(matrixProperties.ctrlPr).rPr);
         return {
           type: "matrix" as const,
           ...(baseJustification ? { baseJustification } : {}),
+          ...(columnJustifications.length > 0 ? { columnJustifications } : {}),
           ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(matrixNode.mr).map((row) =>
             asArray(asObject(row).e).map((cell) => parseMathNodes(asObject(cell))),
@@ -1969,6 +1971,17 @@ function matrixBaseJustificationValue(value: unknown): Extract<MathNode, { type:
     return "bottom";
   }
   return undefined;
+}
+
+function matrixColumnJustificationValues(node: unknown): NonNullable<Extract<MathNode, { type: "matrix" }>["columnJustifications"]> {
+  return asArray(asObject(node).mc)
+    .map((column) => matrixColumnJustificationValue(asObject(asObject(column).mcPr).mcJc))
+    .filter((value): value is "left" | "center" | "right" => value !== undefined);
+}
+
+function matrixColumnJustificationValue(node: unknown): "left" | "center" | "right" | undefined {
+  const value = asObject(node).val;
+  return value === "left" || value === "center" || value === "right" ? value : undefined;
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
