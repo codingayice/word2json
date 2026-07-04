@@ -749,13 +749,23 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
 }
 
 function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNode["pagination"]> | undefined {
+  const keepNext = parsePaginationToggle(properties.keepNext);
+  const keepLines = parsePaginationToggle(properties.keepLines);
+  const pageBreakBefore = parsePaginationToggle(properties.pageBreakBefore);
   const pagination = {
-    ...(properties.keepNext !== undefined ? { keepNext: true } : {}),
-    ...(properties.keepLines !== undefined ? { keepLines: true } : {}),
-    ...(properties.pageBreakBefore !== undefined ? { pageBreakBefore: true } : {}),
+    ...(keepNext !== undefined ? { keepNext } : {}),
+    ...(keepLines !== undefined ? { keepLines } : {}),
+    ...(pageBreakBefore !== undefined ? { pageBreakBefore } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;
+}
+
+function parsePaginationToggle(value: unknown): boolean | undefined {
+  if (value === undefined) return undefined;
+
+  const rawValue = asObject(value).val;
+  return rawValue === "0" || rawValue === false || rawValue === "false" || rawValue === "off" ? false : true;
 }
 
 function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined {
@@ -1574,10 +1584,13 @@ function parseParagraphIndent(value: unknown): ParagraphNode["indent"] | undefin
 }
 
 function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | undefined {
+  const keepNext = parsePaginationToggle(properties.keepNext);
+  const keepLines = parsePaginationToggle(properties.keepLines);
+  const pageBreakBefore = parsePaginationToggle(properties.pageBreakBefore);
   const pagination = {
-    ...(properties.keepNext !== undefined ? { keepNext: true } : {}),
-    ...(properties.keepLines !== undefined ? { keepLines: true } : {}),
-    ...(properties.pageBreakBefore !== undefined ? { pageBreakBefore: true } : {}),
+    ...(keepNext !== undefined ? { keepNext } : {}),
+    ...(keepLines !== undefined ? { keepLines } : {}),
+    ...(pageBreakBefore !== undefined ? { pageBreakBefore } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;

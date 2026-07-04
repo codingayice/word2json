@@ -4624,6 +4624,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:pageBreakBefore/>");
   });
 
+  it("writes explicit off paragraph pagination controls", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        pagination: { keepNext: false, keepLines: false, pageBreakBefore: false },
+        runs: [{ text: "Loose paragraph" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:keepNext w:val="0"/>');
+    expect(xml).toContain('<w:keepLines w:val="0"/>');
+    expect(xml).toContain('<w:pageBreakBefore w:val="0"/>');
+  });
+
   it("writes paragraph spacing", async () => {
     const document = createDocumentJson([
       {
@@ -4952,6 +4970,28 @@ describe("DOCX writer", () => {
     const styles = await zip.file("word/styles.xml")!.async("string");
 
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="KeepHeading"><w:name w:val="Keep Heading"/><w:pPr><w:keepNext/><w:keepLines/><w:pageBreakBefore/></w:pPr></w:style>');
+  });
+
+  it("writes explicit off paragraph style pagination properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "LooseHeading",
+          name: "Loose Heading",
+          paragraph: {
+            pagination: { keepNext: false, keepLines: false, pageBreakBefore: false },
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "LooseHeading", runs: [{ text: "Heading" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="LooseHeading"><w:name w:val="Loose Heading"/><w:pPr><w:keepNext w:val="0"/><w:keepLines w:val="0"/><w:pageBreakBefore w:val="0"/></w:pPr></w:style>');
   });
 
   it("writes paragraph style borders and shading", async () => {
@@ -9791,6 +9831,34 @@ describe("DOCX reader", () => {
         runs: [{ text: "Controlled paragraph" }],
       },
     ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips explicit off paragraph pagination controls", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "LooseHeading",
+          name: "Loose Heading",
+          paragraph: {
+            pagination: { keepNext: false, keepLines: false, pageBreakBefore: false },
+          },
+        }],
+      },
+      sections: [{
+        blocks: [{
+          type: "paragraph" as const,
+          styleId: "LooseHeading",
+          pagination: { keepNext: false, keepLines: false, pageBreakBefore: false },
+          runs: [{ text: "Loose paragraph" }],
+        }],
+      }],
+    };
 
     const docx = await buildDocx(source);
     const parsed = await parseDocx(docx);

@@ -625,12 +625,17 @@ function paragraphIndentXml(indent: NonNullable<ParagraphNode["indent"]>): strin
     `/>`;
 }
 
+function paragraphPaginationToggleXml(name: string, value: boolean | undefined): string {
+  if (value === undefined) return "";
+  return value ? `<w:${name}/>` : `<w:${name} w:val="0"/>`;
+}
+
 function paragraphPaginationXml(pagination?: ParagraphNode["pagination"]): string {
   return pagination
     ? [
-      pagination.keepNext ? "<w:keepNext/>" : "",
-      pagination.keepLines ? "<w:keepLines/>" : "",
-      pagination.pageBreakBefore ? "<w:pageBreakBefore/>" : "",
+      paragraphPaginationToggleXml("keepNext", pagination.keepNext),
+      paragraphPaginationToggleXml("keepLines", pagination.keepLines),
+      paragraphPaginationToggleXml("pageBreakBefore", pagination.pageBreakBefore),
     ].join("")
     : "";
 }
