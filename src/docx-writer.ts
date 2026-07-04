@@ -341,6 +341,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   const lineNumbering = lineNumberingXml(section.lineNumbering);
   const footnoteProperties = notePropertiesXml("footnotePr", section.footnoteProperties);
   const endnoteProperties = notePropertiesXml("endnotePr", section.endnoteProperties);
+  const noEndnote = section.noEndnote ? "<w:noEndnote/>" : "";
   const documentGrid = documentGridXml(section.documentGrid);
   const verticalAlignment = section.verticalAlignment
     ? `<w:vAlign w:val="${section.verticalAlignment}"/>`
@@ -366,6 +367,7 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
     lineNumbering +
     footnoteProperties +
     endnoteProperties +
+    noEndnote +
     columns +
     documentGrid +
     verticalAlignment +

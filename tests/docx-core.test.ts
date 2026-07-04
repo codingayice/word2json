@@ -4924,6 +4924,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain("<w:bidi/>");
   });
 
+  it("writes section no endnote", async () => {
+    const document = {
+      version: "1.0" as const,
+      sections: [
+        {
+          noEndnote: true,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "No endnote here" }] }],
+        },
+      ],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:noEndnote/>");
+  });
+
   it("writes section mirror margins", async () => {
     const document = {
       version: "1.0" as const,
@@ -10725,6 +10743,23 @@ describe("DOCX reader", () => {
         {
           bidi: true,
           blocks: [{ type: "paragraph" as const, runs: [{ text: "Bidi section" }] }],
+        },
+      ],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips section no endnote", async () => {
+    const source = {
+      version: "1.0" as const,
+      sections: [
+        {
+          noEndnote: true,
+          blocks: [{ type: "paragraph" as const, runs: [{ text: "No endnote here" }] }],
         },
       ],
     };

@@ -372,6 +372,7 @@ export type SectionNode = {
   lineNumbering?: SectionLineNumbering;
   footnoteProperties?: SectionNoteProperties;
   endnoteProperties?: SectionNoteProperties;
+  noEndnote?: boolean;
   documentGrid?: SectionDocumentGrid;
   verticalAlignment?: SectionVerticalAlignment;
   textDirection?: SectionTextDirection;

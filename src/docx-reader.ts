@@ -1022,6 +1022,7 @@ async function parseSections(
     const lineNumbering = parseLineNumbering(body.sectPr);
     const footnoteProperties = parseNoteProperties(body.sectPr, "footnotePr");
     const endnoteProperties = parseNoteProperties(body.sectPr, "endnotePr");
+    const noEndnote = parseNoEndnote(body.sectPr);
     const documentGrid = parseDocumentGrid(body.sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(body.sectPr);
     const textDirection = parseSectionTextDirection(body.sectPr);
@@ -1034,6 +1035,7 @@ async function parseSections(
       ...(lineNumbering ? { lineNumbering } : {}),
       ...(footnoteProperties ? { footnoteProperties } : {}),
       ...(endnoteProperties ? { endnoteProperties } : {}),
+      ...(noEndnote ? { noEndnote } : {}),
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
       ...(textDirection ? { textDirection } : {}),
@@ -1055,6 +1057,7 @@ async function parseSections(
     const lineNumbering = parseLineNumbering(sectPr);
     const footnoteProperties = parseNoteProperties(sectPr, "footnotePr");
     const endnoteProperties = parseNoteProperties(sectPr, "endnotePr");
+    const noEndnote = parseNoEndnote(sectPr);
     const documentGrid = parseDocumentGrid(sectPr);
     const verticalAlignment = parseSectionVerticalAlignment(sectPr);
     const textDirection = parseSectionTextDirection(sectPr);
@@ -1069,6 +1072,7 @@ async function parseSections(
       ...(lineNumbering ? { lineNumbering } : {}),
       ...(footnoteProperties ? { footnoteProperties } : {}),
       ...(endnoteProperties ? { endnoteProperties } : {}),
+      ...(noEndnote ? { noEndnote } : {}),
       ...(documentGrid ? { documentGrid } : {}),
       ...(verticalAlignment ? { verticalAlignment } : {}),
       ...(textDirection ? { textDirection } : {}),
@@ -1638,6 +1642,10 @@ function parseNoteProperties(sectionPropertiesValue: unknown, key: "footnotePr" 
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseNoEndnote(sectionPropertiesValue: unknown): boolean | undefined {
+  return asObject(sectionPropertiesValue).noEndnote !== undefined ? true : undefined;
 }
 
 function parseDocumentGrid(sectionPropertiesValue: unknown): SectionNode["documentGrid"] | undefined {
