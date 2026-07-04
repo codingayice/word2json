@@ -1558,11 +1558,11 @@ function imageXml(image: ImageNode, context: WriterContext): string {
 }
 
 function imageEffectsXml(effects: ImageNode["effects"]): string {
-  if (!effects?.outerShadow && !effects?.glow) {
+  if (!effects?.outerShadow && !effects?.glow && !effects?.softEdge) {
     return "";
   }
 
-  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageGlowXml(effects.glow)}</a:effectLst>`;
+  return `<a:effectLst>${imageOuterShadowXml(effects.outerShadow)}${imageGlowXml(effects.glow)}${imageSoftEdgeXml(effects.softEdge)}</a:effectLst>`;
 }
 
 function imageOuterShadowXml(shadow: NonNullable<ImageNode["effects"]>["outerShadow"]): string {
@@ -1588,6 +1588,10 @@ function imageGlowXml(glow: NonNullable<ImageNode["effects"]>["glow"]): string {
 
   const radius = glow.radius !== undefined ? ` rad="${glow.radius}"` : "";
   return `<a:glow${radius}>${imageEffectColorXml(glow.color, glow.alpha)}</a:glow>`;
+}
+
+function imageSoftEdgeXml(softEdge: NonNullable<ImageNode["effects"]>["softEdge"]): string {
+  return softEdge ? `<a:softEdge rad="${softEdge.radius}"/>` : "";
 }
 
 function imageEffectColorXml(color: string | undefined, alpha: number | undefined): string {

@@ -852,6 +852,7 @@ export type ImageNode = {
 export type ImageEffects = {
   outerShadow?: ImageOuterShadowEffect;
   glow?: ImageGlowEffect;
+  softEdge?: ImageSoftEdgeEffect;
 };
 
 export type ImageOuterShadowEffect = {
@@ -868,6 +869,10 @@ export type ImageGlowEffect = {
   radius?: number;
   color?: string;
   alpha?: number;
+};
+
+export type ImageSoftEdgeEffect = {
+  radius: number;
 };
 
 export type ImageCrop = {

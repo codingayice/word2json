@@ -1640,6 +1640,7 @@ function parseImageEffects(inline: XmlNode): ImageNode["effects"] | undefined {
   const parsed = {
     ...parseImageOuterShadow(effects.outerShdw),
     ...parseImageGlow(effects.glow),
+    ...parseImageSoftEdge(effects.softEdge),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -1675,6 +1676,13 @@ function parseImageGlow(value: unknown): Pick<NonNullable<ImageNode["effects"]>,
       ...parseImageEffectColor(glow.srgbClr),
     },
   };
+}
+
+function parseImageSoftEdge(value: unknown): Pick<NonNullable<ImageNode["effects"]>, "softEdge"> | {} {
+  const softEdge = asObject(value);
+  return softEdge.rad !== undefined
+    ? { softEdge: { radius: parseNumber(softEdge.rad) } }
+    : {};
 }
 
 function parseImageEffectColor(value: unknown): Pick<NonNullable<NonNullable<ImageNode["effects"]>["glow"]>, "color" | "alpha"> {
