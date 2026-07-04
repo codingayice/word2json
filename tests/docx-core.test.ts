@@ -4070,6 +4070,24 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tblpPr w:leftFromText="180" w:rightFromText="180" w:topFromText="120" w:bottomFromText="120" w:horzAnchor="margin" w:vertAnchor="page" w:tblpX="720" w:tblpY="1440"/>');
   });
 
+  it("writes floating table overlap control", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        overlap: "never",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "No overlap" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblOverlap w:val="never"/>');
+  });
+
   it("writes percentage table width", async () => {
     const document = createDocumentJson([
       {
@@ -10244,6 +10262,23 @@ describe("DOCX reader", () => {
         },
         rows: [
           { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Floating" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips floating table overlap control", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        overlap: "never",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "No overlap" }] }] }] },
         ],
       },
     ]);

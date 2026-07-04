@@ -711,6 +711,7 @@ export type TableNode = {
   type: "table";
   styleId?: string;
   position?: TablePosition;
+  overlap?: "never" | "overlap";
   look?: TableLook;
   layout?: "autofit" | "fixed";
   grid?: number[];
