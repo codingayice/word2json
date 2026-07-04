@@ -6,6 +6,22 @@ import { describe, expect, it } from "vitest";
 import JSZip from "jszip";
 import { buildDocx, createDocumentJson, parseDocx } from "../src/index";
 
+function defaultThemeColors() {
+  return {
+    dark1: "000000",
+    light1: "FFFFFF",
+    dark2: "1F497D",
+    light2: "EEECE1",
+    accent2: "C0504D",
+    accent3: "9BBB59",
+    accent4: "8064A2",
+    accent5: "4BACC6",
+    accent6: "F79646",
+    hyperlink: "0000FF",
+    followedHyperlink: "800080",
+  };
+}
+
 describe("DocumentJson schema", () => {
   it("creates a versioned document with sections and paragraphs", () => {
     const document = createDocumentJson([
@@ -918,7 +934,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:f><m:fPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="30"/><w:color w:val="C55A11"/><w:highlight w:val="blue"/></w:rPr></m:ctrlPr></m:fPr><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f>');
+    expect(xml).toContain('<m:f><m:fPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="C55A11"/><w:sz w:val="30"/><w:highlight w:val="blue"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:fPr><m:num><m:r><m:t>1</m:t></m:r></m:num><m:den><m:r><m:t>2</m:t></m:r></m:den></m:f>');
   });
 
   it("writes fraction type", async () => {
@@ -984,7 +1000,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:sSup><m:sSupPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="24"/><w:color w:val="7030A0"/><w:highlight w:val="green"/></w:rPr></m:ctrlPr></m:sSupPr><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>');
+    expect(xml).toContain('<m:sSup><m:sSupPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="7030A0"/><w:sz w:val="24"/><w:highlight w:val="green"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:sSupPr><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>');
   });
 
   it("writes subscript control properties", async () => {
@@ -1021,7 +1037,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:sSub><m:sSubPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="22"/><w:color w:val="00B050"/><w:highlight w:val="magenta"/></w:rPr></m:ctrlPr></m:sSubPr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub></m:sSub>');
+    expect(xml).toContain('<m:sSub><m:sSubPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="00B050"/><w:sz w:val="22"/><w:highlight w:val="magenta"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:sSubPr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub></m:sSub>');
   });
 
   it("writes radical and n-ary office math runs", async () => {
@@ -1123,7 +1139,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:rad><m:radPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:radPr><m:deg><m:r><m:t>3</m:t></m:r></m:deg><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad>');
+    expect(xml).toContain('<m:rad><m:radPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:radPr><m:deg><m:r><m:t>3</m:t></m:r></m:deg><m:e><m:r><m:t>x</m:t></m:r></m:e></m:rad>');
   });
 
   it("writes nary control properties", async () => {
@@ -1162,7 +1178,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∑"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
+    expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∑"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
   });
 
   it("writes nary operator", async () => {
@@ -1417,7 +1433,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:m><m:mPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:mPr><m:mr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:mr></m:m>');
+    expect(xml).toContain('<m:m><m:mPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:mPr><m:mr><m:e><m:r><m:t>a</m:t></m:r></m:e><m:e><m:r><m:t>b</m:t></m:r></m:e></m:mr></m:m>');
   });
 
   it("writes matrix base justification", async () => {
@@ -1721,7 +1737,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="["/><m:endChr m:val="]"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d>');
+    expect(xml).toContain('<m:d><m:dPr><m:begChr m:val="["/><m:endChr m:val="]"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:dPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:d>');
   });
 
   it("writes delimiter grow", async () => {
@@ -1846,7 +1862,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:acc><m:accPr><m:chr m:val="¯"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:accPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:acc>');
+    expect(xml).toContain('<m:acc><m:accPr><m:chr m:val="¯"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:accPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:acc>');
   });
 
   it("writes bar office math runs", async () => {
@@ -1911,7 +1927,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:bar><m:barPr><m:pos m:val="top"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:barPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:bar>');
+    expect(xml).toContain('<m:bar><m:barPr><m:pos m:val="top"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:barPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:bar>');
   });
 
   it("writes function office math runs", async () => {
@@ -1983,7 +1999,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:func><m:funcPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:funcPr><m:fName><m:r><m:t>sin</m:t></m:r></m:fName><m:e><m:r><m:t>x</m:t></m:r></m:e></m:func>');
+    expect(xml).toContain('<m:func><m:funcPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:funcPr><m:fName><m:r><m:t>sin</m:t></m:r></m:fName><m:e><m:r><m:t>x</m:t></m:r></m:e></m:func>');
   });
 
   it("writes limit office math runs", async () => {
@@ -2054,7 +2070,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:limLow><m:limLowPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:limLowPr><m:e><m:r><m:t>lim</m:t></m:r></m:e><m:lim><m:r><m:t>x→0</m:t></m:r></m:lim></m:limLow>');
+    expect(xml).toContain('<m:limLow><m:limLowPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:limLowPr><m:e><m:r><m:t>lim</m:t></m:r></m:e><m:lim><m:r><m:t>x→0</m:t></m:r></m:lim></m:limLow>');
   });
 
   it("writes limit upper control properties", async () => {
@@ -2091,7 +2107,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:limUpp><m:limUppPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:limUppPr><m:e><m:r><m:t>max</m:t></m:r></m:e><m:lim><m:r><m:t>n</m:t></m:r></m:lim></m:limUpp>');
+    expect(xml).toContain('<m:limUpp><m:limUppPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:limUppPr><m:e><m:r><m:t>max</m:t></m:r></m:e><m:lim><m:r><m:t>n</m:t></m:r></m:lim></m:limUpp>');
   });
 
   it("writes equation array office math runs", async () => {
@@ -2166,7 +2182,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:eqArr><m:eqArrPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:eqArrPr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:r><m:t>y=2</m:t></m:r></m:e></m:eqArr>');
+    expect(xml).toContain('<m:eqArr><m:eqArrPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:eqArrPr><m:e><m:r><m:t>x=1</m:t></m:r></m:e><m:e><m:r><m:t>y=2</m:t></m:r></m:e></m:eqArr>');
   });
 
   it("writes equation array row spacing", async () => {
@@ -2482,7 +2498,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:box><m:boxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:boxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:box>');
+    expect(xml).toContain('<m:box><m:boxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:boxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:box>');
   });
 
   it("writes border box office math runs", async () => {
@@ -2580,7 +2596,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:borderBox><m:borderBoxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:borderBoxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:borderBox>');
+    expect(xml).toContain('<m:borderBox><m:borderBoxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:borderBoxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:borderBox>');
   });
 
   it("writes phantom office math runs", async () => {
@@ -2678,7 +2694,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:phant><m:phantPr><m:show m:val="0"/><m:zeroWid m:val="1"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:phantPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:phant>');
+    expect(xml).toContain('<m:phant><m:phantPr><m:show m:val="0"/><m:zeroWid m:val="1"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:phantPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:phant>');
   });
 
   it("writes group character office math runs", async () => {
@@ -2747,7 +2763,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:groupChr><m:groupChrPr><m:chr m:val="⏞"/><m:pos m:val="top"/><m:vertJc m:val="bottom"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:groupChrPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:groupChr>');
+    expect(xml).toContain('<m:groupChr><m:groupChrPr><m:chr m:val="⏞"/><m:pos m:val="top"/><m:vertJc m:val="bottom"/><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:groupChrPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:groupChr>');
   });
 
   it("writes pre sub sup office math runs", async () => {
@@ -2814,7 +2830,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:preSubSup><m:preSubSupPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:preSubSupPr><m:e><m:r><m:t>X</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>j</m:t></m:r></m:sup></m:preSubSup>');
+    expect(xml).toContain('<m:preSubSup><m:preSubSupPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="8064A2"/><w:sz w:val="32"/><w:highlight w:val="darkYellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:preSubSupPr><m:e><m:r><m:t>X</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>j</m:t></m:r></m:sup></m:preSubSup>');
   });
 
   it("writes sub sup office math runs", async () => {
@@ -2881,7 +2897,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:sSubSup><m:sSubSupPr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="26"/><w:color w:val="0070C0"/><w:highlight w:val="cyan"/></w:rPr></m:ctrlPr></m:sSubSupPr><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSubSup>');
+    expect(xml).toContain('<m:sSubSup><m:sSubSupPr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="0070C0"/><w:sz w:val="26"/><w:highlight w:val="cyan"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:sSubSupPr><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSubSup>');
   });
 
   it("writes s pre office math runs", async () => {
@@ -2948,7 +2964,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<m:sPre><m:sPrePr><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="28"/><w:color w:val="C00000"/><w:highlight w:val="yellow"/></w:rPr></m:ctrlPr></m:sPrePr><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>j</m:t></m:r></m:sup><m:e><m:r><m:t>X</m:t></m:r></m:e></m:sPre>');
+    expect(xml).toContain('<m:sPre><m:sPrePr><m:ctrlPr><w:rPr><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:b/><w:i/><w:color w:val="C00000"/><w:sz w:val="28"/><w:highlight w:val="yellow"/><w:u w:val="single"/></w:rPr></m:ctrlPr></m:sPrePr><m:sub><m:r><m:t>i</m:t></m:r></m:sub><m:sup><m:r><m:t>j</m:t></m:r></m:sup><m:e><m:r><m:t>X</m:t></m:r></m:e></m:sPre>');
   });
 
   it("writes text styles and headings into document.xml", async () => {
@@ -3985,7 +4001,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<w:shd w:fill="D9EAF7"/>');
+    expect(xml).toContain('<w:shd w:val="clear" w:fill="D9EAF7"/>');
     expect(xml).toContain('<w:tcPrChange w:id="23" w:author="Noor" w:date="2026-07-04T08:00:00.000Z"><w:tcPr/></w:tcPrChange>');
   });
 
@@ -4093,7 +4109,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<w:shd w:fill="D9EAF7"/>');
+    expect(xml).toContain('<w:shd w:val="clear" w:fill="D9EAF7"/>');
     expect(xml).toContain('<w:tcMar><w:top w:w="120" w:type="dxa"/><w:right w:w="180" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:left w:w="180" w:type="dxa"/></w:tcMar>');
   });
 
@@ -4253,8 +4269,8 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const numbering = await zip.file("word/numbering.xml")!.async("string");
 
-    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="3"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1)"/><w:suff w:val="space"/><w:lvlRestart w:val="2"/><w:isLgl/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl>');
-    expect(numbering).toContain('<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="%2."/><w:isLgl w:val="0"/></w:lvl>');
+    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="3"/><w:numFmt w:val="decimal"/><w:lvlRestart w:val="2"/><w:isLgl/><w:suff w:val="space"/><w:lvlText w:val="%1)"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl>');
+    expect(numbering).toContain('<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/><w:isLgl w:val="0"/><w:lvlText w:val="%2."/></w:lvl>');
   });
 
   it("writes numbering level style alignment and run properties", async () => {
@@ -4294,7 +4310,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const numbering = await zip.file("word/numbering.xml")!.async("string");
 
-    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="1"/><w:pStyle w:val="LegalClause"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="right"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:rPr><w:b/><w:i w:val="0"/><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:color w:val="C00000"/></w:rPr></w:lvl>');
+    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:pStyle w:val="LegalClause"/><w:lvlText w:val="%1."/><w:lvlJc w:val="right"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:rPr><w:b/><w:i w:val="0"/><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:color w:val="C00000"/></w:rPr></w:lvl>');
   });
 
   it("writes abstract numbering identity and style links", async () => {
@@ -4711,6 +4727,7 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:footerReference w:type="first" r:id="rIdFooter2"/>');
     expect(xml).toContain('<w:footerReference w:type="even" r:id="rIdFooter3"/>');
     expect(xml).toContain("<w:titlePg/>");
+    expect(xml.indexOf("<w:titlePg/>")).toBeGreaterThan(xml.indexOf("<w:pgMar"));
     expect(firstHeader).toContain("<w:t>First header</w:t>");
     expect(evenFooter).toContain("<w:t>Even footer</w:t>");
     expect(rels).toContain('Target="header2.xml"');
@@ -5181,7 +5198,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const xml = await zip.file("word/document.xml")!.async("string");
 
-    expect(xml).toContain('<w:shd w:fill="FFF2CC"/>');
+    expect(xml).toContain('<w:shd w:val="clear" w:fill="FFF2CC"/>');
   });
 
   it("writes paragraph borders", async () => {
@@ -5602,7 +5619,7 @@ describe("DOCX writer", () => {
     const zip = await JSZip.loadAsync(buffer);
     const styles = await zip.file("word/styles.xml")!.async("string");
 
-    expect(styles).toContain('<w:shd w:fill="E2F0D9"/>');
+    expect(styles).toContain('<w:shd w:val="clear" w:fill="E2F0D9"/>');
     expect(styles).toContain('<w:left w:val="single" w:sz="12" w:space="4" w:color="70AD47"/>');
   });
 
@@ -11696,7 +11713,7 @@ describe("DOCX reader", () => {
       theme: {
         name: "Contract Theme",
         fonts: { major: "Aptos Display", minor: "Aptos" },
-        colors: { accent1: "4472C4" },
+        colors: { ...defaultThemeColors(), accent1: "4472C4" },
       },
       sections: [
         {
@@ -11758,7 +11775,7 @@ describe("DOCX reader", () => {
           minorEastAsia: "Microsoft YaHei",
           minorComplexScript: "Arial",
         },
-        colors: { accent1: "4472C4" },
+        colors: { ...defaultThemeColors(), accent1: "4472C4" },
       },
       sections: [
         {
@@ -11788,7 +11805,7 @@ describe("DOCX reader", () => {
             { group: "minor" as const, script: "Hang", typeface: "Malgun Gothic" },
           ],
         },
-        colors: { accent1: "4472C4" },
+        colors: { ...defaultThemeColors(), accent1: "4472C4" },
       },
       sections: [
         {
@@ -11809,13 +11826,13 @@ describe("DOCX reader", () => {
       theme: {
         name: "Visual Theme",
         fonts: { major: "Aptos Display", minor: "Aptos" },
-        colors: { accent1: "4472C4" },
+        colors: { ...defaultThemeColors(), accent1: "4472C4" },
         formatScheme: {
           name: "Visual Formats",
-          fillStyleColors: ["FFFFFF", "F2F2F2"],
-          lineStyleColors: ["4472C4", "70AD47"],
-          effectStyleColors: ["808080"],
-          backgroundFillStyleColors: ["000000", "1F2937"],
+          fillStyleColors: ["FFFFFF", "F2F2F2", "FFFFFF"],
+          lineStyleColors: ["4472C4", "70AD47", "000000"],
+          effectStyleColors: ["808080", "000000", "808080"],
+          backgroundFillStyleColors: ["000000", "1F2937", "FFFFFF"],
         },
       },
       sections: [

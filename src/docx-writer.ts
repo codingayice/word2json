@@ -132,17 +132,17 @@ function settingsXml(settings: NonNullable<DocumentJson["settings"]>): string {
 
   return xmlDeclaration(
     `<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"${mathNamespace}>` +
+      viewSettingsXml(settings.view) +
+      proofingSettingsXml(settings.proofing) +
+      (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       (settings.defaultTabStop !== undefined ? `<w:defaultTabStop w:val="${settings.defaultTabStop}"/>` : "") +
       (settings.evenAndOddHeaders ? "<w:evenAndOddHeaders/>" : "") +
       (settings.updateFields ? "<w:updateFields/>" : "") +
-      (settings.trackRevisions ? "<w:trackRevisions/>" : "") +
       compatibilitySettingsXml(settings.compatibility) +
-      proofingSettingsXml(settings.proofing) +
       documentProtectionXml(settings.protection) +
       mailMergeSettingsXml(settings.mailMerge) +
       writeProtectionXml(settings.writeProtection) +
       mathSettingsXml(settings.math) +
-      viewSettingsXml(settings.view) +
       `</w:settings>`,
   );
 }
@@ -359,22 +359,22 @@ function sectionPropertiesXml(section: SectionNode, context: WriterContext): str
   return `<w:sectPr>` +
     headerReference +
     footerReference +
-    titlePage +
+    footnoteProperties +
+    endnoteProperties +
     breakType +
     `<w:pgSz w:w="${page.width}" w:h="${page.height}"${orientation}/>` +
     `<w:pgMar w:top="${page.margins.top}" w:right="${page.margins.right}" w:bottom="${page.margins.bottom}" w:left="${page.margins.left}" w:header="${page.margins.header}" w:footer="${page.margins.footer}" w:gutter="${page.margins.gutter}"/>` +
-    pageNumbering +
     lineNumbering +
-    footnoteProperties +
-    endnoteProperties +
-    noEndnote +
+    pageNumbering +
     columns +
-    documentGrid +
     verticalAlignment +
+    noEndnote +
+    titlePage +
     textDirection +
     bidi +
     rtlGutter +
     mirrorMargins +
+    documentGrid +
     `</w:sectPr>`;
 }
 
@@ -678,18 +678,44 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   const list = paragraph.list
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
-  const pagination = paragraphPaginationXml(paragraph.pagination);
+  const pagination = paragraph.pagination;
   const frame = paragraphFrameXml(paragraph.frame);
   const propertyRevision = paragraph.propertyRevision
     ? propertyRevisionXml("pPr", "pPrChange", paragraph.propertyRevision)
     : "";
-  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${tabs}${list}${pagination}${frame}${propertyRevision}`;
+  const properties = [
+    style,
+    frame,
+    paragraphPaginationToggleXml("keepNext", pagination?.keepNext),
+    paragraphPaginationToggleXml("keepLines", pagination?.keepLines),
+    paragraphPaginationToggleXml("pageBreakBefore", pagination?.pageBreakBefore),
+    paragraphPaginationToggleXml("widowControl", pagination?.widowControl),
+    list,
+    paragraphPaginationToggleXml("suppressLineNumbers", pagination?.suppressLineNumbers),
+    borders,
+    shading,
+    tabs,
+    paragraphPaginationToggleXml("suppressAutoHyphens", pagination?.suppressAutoHyphens),
+    paragraphPaginationToggleXml("overflowPunct", pagination?.overflowPunct),
+    paragraphPaginationToggleXml("topLinePunct", pagination?.topLinePunct),
+    paragraphPaginationToggleXml("autoSpaceDE", pagination?.autoSpaceDE),
+    paragraphPaginationToggleXml("autoSpaceDN", pagination?.autoSpaceDN),
+    paragraphPaginationToggleXml("adjustRightInd", pagination?.adjustRightInd),
+    spacing,
+    indent,
+    paragraphPaginationToggleXml("contextualSpacing", pagination?.contextualSpacing),
+    paragraphPaginationToggleXml("mirrorIndents", pagination?.mirrorIndents),
+    alignment,
+    pagination?.textDirection ? `<w:textDirection w:val="${pagination.textDirection}"/>` : "",
+    pagination?.textAlignment ? `<w:textAlignment w:val="${pagination.textAlignment}"/>` : "",
+    propertyRevision,
+  ].join("");
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }
 
 function shadingXml(shading: { fill: string }): string {
-  return `<w:shd w:fill="${escapeAttribute(shading.fill)}"/>`;
+  return `<w:shd w:val="clear" w:fill="${escapeAttribute(shading.fill)}"/>`;
 }
 
 function paragraphBordersXml(borders: NonNullable<ParagraphNode["borders"]>): string {
@@ -1219,39 +1245,39 @@ function nextCommentId(context: WriterContext): number {
 function runPropertiesXml(run: TextRun): string {
   const properties = [
     run.styleId ? `<w:rStyle w:val="${escapeAttribute(run.styleId)}"/>` : "",
+    runFontsXml(run),
     run.bold !== undefined ? (run.bold ? "<w:b/>" : '<w:b w:val="0"/>') : "",
     run.italic !== undefined ? (run.italic ? "<w:i/>" : '<w:i w:val="0"/>') : "",
-    run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
-    runFontsXml(run),
-    run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
-    run.complexScriptFontSize ? `<w:szCs w:val="${run.complexScriptFontSize * 2}"/>` : "",
-    run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
-    run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
+    run.allCaps !== undefined ? (run.allCaps ? "<w:caps/>" : '<w:caps w:val="0"/>') : "",
+    run.smallCaps !== undefined ? (run.smallCaps ? "<w:smallCaps/>" : '<w:smallCaps w:val="0"/>') : "",
     run.strike !== undefined ? (run.strike ? "<w:strike/>" : '<w:strike w:val="0"/>') : "",
     run.doubleStrike !== undefined ? (run.doubleStrike ? "<w:dstrike/>" : '<w:dstrike w:val="0"/>') : "",
-    run.smallCaps !== undefined ? (run.smallCaps ? "<w:smallCaps/>" : '<w:smallCaps w:val="0"/>') : "",
-    run.allCaps !== undefined ? (run.allCaps ? "<w:caps/>" : '<w:caps w:val="0"/>') : "",
-    run.shadow !== undefined ? (run.shadow ? "<w:shadow/>" : '<w:shadow w:val="0"/>') : "",
     run.outline !== undefined ? (run.outline ? "<w:outline/>" : '<w:outline w:val="0"/>') : "",
+    run.shadow !== undefined ? (run.shadow ? "<w:shadow/>" : '<w:shadow w:val="0"/>') : "",
     run.emboss !== undefined ? (run.emboss ? "<w:emboss/>" : '<w:emboss w:val="0"/>') : "",
     run.imprint !== undefined ? (run.imprint ? "<w:imprint/>" : '<w:imprint w:val="0"/>') : "",
-    run.rtl !== undefined ? (run.rtl ? "<w:rtl/>" : '<w:rtl w:val="0"/>') : "",
-    run.complexScript !== undefined ? (run.complexScript ? "<w:cs/>" : '<w:cs w:val="0"/>') : "",
-    run.specVanish !== undefined ? (run.specVanish ? "<w:specVanish/>" : '<w:specVanish w:val="0"/>') : "",
+    run.noProof !== undefined ? (run.noProof ? "<w:noProof/>" : '<w:noProof w:val="0"/>') : "",
+    run.snapToGrid !== undefined ? (run.snapToGrid ? "<w:snapToGrid/>" : '<w:snapToGrid w:val="0"/>') : "",
     run.hidden !== undefined ? (run.hidden ? "<w:vanish/>" : '<w:vanish w:val="0"/>') : "",
     run.webHidden !== undefined ? (run.webHidden ? "<w:webHidden/>" : '<w:webHidden w:val="0"/>') : "",
-    run.snapToGrid !== undefined ? (run.snapToGrid ? "<w:snapToGrid/>" : '<w:snapToGrid w:val="0"/>') : "",
-    run.noProof !== undefined ? (run.noProof ? "<w:noProof/>" : '<w:noProof w:val="0"/>') : "",
-    run.officeMath !== undefined ? (run.officeMath ? "<w:oMath/>" : '<w:oMath w:val="0"/>') : "",
-    run.language ? runLanguageXml(run.language) : "",
-    run.characterPosition !== undefined ? `<w:position w:val="${run.characterPosition}"/>` : "",
-    run.kerning !== undefined ? `<w:kern w:val="${run.kerning}"/>` : "",
-    run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
+    run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
     run.characterSpacing !== undefined ? `<w:spacing w:val="${run.characterSpacing}"/>` : "",
     run.scale !== undefined ? `<w:w w:val="${run.scale}"/>` : "",
-    run.fitText ? `<w:fitText w:val="${run.fitText.width}"${run.fitText.id !== undefined ? ` w:id="${run.fitText.id}"` : ""}/>` : "",
-    run.emphasis ? `<w:em w:val="${run.emphasis}"/>` : "",
+    run.kerning !== undefined ? `<w:kern w:val="${run.kerning}"/>` : "",
+    run.characterPosition !== undefined ? `<w:position w:val="${run.characterPosition}"/>` : "",
+    run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
+    run.complexScriptFontSize ? `<w:szCs w:val="${run.complexScriptFontSize * 2}"/>` : "",
+    run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
+    run.underline !== undefined ? `<w:u w:val="${run.underline ? "single" : "none"}"/>` : "",
     run.border ? borderSideXml("bdr", run.border) : "",
+    run.fitText ? `<w:fitText w:val="${run.fitText.width}"${run.fitText.id !== undefined ? ` w:id="${run.fitText.id}"` : ""}/>` : "",
+    run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
+    run.rtl !== undefined ? (run.rtl ? "<w:rtl/>" : '<w:rtl w:val="0"/>') : "",
+    run.complexScript !== undefined ? (run.complexScript ? "<w:cs/>" : '<w:cs w:val="0"/>') : "",
+    run.emphasis ? `<w:em w:val="${run.emphasis}"/>` : "",
+    run.language ? runLanguageXml(run.language) : "",
+    run.specVanish !== undefined ? (run.specVanish ? "<w:specVanish/>" : '<w:specVanish w:val="0"/>') : "",
+    run.officeMath !== undefined ? (run.officeMath ? "<w:oMath/>" : '<w:oMath w:val="0"/>') : "",
   ].join("");
 
   return properties ? `<w:rPr>${properties}</w:rPr>` : "";
@@ -1315,11 +1341,11 @@ function tableCellXml(cell: TableCellNode, context: WriterContext): string {
     cell.width ? `<w:tcW w:w="${cell.width}" w:type="dxa"/>` : "",
     cell.colSpan ? `<w:gridSpan w:val="${cell.colSpan}"/>` : "",
     cell.verticalMerge ? `<w:vMerge w:val="${cell.verticalMerge}"/>` : "",
-    cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
-    cell.shading ? `<w:shd w:fill="${escapeAttribute(cell.shading.fill)}"/>` : "",
     cell.borders ? tableCellBordersXml(cell.borders) : "",
-    cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
+    cell.shading ? shadingXml(cell.shading) : "",
     cell.margins ? tableCellMarginsXml(cell.margins) : "",
+    cell.textDirection ? `<w:textDirection w:val="${cell.textDirection}"/>` : "",
+    cell.verticalAlignment ? `<w:vAlign w:val="${cell.verticalAlignment}"/>` : "",
     cell.propertyRevision ? propertyRevisionXml("tcPr", "tcPrChange", cell.propertyRevision) : "",
   ].join("");
   const blocks = cell.blocks.map((block) => paragraphXml(block, context)).join("");
@@ -1396,6 +1422,7 @@ function imageXml(image: ImageNode, context: WriterContext): string {
     `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
     `<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
     `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:nvPicPr><pic:cNvPr id="${id}" name="Image ${id}"${image.altText ? ` descr="${escapeAttribute(image.altText)}"` : ""}/><pic:cNvPicPr/></pic:nvPicPr>` +
     `<pic:blipFill><a:blip r:embed="${relationshipId}"/>${crop}</pic:blipFill>` +
     `<pic:spPr><a:xfrm${rotation}><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm></pic:spPr>` +
     `</pic:pic></a:graphicData></a:graphic>`;
@@ -1635,18 +1662,18 @@ function documentRelsXml(context: WriterContext): string {
 
 function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
   const colorScheme = [
-    themeColorXml("dk1", theme.colors.dark1),
-    themeColorXml("lt1", theme.colors.light1),
-    themeColorXml("dk2", theme.colors.dark2),
-    themeColorXml("lt2", theme.colors.light2),
+    themeColorXml("dk1", theme.colors.dark1 ?? "000000"),
+    themeColorXml("lt1", theme.colors.light1 ?? "FFFFFF"),
+    themeColorXml("dk2", theme.colors.dark2 ?? "1F497D"),
+    themeColorXml("lt2", theme.colors.light2 ?? "EEECE1"),
     themeColorXml("accent1", theme.colors.accent1),
-    themeColorXml("accent2", theme.colors.accent2),
-    themeColorXml("accent3", theme.colors.accent3),
-    themeColorXml("accent4", theme.colors.accent4),
-    themeColorXml("accent5", theme.colors.accent5),
-    themeColorXml("accent6", theme.colors.accent6),
-    themeColorXml("hlink", theme.colors.hyperlink),
-    themeColorXml("folHlink", theme.colors.followedHyperlink),
+    themeColorXml("accent2", theme.colors.accent2 ?? "C0504D"),
+    themeColorXml("accent3", theme.colors.accent3 ?? "9BBB59"),
+    themeColorXml("accent4", theme.colors.accent4 ?? "8064A2"),
+    themeColorXml("accent5", theme.colors.accent5 ?? "4BACC6"),
+    themeColorXml("accent6", theme.colors.accent6 ?? "F79646"),
+    themeColorXml("hlink", theme.colors.hyperlink ?? "0000FF"),
+    themeColorXml("folHlink", theme.colors.followedHyperlink ?? "800080"),
   ].join("");
 
   return xmlDeclaration(
@@ -1668,8 +1695,8 @@ function themeXml(theme: NonNullable<DocumentJson["theme"]>): string {
 function themeFontXml(tag: "majorFont" | "minorFont", latin: string, eastAsia: string | undefined, complexScript: string | undefined, supplemental: NonNullable<DocumentJson["theme"]>["fonts"]["supplemental"]): string {
   return `<a:${tag}>` +
     `<a:latin typeface="${escapeAttribute(latin)}"/>` +
-    (eastAsia ? `<a:ea typeface="${escapeAttribute(eastAsia)}"/>` : "") +
-    (complexScript ? `<a:cs typeface="${escapeAttribute(complexScript)}"/>` : "") +
+    `<a:ea typeface="${escapeAttribute(eastAsia ?? "")}"/>` +
+    `<a:cs typeface="${escapeAttribute(complexScript ?? "")}"/>` +
     (supplemental ?? []).map((font) => `<a:font script="${escapeAttribute(font.script)}" typeface="${escapeAttribute(font.typeface)}"/>`).join("") +
     `</a:${tag}>`;
 }
@@ -1679,16 +1706,16 @@ function themeColorXml(tag: string, color: string | undefined): string {
 }
 
 function themeFormatSchemeXml(formatScheme: NonNullable<NonNullable<DocumentJson["theme"]>["formatScheme"]>): string {
-  const fillStyles = (formatScheme.fillStyleColors ?? [])
+  const fillStyles = padThemeColors(formatScheme.fillStyleColors, ["FFFFFF", "EEECE1", "D9EAF7"])
     .map((color) => `<a:solidFill><a:srgbClr val="${escapeAttribute(color)}"/></a:solidFill>`)
     .join("");
-  const lineStyles = (formatScheme.lineStyleColors ?? [])
+  const lineStyles = padThemeColors(formatScheme.lineStyleColors, ["000000", "808080", "A6A6A6"])
     .map((color) => `<a:ln w="9525"><a:solidFill><a:srgbClr val="${escapeAttribute(color)}"/></a:solidFill></a:ln>`)
     .join("");
-  const effectStyles = (formatScheme.effectStyleColors ?? [])
+  const effectStyles = padThemeColors(formatScheme.effectStyleColors, ["000000", "808080", "A6A6A6"])
     .map((color) => `<a:effectStyle><a:effectLst><a:outerShdw><a:srgbClr val="${escapeAttribute(color)}"/></a:outerShdw></a:effectLst></a:effectStyle>`)
     .join("");
-  const backgroundFillStyles = (formatScheme.backgroundFillStyleColors ?? [])
+  const backgroundFillStyles = padThemeColors(formatScheme.backgroundFillStyleColors, ["FFFFFF", "EEECE1", "D9EAF7"])
     .map((color) => `<a:solidFill><a:srgbClr val="${escapeAttribute(color)}"/></a:solidFill>`)
     .join("");
 
@@ -1698,6 +1725,15 @@ function themeFormatSchemeXml(formatScheme: NonNullable<NonNullable<DocumentJson
     `<a:effectStyleLst>${effectStyles}</a:effectStyleLst>` +
     `<a:bgFillStyleLst>${backgroundFillStyles}</a:bgFillStyleLst>` +
     `</a:fmtScheme>`;
+}
+
+function padThemeColors(colors: string[] | undefined, defaults: string[]): string[] {
+  const values = [...(colors ?? [])];
+  for (const color of defaults) {
+    if (values.length >= defaults.length) break;
+    values.push(color);
+  }
+  return values;
 }
 
 function stylesXml(document: DocumentJson): string {
@@ -1904,12 +1940,12 @@ function numberingLevelXml(level: NonNullable<DocumentJson["numbering"]>["abstra
 
   return `<w:lvl w:ilvl="${level.level}">` +
     `<w:start w:val="${level.start ?? 1}"/>` +
-    style +
     `<w:numFmt w:val="${level.format}"/>` +
-    `<w:lvlText w:val="${escapeAttribute(level.text)}"/>` +
-    suffix +
     restart +
+    style +
     legal +
+    suffix +
+    `<w:lvlText w:val="${escapeAttribute(level.text)}"/>` +
     alignment +
     indentation +
     runProperties +
