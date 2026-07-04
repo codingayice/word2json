@@ -714,6 +714,7 @@ export type TableNode = {
   layout?: "autofit" | "fixed";
   grid?: number[];
   width?: number;
+  widthType?: "auto" | "dxa" | "nil" | "pct";
   borders?: "single";
   alignment?: ParagraphAlignment;
   cellSpacing?: number;

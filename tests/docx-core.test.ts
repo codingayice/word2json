@@ -4025,6 +4025,25 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:tblCellSpacing w:w="120" w:type="dxa"/>');
   });
 
+  it("writes percentage table width", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        width: 5000,
+        widthType: "pct",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Full width" }] }] }] },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tblW w:w="5000" w:type="pct"/>');
+  });
+
   it("writes table style look flags", async () => {
     const document = createDocumentJson([
       {
@@ -10112,6 +10131,24 @@ describe("DOCX reader", () => {
         cellSpacing: 120,
         rows: [
           { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Centered" }] }] }] },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips percentage table width", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        width: 5000,
+        widthType: "pct",
+        rows: [
+          { cells: [{ blocks: [{ type: "paragraph", runs: [{ text: "Full width" }] }] }] },
         ],
       },
     ]);

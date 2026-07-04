@@ -1322,7 +1322,7 @@ function runLanguageXml(language: RunLanguage): string {
 function tableXml(table: TableNode, context: WriterContext): string {
   const properties = [
     table.styleId ? `<w:tblStyle w:val="${escapeAttribute(table.styleId)}"/>` : "",
-    table.width ? `<w:tblW w:w="${table.width}" w:type="dxa"/>` : "",
+    table.width !== undefined ? `<w:tblW w:w="${table.width}" w:type="${table.widthType ?? "dxa"}"/>` : "",
     table.borders ? tableBordersXml(table.borders) : "",
     table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",
     table.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${table.cellSpacing}" w:type="dxa"/>` : "",

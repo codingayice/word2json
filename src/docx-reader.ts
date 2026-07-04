@@ -3054,6 +3054,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const cellSpacing = asObject(properties.tblCellSpacing);
   const layout = parseTableLayout(properties.tblLayout);
   const look = parseTableLook(properties.tblLook);
+  const widthType = parseTableWidthType(width.type);
   const propertyRevision = parsePropertyRevision(properties.tblPrChange);
   const grid = parseTableGrid(table.tblGrid);
 
@@ -3062,6 +3063,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(typeof style.val === "string" ? { styleId: style.val } : {}),
     ...(grid ? { grid } : {}),
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
+    ...(widthType && widthType !== "dxa" ? { widthType } : {}),
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
@@ -3085,6 +3087,10 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       };
     }),
   };
+}
+
+function parseTableWidthType(value: unknown): TableNode["widthType"] | undefined {
+  return value === "auto" || value === "dxa" || value === "nil" || value === "pct" ? value : undefined;
 }
 
 function parseTableLayout(value: unknown): TableNode["layout"] | undefined {
