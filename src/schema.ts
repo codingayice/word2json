@@ -430,7 +430,7 @@ export type MathNode =
   | { type: "delimiter"; controlProperties?: MathControlProperties; begin?: string; end?: string; content: MathNode[] }
   | { type: "accent"; controlProperties?: MathControlProperties; mark: string; content: MathNode[] }
   | { type: "bar"; controlProperties?: MathControlProperties; position: "top" | "bottom"; content: MathNode[] }
-  | { type: "function"; name: MathNode[]; argument: MathNode[] }
+  | { type: "function"; controlProperties?: MathControlProperties; name: MathNode[]; argument: MathNode[] }
   | { type: "limitLower"; base: MathNode[]; limit: MathNode[] }
   | { type: "limitUpper"; base: MathNode[]; limit: MathNode[] }
   | { type: "equationArray"; rows: MathNode[][] }

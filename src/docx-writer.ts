@@ -750,7 +750,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "function") {
-    return `<m:func><m:fName>${node.name.map((child) => mathNodeXml(child)).join("")}</m:fName><m:e>${node.argument.map((child) => mathNodeXml(child)).join("")}</m:e></m:func>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:func>${properties ? `<m:funcPr><m:ctrlPr>${properties}</m:ctrlPr></m:funcPr>` : ""}<m:fName>${node.name.map((child) => mathNodeXml(child)).join("")}</m:fName><m:e>${node.argument.map((child) => mathNodeXml(child)).join("")}</m:e></m:func>`;
   }
 
   if (node.type === "limitLower") {
