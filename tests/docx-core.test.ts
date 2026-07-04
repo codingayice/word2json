@@ -694,6 +694,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:sz w:val="24"/><w:szCs w:val="32"/></w:rPr><w:t>Mixed</w:t>');
   });
 
+  it("writes text run complex script font family", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "مرحبا", complexScriptFontFamily: "Arial" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:rFonts w:cs="Arial"/></w:rPr><w:t>مرحبا</w:t>');
+  });
+
+  it("writes text run complex script font family with latin family", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", fontFamily: "Aptos", complexScriptFontFamily: "Arial" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:cs="Arial"/></w:rPr><w:t>Mixed</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5814,6 +5844,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Mixed", fontSize: 12, complexScriptFontSize: 16 }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run complex script font family", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "مرحبا", complexScriptFontFamily: "Arial" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run complex script font family with latin family", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", fontFamily: "Aptos", complexScriptFontFamily: "Arial" }],
       },
     ]);
 
