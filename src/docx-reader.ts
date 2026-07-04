@@ -1708,9 +1708,12 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const naryProperties = asObject(naryNode.naryPr);
         const controlProperties = parseMathControlProperties(asObject(naryProperties.ctrlPr).rPr);
         const limitLocation = naryLimitLocationValue(asObject(naryProperties.limLoc).val);
+        const operatorCharacter = asObject(naryProperties.chr).val;
+        const operator = naryOperatorValue(operatorCharacter);
         return {
           type: "nary" as const,
-          operator: naryOperatorValue(asObject(naryProperties.chr).val),
+          operator,
+          ...(typeof operatorCharacter === "string" && operatorCharacter !== naryOperatorCharacter(operator) ? { operatorCharacter } : {}),
           ...(controlProperties ? { controlProperties } : {}),
           ...(limitLocation ? { limitLocation } : {}),
           ...mathOptionalBooleanProperty(naryProperties.grow, "grow"),
@@ -1979,6 +1982,18 @@ function naryOperatorValue(value: unknown): Extract<MathNode, { type: "nary" }>[
     "⋃": "union",
   } as const;
   return typeof value === "string" && value in values ? values[value as keyof typeof values] : "sum";
+}
+
+function naryOperatorCharacter(operator: Extract<MathNode, { type: "nary" }>["operator"]): string {
+  const values = {
+    sum: "∑",
+    integral: "∫",
+    product: "∏",
+    coproduct: "∐",
+    intersection: "⋂",
+    union: "⋃",
+  } satisfies Record<Extract<MathNode, { type: "nary" }>["operator"], string>;
+  return values[operator];
 }
 
 function naryLimitLocationValue(value: unknown): Extract<MathNode, { type: "nary" }>["limitLocation"] | undefined {

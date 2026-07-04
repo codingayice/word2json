@@ -850,7 +850,7 @@ function mathNodeXml(node: MathNode): string {
 
   const properties = mathControlPropertiesXml(node.controlProperties);
   const naryProperties = [
-    naryOperatorXml(node.operator),
+    naryOperatorXml(node.operator, node.operatorCharacter),
     naryLimitLocationXml(node.limitLocation),
     node.grow !== undefined ? `<m:grow m:val="${node.grow ? "1" : "0"}"/>` : "",
     node.hideLowerLimit ? '<m:subHide m:val="1"/>' : "",
@@ -875,7 +875,11 @@ function fractionTypeXml(type: Extract<MathNode, { type: "fraction" }>["fraction
   return `<m:type m:val="${value}"/>`;
 }
 
-function naryOperatorXml(operator: Extract<MathNode, { type: "nary" }>["operator"]): string {
+function naryOperatorXml(operator: Extract<MathNode, { type: "nary" }>["operator"], character?: string): string {
+  return `<m:chr m:val="${escapeAttribute(character ?? naryOperatorCharacter(operator))}"/>`;
+}
+
+function naryOperatorCharacter(operator: Extract<MathNode, { type: "nary" }>["operator"]): string {
   const values = {
     sum: "∑",
     integral: "∫",
@@ -884,7 +888,7 @@ function naryOperatorXml(operator: Extract<MathNode, { type: "nary" }>["operator
     intersection: "⋂",
     union: "⋃",
   } satisfies Record<Extract<MathNode, { type: "nary" }>["operator"], string>;
-  return `<m:chr m:val="${values[operator]}"/>`;
+  return values[operator];
 }
 
 function naryLimitLocationXml(location: Extract<MathNode, { type: "nary" }>["limitLocation"]): string {

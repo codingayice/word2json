@@ -421,6 +421,37 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="∏"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
   });
 
+  it("writes nary custom operator character", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "nary" as const,
+                  operator: "sum" as const,
+                  operatorCharacter: "⊕",
+                  lowerLimit: [{ type: "text" as const, text: "i=1" }],
+                  upperLimit: [{ type: "text" as const, text: "n" }],
+                  body: [{ type: "text" as const, text: "i" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:nary><m:naryPr><m:chr m:val="⊕"/></m:naryPr><m:sub><m:r><m:t>i=1</m:t></m:r></m:sub><m:sup><m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>i</m:t></m:r></m:e></m:nary>');
+  });
+
   it("writes nary limit location", async () => {
     const document = createDocumentJson([
       {
@@ -4593,6 +4624,36 @@ describe("DOCX reader", () => {
                   lowerLimit: [{ type: "text" as const, text: "0" }],
                   upperLimit: [{ type: "text" as const, text: "1" }],
                   body: [{ type: "text" as const, text: "f(x)" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips nary custom operator character", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "nary" as const,
+                  operator: "sum" as const,
+                  operatorCharacter: "⊕",
+                  lowerLimit: [{ type: "text" as const, text: "i=1" }],
+                  upperLimit: [{ type: "text" as const, text: "n" }],
+                  body: [{ type: "text" as const, text: "i" }],
                 },
               ],
             },
