@@ -1371,7 +1371,7 @@ function tableLookXml(look: NonNullable<TableNode["look"]>): string {
 
 function tableCellXml(cell: TableCellNode, context: WriterContext): string {
   const properties = [
-    cell.width ? `<w:tcW w:w="${cell.width}" w:type="dxa"/>` : "",
+    cell.width !== undefined ? `<w:tcW w:w="${cell.width}" w:type="${cell.widthType ?? "dxa"}"/>` : "",
     cell.colSpan ? `<w:gridSpan w:val="${cell.colSpan}"/>` : "",
     cell.verticalMerge ? `<w:vMerge w:val="${cell.verticalMerge}"/>` : "",
     cell.borders ? tableCellBordersXml(cell.borders) : "",

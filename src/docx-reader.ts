@@ -3199,6 +3199,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
   const cell = asObject(value);
   const properties = asObject(cell.tcPr);
   const width = asObject(properties.tcW);
+  const widthType = parseTableWidthType(width.type);
   const gridSpan = asObject(properties.gridSpan);
   const verticalMerge = asObject(properties.vMerge);
   const verticalAlignment = asObject(properties.vAlign);
@@ -3212,6 +3213,7 @@ function parseTableCell(value: unknown, relationships: RelationshipMap, comments
 
   return {
     ...(width.w !== undefined ? { width: parseNumber(width.w) } : {}),
+    ...(widthType && widthType !== "dxa" ? { widthType } : {}),
     ...(gridSpan.val !== undefined ? { colSpan: parseNumber(gridSpan.val) } : {}),
     ...(typeof verticalMerge.val === "string" ? { verticalMerge: verticalMerge.val as NonNullable<TableCellNode["verticalMerge"]> } : {}),
     ...(typeof verticalAlignment.val === "string" ? { verticalAlignment: verticalAlignment.val as NonNullable<TableCellNode["verticalAlignment"]> } : {}),

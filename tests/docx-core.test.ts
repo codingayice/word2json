@@ -4196,6 +4196,31 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:vMerge w:val="continue"/>');
   });
 
+  it("writes percentage cell width", async () => {
+    const document = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                width: 2500,
+                widthType: "pct",
+                blocks: [{ type: "paragraph", runs: [{ text: "Half" }] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tcW w:w="2500" w:type="pct"/>');
+  });
+
   it("writes cell shading and margins", async () => {
     const document = createDocumentJson([
       {
@@ -10290,6 +10315,30 @@ describe("DOCX reader", () => {
                 blocks: [{ type: "paragraph", runs: [] }],
               },
               { blocks: [{ type: "paragraph", runs: [{ text: "Bottom" }] }] },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips percentage cell width", async () => {
+    const source = createDocumentJson([
+      {
+        type: "table",
+        rows: [
+          {
+            cells: [
+              {
+                width: 2500,
+                widthType: "pct",
+                blocks: [{ type: "paragraph", runs: [{ text: "Half" }] }],
+              },
             ],
           },
         ],

@@ -746,6 +746,7 @@ export type TableRowHeight = {
 
 export type TableCellNode = {
   width?: number;
+  widthType?: "auto" | "dxa" | "nil" | "pct";
   colSpan?: number;
   verticalMerge?: "restart" | "continue";
   verticalAlignment?: "top" | "center" | "bottom";
