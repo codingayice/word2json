@@ -156,20 +156,20 @@ git diff --check
 
 Expected: Targeted tests, full tests, and build pass. `git diff --check` may print existing LF/CRLF warnings but must exit 0.
 
-- [ ] **Step 2: Commit implementation**
+- [x] **Step 2: Commit implementation**
 
 ```bash
 git add src/schema.ts src/docx-writer.ts src/docx-reader.ts tests/docx-core.test.ts docs/superpowers/plans/2026-07-04-phase-136-text-run-kerning.md
 git commit -m "feat: add phase 136 text run kerning"
 ```
 
-- [ ] **Step 3: Push branch**
+- [x] **Step 3: Push branch**
 
 ```bash
 git push -u origin phase-136-text-run-kerning
 ```
 
-- [ ] **Step 4: Record push metadata**
+- [x] **Step 4: Record push metadata**
 
 Append the pushed commit hash and remote branch to this plan, then commit the plan update:
 
@@ -181,4 +181,7 @@ git push
 
 ## Push Record
 
-- Pending.
+- Branch: `phase-136-text-run-kerning`
+- Remote: `origin/phase-136-text-run-kerning`
+- Implementation commit: `3c94bf3 feat: add phase 136 text run kerning`
+- Pushed to: `https://github.com/codingayice/word2json.git`
