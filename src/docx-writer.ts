@@ -1073,7 +1073,7 @@ function runPropertiesXml(run: TextRun): string {
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
     run.strike !== undefined ? (run.strike ? "<w:strike/>" : '<w:strike w:val="0"/>') : "",
-    run.doubleStrike ? "<w:dstrike/>" : "",
+    run.doubleStrike !== undefined ? (run.doubleStrike ? "<w:dstrike/>" : '<w:dstrike w:val="0"/>') : "",
     run.smallCaps ? "<w:smallCaps/>" : "",
     run.allCaps ? "<w:caps/>" : "",
     run.verticalAlign ? `<w:vertAlign w:val="${run.verticalAlign}"/>` : "",
