@@ -639,6 +639,10 @@ function paragraphPaginationXml(pagination?: ParagraphNode["pagination"]): strin
       paragraphPaginationToggleXml("widowControl", pagination.widowControl),
       paragraphPaginationToggleXml("suppressLineNumbers", pagination.suppressLineNumbers),
       paragraphPaginationToggleXml("suppressAutoHyphens", pagination.suppressAutoHyphens),
+      paragraphPaginationToggleXml("contextualSpacing", pagination.contextualSpacing),
+      paragraphPaginationToggleXml("mirrorIndents", pagination.mirrorIndents),
+      paragraphPaginationToggleXml("overflowPunct", pagination.overflowPunct),
+      paragraphPaginationToggleXml("topLinePunct", pagination.topLinePunct),
     ].join("")
     : "";
 }

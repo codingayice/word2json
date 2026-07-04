@@ -423,6 +423,10 @@ export type ParagraphPagination = {
   widowControl?: boolean;
   suppressLineNumbers?: boolean;
   suppressAutoHyphens?: boolean;
+  contextualSpacing?: boolean;
+  mirrorIndents?: boolean;
+  overflowPunct?: boolean;
+  topLinePunct?: boolean;
 };
 
 export type ListSettings = {

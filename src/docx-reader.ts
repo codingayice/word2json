@@ -755,6 +755,10 @@ function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNod
   const widowControl = parsePaginationToggle(properties.widowControl);
   const suppressLineNumbers = parsePaginationToggle(properties.suppressLineNumbers);
   const suppressAutoHyphens = parsePaginationToggle(properties.suppressAutoHyphens);
+  const contextualSpacing = parsePaginationToggle(properties.contextualSpacing);
+  const mirrorIndents = parsePaginationToggle(properties.mirrorIndents);
+  const overflowPunct = parsePaginationToggle(properties.overflowPunct);
+  const topLinePunct = parsePaginationToggle(properties.topLinePunct);
   const pagination = {
     ...(keepNext !== undefined ? { keepNext } : {}),
     ...(keepLines !== undefined ? { keepLines } : {}),
@@ -762,6 +766,10 @@ function parseParagraphPagination(properties: XmlNode): NonNullable<ParagraphNod
     ...(widowControl !== undefined ? { widowControl } : {}),
     ...(suppressLineNumbers !== undefined ? { suppressLineNumbers } : {}),
     ...(suppressAutoHyphens !== undefined ? { suppressAutoHyphens } : {}),
+    ...(contextualSpacing !== undefined ? { contextualSpacing } : {}),
+    ...(mirrorIndents !== undefined ? { mirrorIndents } : {}),
+    ...(overflowPunct !== undefined ? { overflowPunct } : {}),
+    ...(topLinePunct !== undefined ? { topLinePunct } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;
@@ -1596,6 +1604,10 @@ function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | und
   const widowControl = parsePaginationToggle(properties.widowControl);
   const suppressLineNumbers = parsePaginationToggle(properties.suppressLineNumbers);
   const suppressAutoHyphens = parsePaginationToggle(properties.suppressAutoHyphens);
+  const contextualSpacing = parsePaginationToggle(properties.contextualSpacing);
+  const mirrorIndents = parsePaginationToggle(properties.mirrorIndents);
+  const overflowPunct = parsePaginationToggle(properties.overflowPunct);
+  const topLinePunct = parsePaginationToggle(properties.topLinePunct);
   const pagination = {
     ...(keepNext !== undefined ? { keepNext } : {}),
     ...(keepLines !== undefined ? { keepLines } : {}),
@@ -1603,6 +1615,10 @@ function parsePagination(properties: XmlNode): ParagraphNode["pagination"] | und
     ...(widowControl !== undefined ? { widowControl } : {}),
     ...(suppressLineNumbers !== undefined ? { suppressLineNumbers } : {}),
     ...(suppressAutoHyphens !== undefined ? { suppressAutoHyphens } : {}),
+    ...(contextualSpacing !== undefined ? { contextualSpacing } : {}),
+    ...(mirrorIndents !== undefined ? { mirrorIndents } : {}),
+    ...(overflowPunct !== undefined ? { overflowPunct } : {}),
+    ...(topLinePunct !== undefined ? { topLinePunct } : {}),
   };
 
   return Object.keys(pagination).length > 0 ? pagination : undefined;
