@@ -1710,8 +1710,10 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.m)
       .map((matrix) => {
         const matrixNode = asObject(matrix);
+        const controlProperties = parseMathControlProperties(asObject(asObject(matrixNode.mPr).ctrlPr).rPr);
         return {
           type: "matrix" as const,
+          ...(controlProperties ? { controlProperties } : {}),
           rows: asArray(matrixNode.mr).map((row) =>
             asArray(asObject(row).e).map((cell) => parseMathNodes(asObject(cell))),
           ),

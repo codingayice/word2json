@@ -725,7 +725,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "matrix") {
-    return `<m:m>${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:m>${properties ? `<m:mPr><m:ctrlPr>${properties}</m:ctrlPr></m:mPr>` : ""}${node.rows.map((row) => `<m:mr>${row.map((cell) => `<m:e>${cell.map((child) => mathNodeXml(child)).join("")}</m:e>`).join("")}</m:mr>`).join("")}</m:m>`;
   }
 
   if (node.type === "delimiter") {
