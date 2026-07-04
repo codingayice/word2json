@@ -6421,6 +6421,34 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ListedHeading"><w:name w:val="Listed Heading"/><w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="10"/></w:numPr><w:outlineLvl w:val="2"/></w:pPr></w:style>');
   });
 
+  it("writes partial paragraph style numbering properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [
+          {
+            id: "ListBullet",
+            name: "List Bullet",
+            paragraph: { list: { type: "bullet" as const } },
+          },
+          {
+            id: "Subtitle",
+            name: "Subtitle",
+            paragraph: { list: { level: 1 } },
+          },
+        ],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "List" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:pPr><w:numPr><w:numId w:val="1"/></w:numPr></w:pPr></w:style>');
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:pPr><w:numPr><w:ilvl w:val="1"/></w:numPr></w:pPr></w:style>');
+  });
+
   it("writes custom properties for built-in paragraph style overrides", async () => {
     const document = {
       version: "1.0" as const,
@@ -13527,6 +13555,37 @@ describe("DOCX reader", () => {
     const parsed = await parseDocx(docx);
 
     expect(parsed).toEqual(source);
+  });
+
+  it("imports partial paragraph style numbering properties", async () => {
+    const docx = await buildDocx({
+      version: "1.0" as const,
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Seed" }] }] }],
+    });
+    const zip = await JSZip.loadAsync(docx);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+    zip.file(
+      "word/styles.xml",
+      styles.replace(
+        "</w:styles>",
+        '<w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:pPr><w:numPr><w:numId w:val="1"/></w:numPr></w:pPr></w:style>' +
+          '<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:pPr><w:numPr><w:ilvl w:val="1"/></w:numPr></w:pPr></w:style>' +
+          "</w:styles>",
+      ),
+    );
+
+    const parsed = await parseDocx(await zip.generateAsync({ type: "nodebuffer" }));
+
+    expect(parsed.styles?.paragraph).toContainEqual({
+      id: "ListBullet",
+      name: "List Bullet",
+      paragraph: { list: { type: "bullet" } },
+    });
+    expect(parsed.styles?.paragraph).toContainEqual({
+      id: "Subtitle",
+      name: "Subtitle",
+      paragraph: { list: { level: 1 } },
+    });
   });
 
   it("imports custom properties from built-in paragraph style overrides", async () => {

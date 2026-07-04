@@ -811,7 +811,7 @@ function parseStyleParagraphProperties(value: unknown, numberingContext: Numberi
   const alignment = asObject(properties.jc);
   const spacing = parseParagraphSpacing(properties.spacing);
   const indent = parseParagraphIndent(properties.ind);
-  const list = parseListSettings(properties.numPr, numberingContext);
+  const list = parseStyleListSettings(properties.numPr, numberingContext);
   const outlineLevel = asObject(properties.outlineLvl);
   const shading = parseShading(properties.shd);
   const borders = parseParagraphBorders(properties.pBdr);
@@ -829,6 +829,20 @@ function parseStyleParagraphProperties(value: unknown, numberingContext: Numberi
     ...(pagination ? { pagination } : {}),
     ...(frame ? { frame } : {}),
     ...(tabs ? { tabs } : {}),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseStyleListSettings(value: unknown, numberingContext: NumberingContext): StyleParagraphProperties["list"] | undefined {
+  const numbering = asObject(value);
+  const level = asObject(numbering.ilvl);
+  const numId = asObject(numbering.numId);
+  const parsedNumId = numId.val !== undefined ? parseNumber(numId.val) : undefined;
+  const parsed = {
+    ...(parsedNumId !== undefined ? { type: numberingContext.listTypes.get(parsedNumId) ?? (parsedNumId === 1 ? "bullet" : "ordered") } : {}),
+    ...(level.val !== undefined ? { level: parseNumber(level.val) } : {}),
+    ...(parsedNumId !== undefined && !isBuiltInNumberingId(parsedNumId) ? { numberingId: parsedNumId } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;

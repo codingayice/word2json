@@ -334,7 +334,7 @@ export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
   spacing?: ParagraphSpacing;
   indent?: ParagraphIndent;
-  list?: ListSettings;
+  list?: StyleListSettings;
   outlineLevel?: number;
   shading?: ShadingDefinition;
   borders?: ParagraphBorders;
@@ -615,6 +615,12 @@ export type ParagraphTabStop = {
 export type ListSettings = {
   type: "bullet" | "ordered";
   level: number;
+  numberingId?: number;
+};
+
+export type StyleListSettings = {
+  type?: "bullet" | "ordered";
+  level?: number;
   numberingId?: number;
 };
 

@@ -2165,7 +2165,7 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
     properties.alignment ? `<w:jc w:val="${properties.alignment}"/>` : "",
     properties.spacing ? paragraphSpacingXml(properties.spacing) : "",
     properties.indent ? paragraphIndentXml(properties.indent) : "",
-    properties.list ? `<w:numPr><w:ilvl w:val="${properties.list.level}"/><w:numId w:val="${properties.list.numberingId ?? (properties.list.type === "bullet" ? 1 : 2)}"/></w:numPr>` : "",
+    properties.list ? styleListXml(properties.list) : "",
     properties.outlineLevel !== undefined ? `<w:outlineLvl w:val="${properties.outlineLevel}"/>` : "",
     properties.shading ? shadingXml(properties.shading) : "",
     properties.borders ? paragraphBordersXml(properties.borders) : "",
@@ -2175,6 +2175,14 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
   ].join("");
 
   return paragraphProperties ? `<w:pPr>${paragraphProperties}</w:pPr>` : "";
+}
+
+function styleListXml(list: NonNullable<StyleParagraphProperties["list"]>): string {
+  const level = list.level !== undefined ? `<w:ilvl w:val="${list.level}"/>` : "";
+  const numberingId = list.numberingId ?? (list.type === "bullet" ? 1 : list.type === "ordered" ? 2 : undefined);
+  const numbering = numberingId !== undefined ? `<w:numId w:val="${numberingId}"/>` : "";
+
+  return level || numbering ? `<w:numPr>${level}${numbering}</w:numPr>` : "";
 }
 
 function styleRunPropertiesXml(run?: StyleRunProperties): string {
