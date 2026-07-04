@@ -6421,6 +6421,34 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="ListedHeading"><w:name w:val="Listed Heading"/><w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="10"/></w:numPr><w:outlineLvl w:val="2"/></w:pPr></w:style>');
   });
 
+  it("writes custom properties for built-in paragraph style overrides", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "Heading1",
+          name: "heading 1",
+          basedOn: "Normal",
+          next: "Normal",
+          paragraph: {
+            pagination: { keepNext: true, keepLines: true },
+            spacing: { before: 320, after: 160 },
+            outlineLevel: 0,
+          },
+          run: { bold: true, fontSize: 16, color: "2E74B5" },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "Heading1", runs: [{ text: "Heading" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles.match(/w:styleId="Heading1"/g)).toHaveLength(1);
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:spacing w:before="320" w:after="160"/><w:outlineLvl w:val="0"/><w:keepNext/><w:keepLines/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="2E74B5"/></w:rPr></w:style>');
+  });
+
   it("writes explicit off paragraph style pagination properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -13499,6 +13527,37 @@ describe("DOCX reader", () => {
     const parsed = await parseDocx(docx);
 
     expect(parsed).toEqual(source);
+  });
+
+  it("imports custom properties from built-in paragraph style overrides", async () => {
+    const docx = await buildDocx({
+      version: "1.0" as const,
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Seed" }] }] }],
+    });
+    const zip = await JSZip.loadAsync(docx);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+    zip.file(
+      "word/styles.xml",
+      styles.replace(
+        '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>',
+        '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:keepLines/><w:spacing w:before="320" w:after="160"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="2E74B5"/></w:rPr></w:style>',
+      ),
+    );
+
+    const parsed = await parseDocx(await zip.generateAsync({ type: "nodebuffer" }));
+
+    expect(parsed.styles?.paragraph).toContainEqual({
+      id: "Heading1",
+      name: "heading 1",
+      basedOn: "Normal",
+      next: "Normal",
+      paragraph: {
+        spacing: { before: 320, after: 160 },
+        pagination: { keepNext: true, keepLines: true },
+        outlineLevel: 0,
+      },
+      run: { bold: true, fontSize: 16, color: "2E74B5" },
+    });
   });
 
   it("round-trips paragraph style layout properties", async () => {

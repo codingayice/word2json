@@ -715,7 +715,7 @@ async function parseStyles(zip: JSZip, numberingContext: NumberingContext): Prom
   const styleNodes = asArray(stylesRoot.style).map((styleValue) => asObject(styleValue));
   const defaults = parseDocDefaults(stylesRoot.docDefaults, numberingContext);
   const paragraph = styleNodes
-    .filter((style) => style.type === "paragraph" && typeof style.styleId === "string" && !isBuiltInParagraphStyleId(style.styleId))
+    .filter((style) => style.type === "paragraph" && typeof style.styleId === "string" && shouldImportParagraphStyle(style))
     .map((style) => {
       const name = asObject(style.name);
       const basedOn = asObject(style.basedOn);
@@ -754,6 +754,20 @@ function parseDocDefaults(value: unknown, numberingContext: NumberingContext): D
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function shouldImportParagraphStyle(style: XmlNode): boolean {
+  if (!isBuiltInParagraphStyleId(style.styleId)) {
+    return true;
+  }
+
+  const basedOn = asObject(style.basedOn).val;
+  const hasNonDefaultBase = typeof basedOn === "string" && !(style.styleId !== "Normal" && basedOn === "Normal");
+
+  return style.pPr !== undefined ||
+    style.rPr !== undefined ||
+    style.next !== undefined ||
+    hasNonDefaultBase;
 }
 
 function parseStyleDefinitions(styleNodes: XmlNode[], type: "character" | "table"): NonNullable<DocumentStyles["character"]> {

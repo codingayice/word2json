@@ -2095,6 +2095,11 @@ function padThemeColors(colors: string[] | undefined, defaults: string[]): strin
 
 function stylesXml(document: DocumentJson): string {
   const defaults = document.styles?.defaults ? docDefaultsXml(document.styles.defaults) : "";
+  const customParagraphStyleIds = new Set((document.styles?.paragraph ?? []).map((style) => style.id));
+  const builtInParagraphStyles = builtInParagraphStyleXml()
+    .filter((style) => !customParagraphStyleIds.has(style.id))
+    .map((style) => style.xml)
+    .join("");
   const paragraphStyles = (document.styles?.paragraph ?? [])
     .map((style) => `<w:style w:type="paragraph" w:styleId="${escapeAttribute(style.id)}">` +
       `<w:name w:val="${escapeAttribute(style.name)}"/>` +
@@ -2113,16 +2118,22 @@ function stylesXml(document: DocumentJson): string {
 
   return xmlDeclaration(
     `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
-      `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>` +
-      `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
-      `<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
-      `<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` +
+      builtInParagraphStyles +
       defaults +
       paragraphStyles +
       characterStyles +
       tableStyles +
       `</w:styles>`,
   );
+}
+
+function builtInParagraphStyleXml(): { id: string; xml: string }[] {
+  return [
+    { id: "Normal", xml: `<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>` },
+    { id: "Heading1", xml: `<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` },
+    { id: "Heading2", xml: `<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` },
+    { id: "Heading3", xml: `<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style>` },
+  ];
 }
 
 function docDefaultsXml(defaults: NonNullable<NonNullable<DocumentJson["styles"]>["defaults"]>): string {
