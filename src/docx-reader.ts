@@ -472,11 +472,14 @@ function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefi
     levels: asArray(value.lvl).map((levelValue) => {
       const level = asObject(levelValue);
       const start = asObject(level.start);
+      const style = asObject(level.pStyle);
       const format = asObject(level.numFmt);
       const text = asObject(level.lvlText);
       const suffix = asObject(level.suff);
       const restart = asObject(level.lvlRestart);
       const legal = parseOptionalOnOff(level.isLgl);
+      const alignment = asObject(level.lvlJc);
+      const run = parseStyleRunProperties(level.rPr);
       const indentation = asObject(asObject(level.pPr).ind);
 
       return {
@@ -484,9 +487,12 @@ function parseAbstractNumberingDefinition(value: XmlNode): AbstractNumberingDefi
         format: parseNumberingFormat(format.val),
         text: typeof text.val === "string" ? text.val : "",
         ...(start.val !== undefined ? { start: parseNumber(start.val) } : {}),
+        ...(typeof style.val === "string" ? { styleId: style.val } : {}),
         ...(isNumberingSuffix(suffix.val) ? { suffix: suffix.val } : {}),
         ...(restart.val !== undefined ? { restart: parseNumber(restart.val) } : {}),
         ...(legal !== undefined ? { legal } : {}),
+        ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
+        ...(run ? { run } : {}),
         ...(indentation.left !== undefined ? { left: parseNumber(indentation.left) } : {}),
         ...(indentation.hanging !== undefined ? { hanging: parseNumber(indentation.hanging) } : {}),
       };

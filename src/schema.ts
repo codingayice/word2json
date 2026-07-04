@@ -172,9 +172,12 @@ export type NumberingLevelDefinition = {
   format: NumberingFormat;
   text: string;
   start?: number;
+  styleId?: string;
   suffix?: "nothing" | "space" | "tab";
   restart?: number;
   legal?: boolean;
+  alignment?: ParagraphAlignment;
+  run?: StyleRunProperties;
   left?: number;
   hanging?: number;
 };

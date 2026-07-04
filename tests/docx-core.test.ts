@@ -4257,6 +4257,46 @@ describe("DOCX writer", () => {
     expect(numbering).toContain('<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="%2."/><w:isLgl w:val="0"/></w:lvl>');
   });
 
+  it("writes numbering level style alignment and run properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 30,
+            levels: [
+              {
+                level: 0,
+                format: "decimal" as const,
+                text: "%1.",
+                start: 1,
+                styleId: "LegalClause",
+                alignment: "right" as const,
+                left: 720,
+                hanging: 360,
+                run: {
+                  bold: true,
+                  italic: false,
+                  fontFamily: "Aptos",
+                  fontSize: 11,
+                  color: "C00000",
+                },
+              },
+            ],
+          },
+        ],
+        nums: [{ id: 30, abstractId: 30 }],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const numbering = await zip.file("word/numbering.xml")!.async("string");
+
+    expect(numbering).toContain('<w:lvl w:ilvl="0"><w:start w:val="1"/><w:pStyle w:val="LegalClause"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="right"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:rPr><w:b/><w:i w:val="0"/><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos"/><w:sz w:val="22"/><w:color w:val="C00000"/></w:rPr></w:lvl>');
+  });
+
   it("writes hyperlinks with external relationships", async () => {
     const document = createDocumentJson([
       {
@@ -9817,6 +9857,45 @@ describe("DOCX reader", () => {
           },
         ],
         nums: [{ id: 20, abstractId: 20 }],
+      },
+      sections: [{ blocks: [] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips numbering level style alignment and run properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      numbering: {
+        abstractNums: [
+          {
+            id: 30,
+            levels: [
+              {
+                level: 0,
+                format: "decimal" as const,
+                text: "%1.",
+                start: 1,
+                styleId: "LegalClause",
+                alignment: "right" as const,
+                left: 720,
+                hanging: 360,
+                run: {
+                  bold: true,
+                  italic: false,
+                  fontFamily: "Aptos",
+                  fontSize: 11,
+                  color: "C00000",
+                },
+              },
+            ],
+          },
+        ],
+        nums: [{ id: 30, abstractId: 30 }],
       },
       sections: [{ blocks: [] }],
     };
