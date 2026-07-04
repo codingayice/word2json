@@ -710,6 +710,7 @@ export type NoteContent = {
 export type TableNode = {
   type: "table";
   styleId?: string;
+  look?: TableLook;
   grid?: number[];
   width?: number;
   borders?: "single";
@@ -717,6 +718,15 @@ export type TableNode = {
   cellSpacing?: number;
   propertyRevision?: ParagraphPropertyRevision;
   rows: TableRowNode[];
+};
+
+export type TableLook = {
+  firstRow?: boolean;
+  lastRow?: boolean;
+  firstColumn?: boolean;
+  lastColumn?: boolean;
+  bandedRows?: boolean;
+  bandedColumns?: boolean;
 };
 
 export type TableRowNode = {

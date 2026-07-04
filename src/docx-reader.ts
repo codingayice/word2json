@@ -3052,6 +3052,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
   const borders = asObject(properties.tblBorders);
   const alignment = asObject(properties.jc);
   const cellSpacing = asObject(properties.tblCellSpacing);
+  const look = parseTableLook(properties.tblLook);
   const propertyRevision = parsePropertyRevision(properties.tblPrChange);
   const grid = parseTableGrid(table.tblGrid);
 
@@ -3063,6 +3064,7 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
     ...(borders.top !== undefined ? { borders: "single" as const } : {}),
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as NonNullable<TableNode["alignment"]> } : {}),
     ...(cellSpacing.w !== undefined ? { cellSpacing: parseNumber(cellSpacing.w) } : {}),
+    ...(look ? { look } : {}),
     ...(propertyRevision ? { propertyRevision } : {}),
     rows: asArray(table.tr).map((rowValue) => {
       const row = asObject(rowValue);
@@ -3081,6 +3083,59 @@ function parseTable(value: unknown, relationships: RelationshipMap, comments: Co
       };
     }),
   };
+}
+
+function parseTableLook(value: unknown): TableNode["look"] | undefined {
+  const look = asObject(value);
+  const parsed = {
+    ...parseTableLookValue(look.val),
+    ...parseTableLookFlag(look.firstRow, "firstRow"),
+    ...parseTableLookFlag(look.lastRow, "lastRow"),
+    ...parseTableLookFlag(look.firstColumn, "firstColumn"),
+    ...parseTableLookFlag(look.lastColumn, "lastColumn"),
+    ...parseInvertedTableLookFlag(look.noHBand, "bandedRows"),
+    ...parseInvertedTableLookFlag(look.noVBand, "bandedColumns"),
+  };
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseTableLookValue(value: unknown): TableNode["look"] | undefined {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(String(value), 16);
+  if (Number.isNaN(parsed)) {
+    return undefined;
+  }
+
+  return {
+    firstRow: (parsed & 0x0020) !== 0,
+    lastRow: (parsed & 0x0040) !== 0,
+    firstColumn: (parsed & 0x0080) !== 0,
+    lastColumn: (parsed & 0x0100) !== 0,
+    bandedRows: (parsed & 0x0200) === 0,
+    bandedColumns: (parsed & 0x0400) === 0,
+  };
+}
+
+function parseTableLookFlag<K extends keyof NonNullable<TableNode["look"]>>(value: unknown, key: K): Partial<Pick<NonNullable<TableNode["look"]>, K>> {
+  const parsed = parseTableLookOnOff(value);
+  return parsed === undefined ? {} : { [key]: parsed } as Partial<Pick<NonNullable<TableNode["look"]>, K>>;
+}
+
+function parseInvertedTableLookFlag<K extends keyof NonNullable<TableNode["look"]>>(value: unknown, key: K): Partial<Pick<NonNullable<TableNode["look"]>, K>> {
+  const parsed = parseTableLookOnOff(value);
+  return parsed === undefined ? {} : { [key]: !parsed } as Partial<Pick<NonNullable<TableNode["look"]>, K>>;
+}
+
+function parseTableLookOnOff(value: unknown): boolean | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return !(value === "0" || value === false || value === "false" || value === "off");
 }
 
 function parseTableGrid(value: unknown): number[] | undefined {

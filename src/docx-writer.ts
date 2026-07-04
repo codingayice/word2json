@@ -1326,6 +1326,7 @@ function tableXml(table: TableNode, context: WriterContext): string {
     table.borders ? tableBordersXml(table.borders) : "",
     table.alignment ? `<w:jc w:val="${table.alignment}"/>` : "",
     table.cellSpacing !== undefined ? `<w:tblCellSpacing w:w="${table.cellSpacing}" w:type="dxa"/>` : "",
+    table.look ? tableLookXml(table.look) : "",
     table.propertyRevision ? propertyRevisionXml("tblPr", "tblPrChange", table.propertyRevision) : "",
   ].join("");
   const rows = table.rows
@@ -1348,6 +1349,23 @@ function tableXml(table: TableNode, context: WriterContext): string {
     : "";
 
   return `<w:tbl>${properties ? `<w:tblPr>${properties}</w:tblPr>` : ""}${grid}${rows}</w:tbl>`;
+}
+
+function tableLookXml(look: NonNullable<TableNode["look"]>): string {
+  const hasFlags = Object.values(look).some((value) => value !== undefined);
+  if (!hasFlags) {
+    return "";
+  }
+
+  let value = 0;
+  if (look.firstRow) value |= 0x0020;
+  if (look.lastRow) value |= 0x0040;
+  if (look.firstColumn) value |= 0x0080;
+  if (look.lastColumn) value |= 0x0100;
+  if (look.bandedRows === false) value |= 0x0200;
+  if (look.bandedColumns === false) value |= 0x0400;
+
+  return `<w:tblLook w:val="${value.toString(16).toUpperCase().padStart(4, "0")}"/>`;
 }
 
 function tableCellXml(cell: TableCellNode, context: WriterContext): string {
