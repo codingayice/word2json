@@ -161,7 +161,7 @@ git diff --check
 
 Expected: all commands exit 0. Existing LF/CRLF warnings from `git diff --check` are acceptable if the exit code is 0.
 
-- [ ] **Step 3: Commit feature**
+- [x] **Step 3: Commit feature**
 
 Run:
 
@@ -171,7 +171,7 @@ git commit -m "feat: add phase 158 section header footer types"
 git push -u origin phase-158-section-header-footer-types
 ```
 
-- [ ] **Step 4: Record push**
+- [x] **Step 4: Record push**
 
 Append a Push Record with the branch, commit hash, verification commands, and PR URL:
 
@@ -179,7 +179,7 @@ Append a Push Record with the branch, commit hash, verification commands, and PR
 https://github.com/codingayice/word2json/pull/new/phase-158-section-header-footer-types
 ```
 
-- [ ] **Step 5: Commit push record**
+- [x] **Step 5: Commit push record**
 
 Run:
 
@@ -194,3 +194,14 @@ git push
 - Spec coverage: Covers first/even/default header and footer references, title page marker, writer, reader, tests, verification, commit, push, and push record.
 - Placeholder scan: No placeholders or deferred implementation notes remain.
 - Type consistency: Uses `titlePage`, `default`, `first`, and `even` consistently across schema, writer, reader, and tests.
+
+## Push Record
+
+- Branch: `phase-158-section-header-footer-types`
+- Feature commit: `310ea55 feat: add phase 158 section header footer types`
+- PR URL: `https://github.com/codingayice/word2json/pull/new/phase-158-section-header-footer-types`
+- RED verification: `npm test -- tests/docx-core.test.ts -t "first and even page headers and footers"` failed with 2 expected failures before implementation.
+- GREEN targeted verification: `npm test -- tests/docx-core.test.ts -t "first and even page headers and footers"` passed with 2 tests.
+- Full verification: `npm test` passed with 458 tests.
+- Build verification: `npm run build` exited 0.
+- Whitespace verification: `git diff --check` exited 0 with existing LF/CRLF warnings.
