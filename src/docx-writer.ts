@@ -572,6 +572,7 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   const indent = paragraph.indent ? paragraphIndentXml(paragraph.indent) : "";
   const shading = paragraph.shading ? shadingXml(paragraph.shading) : "";
   const borders = paragraph.borders ? paragraphBordersXml(paragraph.borders) : "";
+  const tabs = paragraphTabsXml(paragraph.tabs);
   const list = paragraph.list
     ? `<w:numPr><w:ilvl w:val="${paragraph.list.level}"/><w:numId w:val="${paragraph.list.numberingId ?? (paragraph.list.type === "bullet" ? 1 : 2)}"/></w:numPr>`
     : "";
@@ -580,7 +581,7 @@ function paragraphPropertiesXml(paragraph: ParagraphNode): string {
   const propertyRevision = paragraph.propertyRevision
     ? propertyRevisionXml("pPr", "pPrChange", paragraph.propertyRevision)
     : "";
-  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${list}${pagination}${frame}${propertyRevision}`;
+  const properties = `${style}${alignment}${spacing}${indent}${shading}${borders}${tabs}${list}${pagination}${frame}${propertyRevision}`;
 
   return properties ? `<w:pPr>${properties}</w:pPr>` : "";
 }
@@ -644,6 +645,14 @@ function paragraphFrameXml(frame?: ParagraphNode["frame"]): string {
     (frame.anchorLock !== undefined ? ` w:anchorLock="${frame.anchorLock ? 1 : 0}"` : "") +
     (frame.heightRule ? ` w:hRule="${frame.heightRule}"` : "") +
     `/>`;
+}
+
+function paragraphTabsXml(tabs?: ParagraphNode["tabs"]): string {
+  if (!tabs?.length) return "";
+
+  return `<w:tabs>${tabs.map((tab) =>
+    `<w:tab w:val="${tab.value}" w:pos="${tab.position}"${tab.leader ? ` w:leader="${tab.leader}"` : ""}/>`
+  ).join("")}</w:tabs>`;
 }
 
 function paragraphPaginationToggleXml(name: string, value: boolean | undefined): string {
@@ -1652,6 +1661,7 @@ function paragraphStylePropertiesXml(properties?: StyleParagraphProperties): str
     properties.indent ? paragraphIndentXml(properties.indent) : "",
     properties.shading ? shadingXml(properties.shading) : "",
     properties.borders ? paragraphBordersXml(properties.borders) : "",
+    paragraphTabsXml(properties.tabs),
     paragraphPaginationXml(properties.pagination),
     paragraphFrameXml(properties.frame),
   ].join("");

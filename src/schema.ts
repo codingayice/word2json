@@ -317,6 +317,7 @@ export type StyleParagraphProperties = {
   borders?: ParagraphBorders;
   pagination?: ParagraphPagination;
   frame?: ParagraphFrameProperties;
+  tabs?: ParagraphTabStop[];
 };
 
 export type ShadingDefinition = {
@@ -399,6 +400,7 @@ export type ParagraphNode = {
   list?: ListSettings;
   pagination?: ParagraphPagination;
   frame?: ParagraphFrameProperties;
+  tabs?: ParagraphTabStop[];
   commentRangeStart?: Comment;
   commentRangeEnd?: CommentRangeEnd;
   runs: TextRun[];
@@ -450,6 +452,12 @@ export type ParagraphFrameProperties = {
   lines?: number;
   anchorLock?: boolean;
   heightRule?: "auto" | "atLeast" | "exact";
+};
+
+export type ParagraphTabStop = {
+  value: "bar" | "center" | "clear" | "decimal" | "end" | "left" | "num" | "right" | "start";
+  position: number;
+  leader?: "dot" | "heavy" | "hyphen" | "middleDot" | "none" | "underscore";
 };
 
 export type ListSettings = {

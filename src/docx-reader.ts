@@ -737,6 +737,7 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
   const borders = parseParagraphBorders(properties.pBdr);
   const pagination = parseParagraphPagination(properties);
   const frame = parseParagraphFrame(properties.framePr);
+  const tabs = parseParagraphTabs(properties.tabs);
   const parsed = {
     ...(typeof alignment.val === "string" ? { alignment: alignment.val as ParagraphAlignment } : {}),
     ...(spacing ? { spacing } : {}),
@@ -745,6 +746,7 @@ function parseStyleParagraphProperties(value: unknown): StyleParagraphProperties
     ...(borders ? { borders } : {}),
     ...(pagination ? { pagination } : {}),
     ...(frame ? { frame } : {}),
+    ...(tabs ? { tabs } : {}),
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
@@ -813,6 +815,23 @@ function parseParagraphFrame(value: unknown): ParagraphNode["frame"] | undefined
   };
 
   return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+function parseParagraphTabs(value: unknown): ParagraphNode["tabs"] | undefined {
+  const tabs = asArray(asObject(value).tab)
+    .map((tabValue) => {
+      const tab = asObject(tabValue);
+      return typeof tab.val === "string" && tab.pos !== undefined
+        ? {
+          value: tab.val as NonNullable<ParagraphNode["tabs"]>[number]["value"],
+          position: parseNumber(tab.pos),
+          ...(typeof tab.leader === "string" ? { leader: tab.leader as NonNullable<ParagraphNode["tabs"]>[number]["leader"] } : {}),
+        }
+        : undefined;
+    })
+    .filter((tab): tab is NonNullable<ParagraphNode["tabs"]>[number] => tab !== undefined);
+
+  return tabs.length > 0 ? tabs : undefined;
 }
 
 function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined {
@@ -1480,6 +1499,7 @@ function parseParagraph(
   const numbering = parseListSettings(properties.numPr, numberingContext);
   const pagination = parsePagination(properties);
   const frame = parseParagraphFrame(properties.framePr);
+  const tabs = parseParagraphTabs(properties.tabs);
   const propertyRevision = parsePropertyRevision(properties.pPrChange);
   const style = typeof styleNode.val === "string"
     ? paragraphStyleFromId(styleNode.val)
@@ -1500,6 +1520,7 @@ function parseParagraph(
     ...(indent ? { indent } : {}),
     ...(shading ? { shading } : {}),
     ...(borders ? { borders } : {}),
+    ...(tabs ? { tabs } : {}),
     ...(numbering ? { list: numbering } : {}),
     ...(pagination ? { pagination } : {}),
     ...(frame ? { frame } : {}),

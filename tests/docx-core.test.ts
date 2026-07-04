@@ -4735,6 +4735,25 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:framePr w:w="2880" w:h="1440" w:x="720" w:y="360" w:hAnchor="margin" w:vAnchor="page" w:xAlign="center" w:yAlign="top" w:wrap="around" w:dropCap="drop" w:lines="3" w:anchorLock="1" w:hRule="exact"/>');
   });
 
+  it("writes paragraph tab stops", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        tabs: [
+          { value: "left", position: 720 },
+          { value: "right", position: 4320, leader: "dot" },
+        ],
+        runs: [{ text: "Label\tValue" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:tabs><w:tab w:val="left" w:pos="720"/><w:tab w:val="right" w:pos="4320" w:leader="dot"/></w:tabs>');
+  });
+
   it("writes paragraph spacing", async () => {
     const document = createDocumentJson([
       {
@@ -5217,6 +5236,31 @@ describe("DOCX writer", () => {
     const styles = await zip.file("word/styles.xml")!.async("string");
 
     expect(styles).toContain('<w:style w:type="paragraph" w:styleId="Sidebar"><w:name w:val="Sidebar"/><w:pPr><w:framePr w:w="2160" w:hAnchor="page" w:vAnchor="margin" w:xAlign="right" w:yAlign="bottom" w:wrap="notBeside" w:anchorLock="0"/></w:pPr></w:style>');
+  });
+
+  it("writes paragraph style tab stops", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "Tabular",
+          name: "Tabular",
+          paragraph: {
+            tabs: [
+              { value: "center", position: 2160, leader: "hyphen" },
+              { value: "clear", position: 3600 },
+            ],
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, styleId: "Tabular", runs: [{ text: "A\tB" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:style w:type="paragraph" w:styleId="Tabular"><w:name w:val="Tabular"/><w:pPr><w:tabs><w:tab w:val="center" w:pos="2160" w:leader="hyphen"/><w:tab w:val="clear" w:pos="3600"/></w:tabs></w:pPr></w:style>');
   });
 
   it("writes character and table styles", async () => {
@@ -10197,6 +10241,40 @@ describe("DOCX reader", () => {
             heightRule: "exact",
           },
           runs: [{ text: "Framed paragraph" }],
+        }],
+      }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips paragraph tab stops", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        paragraph: [{
+          id: "Tabular",
+          name: "Tabular",
+          paragraph: {
+            tabs: [
+              { value: "center", position: 2160, leader: "hyphen" },
+              { value: "clear", position: 3600 },
+            ],
+          },
+        }],
+      },
+      sections: [{
+        blocks: [{
+          type: "paragraph" as const,
+          styleId: "Tabular",
+          tabs: [
+            { value: "left", position: 720 },
+            { value: "right", position: 4320, leader: "dot" },
+          ],
+          runs: [{ text: "Label\tValue" }],
         }],
       }],
     };
