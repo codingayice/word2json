@@ -794,12 +794,14 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "phantom") {
+    const controlProperties = mathControlPropertiesXml(node.controlProperties);
     const properties = [
       node.show !== undefined ? `<m:show m:val="${node.show ? "1" : "0"}"/>` : "",
       node.zeroWidth ? '<m:zeroWid m:val="1"/>' : "",
       node.zeroAscent ? '<m:zeroAsc m:val="1"/>' : "",
       node.zeroDescent ? '<m:zeroDesc m:val="1"/>' : "",
       node.transparent ? '<m:transp m:val="1"/>' : "",
+      controlProperties ? `<m:ctrlPr>${controlProperties}</m:ctrlPr>` : "",
     ].join("");
     return `<m:phant>${properties ? `<m:phantPr>${properties}</m:phantPr>` : ""}<m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:phant>`;
   }

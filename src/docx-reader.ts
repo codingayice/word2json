@@ -1836,6 +1836,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
       .map((phantom) => {
         const phantomNode = asObject(phantom);
         const phantomProperties = asObject(phantomNode.phantPr);
+        const controlProperties = parseMathControlProperties(asObject(phantomProperties.ctrlPr).rPr);
         return {
           type: "phantom" as const,
           ...mathOptionalBooleanProperty(phantomProperties.show, "show"),
@@ -1843,6 +1844,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           ...mathBooleanProperty(phantomProperties.zeroAsc, "zeroAscent"),
           ...mathBooleanProperty(phantomProperties.zeroDesc, "zeroDescent"),
           ...mathBooleanProperty(phantomProperties.transp, "transparent"),
+          ...(controlProperties ? { controlProperties } : {}),
           content: parseMathNodes(asObject(phantomNode.e)),
         };
       }),
