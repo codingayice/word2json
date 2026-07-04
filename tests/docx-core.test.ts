@@ -364,6 +364,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:specVanish w:val="0"/></w:rPr><w:t>Visible</w:t>');
   });
 
+  it("writes text run hidden on", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Hidden", hidden: true }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain("<w:rPr><w:vanish/></w:rPr><w:t>Hidden</w:t>");
+  });
+
+  it("writes text run hidden off", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Visible", hidden: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:vanish w:val="0"/></w:rPr><w:t>Visible</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5176,6 +5206,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Visible", specVanish: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run hidden on", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Hidden", hidden: true }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run hidden off", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Visible", hidden: false }],
       },
     ]);
 

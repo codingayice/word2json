@@ -2563,6 +2563,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...parseOnOffRunProperty(properties.rtl, "rtl"),
     ...parseOnOffRunProperty(properties.cs, "complexScript"),
     ...parseOnOffRunProperty(properties.specVanish, "specVanish"),
+    ...parseOnOffRunProperty(properties.vanish, "hidden"),
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<TextRun["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
