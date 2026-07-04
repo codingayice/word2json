@@ -740,7 +740,8 @@ function mathNodeXml(node: MathNode): string {
   }
 
   if (node.type === "accent") {
-    return `<m:acc><m:accPr><m:chr m:val="${escapeAttribute(node.mark)}"/></m:accPr><m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:acc>`;
+    const properties = mathControlPropertiesXml(node.controlProperties);
+    return `<m:acc><m:accPr><m:chr m:val="${escapeAttribute(node.mark)}"/>${properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : ""}</m:accPr><m:e>${node.content.map((child) => mathNodeXml(child)).join("")}</m:e></m:acc>`;
   }
 
   if (node.type === "bar") {

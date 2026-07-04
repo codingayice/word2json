@@ -1737,10 +1737,13 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
     ...asArray(container.acc)
       .map((accent) => {
         const accentNode = asObject(accent);
-        const mark = asObject(asObject(accentNode.accPr).chr).val;
+        const accentProperties = asObject(accentNode.accPr);
+        const mark = asObject(accentProperties.chr).val;
+        const controlProperties = parseMathControlProperties(asObject(accentProperties.ctrlPr).rPr);
         return {
           type: "accent" as const,
           mark: typeof mark === "string" ? mark : "",
+          ...(controlProperties ? { controlProperties } : {}),
           content: parseMathNodes(asObject(accentNode.e)),
         };
       }),

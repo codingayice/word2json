@@ -502,6 +502,43 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:acc><m:accPr><m:chr m:val="¯"/></m:accPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:acc>');
   });
 
+  it("writes accent control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "accent" as const,
+                  mark: "¯",
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:acc><m:accPr><m:chr m:val="¯"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:accPr><m:e><m:r><m:t>x</m:t></m:r></m:e></m:acc>');
+  });
+
   it("writes bar office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -3600,6 +3637,42 @@ describe("DOCX reader", () => {
                       subscript: [{ type: "text" as const, text: "i" }],
                     },
                   ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips accent control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "accent" as const,
+                  mark: "¯",
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x" }],
                 },
               ],
             },

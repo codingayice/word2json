@@ -428,7 +428,7 @@ export type MathNode =
   | { type: "nary"; controlProperties?: MathControlProperties; operator: "sum"; lowerLimit?: MathNode[]; upperLimit?: MathNode[]; body: MathNode[] }
   | { type: "matrix"; controlProperties?: MathControlProperties; rows: MathNode[][][] }
   | { type: "delimiter"; controlProperties?: MathControlProperties; begin?: string; end?: string; content: MathNode[] }
-  | { type: "accent"; mark: string; content: MathNode[] }
+  | { type: "accent"; controlProperties?: MathControlProperties; mark: string; content: MathNode[] }
   | { type: "bar"; position: "top" | "bottom"; content: MathNode[] }
   | { type: "function"; name: MathNode[]; argument: MathNode[] }
   | { type: "limitLower"; base: MathNode[]; limit: MathNode[] }
