@@ -1724,6 +1724,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
         const matrixProperties = asObject(matrixNode.mPr);
         const baseJustification = matrixBaseJustificationValue(asObject(matrixProperties.baseJc).val);
         const rowSpacing = asObject(matrixProperties.rSp).val;
+        const rowSpacingRule = matrixSpacingRuleValue(asObject(matrixProperties.rSpRule).val);
         const columnSpacing = asObject(matrixProperties.cSp).val;
         const columnJustifications = matrixColumnJustificationValues(matrixProperties.mcs);
         const columnCounts = matrixColumnCountValues(matrixProperties.mcs);
@@ -1732,6 +1733,7 @@ function parseMathNodes(container: XmlNode): NonNullable<NonNullable<TextRun["ma
           type: "matrix" as const,
           ...(baseJustification ? { baseJustification } : {}),
           ...(rowSpacing !== undefined ? { rowSpacing: parseNumber(rowSpacing) } : {}),
+          ...(rowSpacingRule ? { rowSpacingRule } : {}),
           ...(columnSpacing !== undefined ? { columnSpacing: parseNumber(columnSpacing) } : {}),
           ...(columnJustifications.length > 0 ? { columnJustifications } : {}),
           ...(columnCounts.length > 0 ? { columnCounts } : {}),
@@ -1998,6 +2000,12 @@ function matrixColumnCountValues(node: unknown): number[] {
       return value !== undefined ? parseNumber(value) : undefined;
     })
     .filter((value): value is number => value !== undefined);
+}
+
+function matrixSpacingRuleValue(value: unknown): "single" | "oneAndHalf" | "double" | "exactly" | "multiple" | undefined {
+  return value === "single" || value === "oneAndHalf" || value === "double" || value === "exactly" || value === "multiple"
+    ? value
+    : undefined;
 }
 
 function parseComplexFieldRuns(runValues: unknown[]): TextRun[] {
