@@ -852,6 +852,7 @@ function mathNodeXml(node: MathNode): string {
   const naryProperties = [
     naryOperatorXml(node.operator),
     naryLimitLocationXml(node.limitLocation),
+    node.grow !== undefined ? `<m:grow m:val="${node.grow ? "1" : "0"}"/>` : "",
     node.hideLowerLimit ? '<m:subHide m:val="1"/>' : "",
     node.hideUpperLimit ? '<m:supHide m:val="1"/>' : "",
     properties ? `<m:ctrlPr>${properties}</m:ctrlPr>` : "",
