@@ -759,6 +759,8 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
   const verticalAlign = asObject(properties.vertAlign);
   const characterSpacing = asObject(properties.spacing);
   const scale = asObject(properties.w);
+  const fitText = asObject(properties.fitText);
+  const emphasis = asObject(properties.em);
   const border = parseBorder(properties.bdr);
   const parsed = {
     ...(properties.b !== undefined ? { bold: true } : {}),
@@ -799,6 +801,10 @@ function parseStyleRunProperties(value: unknown): StyleRunProperties | undefined
     ...(typeof verticalAlign.val === "string" ? { verticalAlign: verticalAlign.val as NonNullable<StyleRunProperties["verticalAlign"]> } : {}),
     ...(characterSpacing.val !== undefined ? { characterSpacing: parseNumber(characterSpacing.val) } : {}),
     ...(scale.val !== undefined ? { scale: parseNumber(scale.val) } : {}),
+    ...(fitText.val !== undefined
+      ? { fitText: { width: parseNumber(fitText.val), ...(fitText.id !== undefined ? { id: parseNumber(fitText.id) } : {}) } }
+      : {}),
+    ...(typeof emphasis.val === "string" ? { emphasis: emphasis.val as NonNullable<StyleRunProperties["emphasis"]> } : {}),
     ...(border ? { border } : {}),
   };
 

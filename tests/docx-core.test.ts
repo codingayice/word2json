@@ -5204,6 +5204,29 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:shadow/><w:outline/><w:emboss/><w:imprint/><w:rtl/><w:cs/><w:specVanish/><w:vanish/><w:webHidden/><w:snapToGrid/><w:noProof/><w:oMath/></w:rPr>');
   });
 
+  it("writes style run fit text and emphasis properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "CompressedText",
+          name: "Compressed Text",
+          run: {
+            fitText: { width: 1440, id: 11 },
+            emphasis: "underDot" as const,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Fit", styleId: "CompressedText" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:rPr><w:fitText w:val="1440" w:id="11"/><w:em w:val="underDot"/></w:rPr>');
+  });
+
   it("writes table style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -10226,6 +10249,28 @@ describe("DOCX reader", () => {
         }],
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Hidden", styleId: "HiddenEffectText" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run fit text and emphasis properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "CompressedText",
+          name: "Compressed Text",
+          run: {
+            fitText: { width: 1440, id: 11 },
+            emphasis: "underDot" as const,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Fit", styleId: "CompressedText" }] }] }],
     };
 
     const docx = await buildDocx(source);
