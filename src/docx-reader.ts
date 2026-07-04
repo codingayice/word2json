@@ -2545,6 +2545,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
   const characterSpacing = asObject(properties.spacing);
   const scale = asObject(properties.w);
   const fitText = asObject(properties.fitText);
+  const emphasis = asObject(properties.em);
   const border = parseBorder(properties.bdr);
 
   return {
@@ -2572,6 +2573,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(fitText.val !== undefined
       ? { fitText: { width: parseNumber(fitText.val), ...(fitText.id !== undefined ? { id: parseNumber(fitText.id) } : {}) } }
       : {}),
+    ...(typeof emphasis.val === "string" ? { emphasis: emphasis.val as NonNullable<TextRun["emphasis"]> } : {}),
     ...(border ? { border } : {}),
   };
 }

@@ -454,6 +454,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:fitText w:val="720"/></w:rPr><w:t>Fit</w:t>');
   });
 
+  it("writes text run emphasis dot", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Emphasis", emphasis: "dot" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:em w:val="dot"/></w:rPr><w:t>Emphasis</w:t>');
+  });
+
+  it("writes text run emphasis none", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", emphasis: "none" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:em w:val="none"/></w:rPr><w:t>Plain</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5350,6 +5380,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Fit", fitText: { width: 720 } }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run emphasis dot", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Emphasis", emphasis: "dot" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run emphasis none", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", emphasis: "none" }],
       },
     ]);
 

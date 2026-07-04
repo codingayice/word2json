@@ -273,6 +273,7 @@ export type StyleRunProperties = {
   characterSpacing?: number;
   scale?: number;
   fitText?: RunFitText;
+  emphasis?: RunEmphasis;
   border?: BorderDefinition;
 };
 
@@ -284,6 +285,8 @@ export type RunFitText = {
   width: number;
   id?: number;
 };
+
+export type RunEmphasis = "dot" | "comma" | "circle" | "underDot" | "none";
 
 export type StyleParagraphProperties = {
   alignment?: ParagraphAlignment;
