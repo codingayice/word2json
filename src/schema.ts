@@ -253,6 +253,7 @@ export type StyleRunProperties = {
   italic?: boolean;
   underline?: boolean;
   fontFamily?: string;
+  eastAsiaFontFamily?: string;
   complexScriptFontFamily?: string;
   fontSize?: number;
   complexScriptFontSize?: number;

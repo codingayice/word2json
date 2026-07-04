@@ -1107,6 +1107,7 @@ function runPropertiesXml(run: TextRun): string {
 function runFontsXml(run: TextRun): string {
   const attributes = [
     run.fontFamily ? ` w:ascii="${escapeAttribute(run.fontFamily)}" w:hAnsi="${escapeAttribute(run.fontFamily)}"` : "",
+    run.eastAsiaFontFamily ? ` w:eastAsia="${escapeAttribute(run.eastAsiaFontFamily)}"` : "",
     run.complexScriptFontFamily ? ` w:cs="${escapeAttribute(run.complexScriptFontFamily)}"` : "",
   ].join("");
 

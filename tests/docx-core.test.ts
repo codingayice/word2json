@@ -724,6 +724,36 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:cs="Arial"/></w:rPr><w:t>Mixed</w:t>');
   });
 
+  it("writes text run east asia font family", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "你好", eastAsiaFontFamily: "SimSun" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:rFonts w:eastAsia="SimSun"/></w:rPr><w:t>你好</w:t>');
+  });
+
+  it("writes text run east asia font family with latin and complex script families", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", fontFamily: "Aptos", eastAsiaFontFamily: "SimSun", complexScriptFontFamily: "Arial" }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="SimSun" w:cs="Arial"/></w:rPr><w:t>Mixed</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -5872,6 +5902,34 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Mixed", fontFamily: "Aptos", complexScriptFontFamily: "Arial" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run east asia font family", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "你好", eastAsiaFontFamily: "SimSun" }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run east asia font family with latin and complex script families", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Mixed", fontFamily: "Aptos", eastAsiaFontFamily: "SimSun", complexScriptFontFamily: "Arial" }],
       },
     ]);
 

@@ -2555,6 +2555,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
 
   return {
     ...(typeof fonts.ascii === "string" ? { fontFamily: fonts.ascii } : {}),
+    ...(typeof fonts.eastAsia === "string" ? { eastAsiaFontFamily: fonts.eastAsia } : {}),
     ...(typeof fonts.cs === "string" ? { complexScriptFontFamily: fonts.cs } : {}),
     ...(typeof size.val === "number" ? { fontSize: size.val / 2 } : {}),
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
