@@ -1072,7 +1072,7 @@ function runPropertiesXml(run: TextRun): string {
     run.fontSize ? `<w:sz w:val="${run.fontSize * 2}"/>` : "",
     run.color ? `<w:color w:val="${escapeAttribute(run.color)}"/>` : "",
     run.highlight ? `<w:highlight w:val="${run.highlight}"/>` : "",
-    run.strike ? "<w:strike/>" : "",
+    run.strike !== undefined ? (run.strike ? "<w:strike/>" : '<w:strike w:val="0"/>') : "",
     run.doubleStrike ? "<w:dstrike/>" : "",
     run.smallCaps ? "<w:smallCaps/>" : "",
     run.allCaps ? "<w:caps/>" : "",

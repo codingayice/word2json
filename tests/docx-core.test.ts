@@ -94,6 +94,21 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<w:rPr><w:i w:val="0"/></w:rPr><w:t>Plain</w:t>');
   });
 
+  it("writes text run strike off", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", strike: false }],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<w:rPr><w:strike w:val="0"/></w:rPr><w:t>Plain</w:t>');
+  });
+
   it("writes inline office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4654,6 +4669,20 @@ describe("DOCX reader", () => {
       {
         type: "paragraph",
         runs: [{ text: "Plain", italic: false }],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips text run strike off", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [{ text: "Plain", strike: false }],
       },
     ]);
 

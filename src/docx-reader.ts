@@ -2552,7 +2552,7 @@ function parseRunFont(properties: XmlNode): Partial<TextRun> {
     ...(typeof size.val === "string" ? { fontSize: Number.parseInt(size.val, 10) / 2 } : {}),
     ...(typeof color.val === "string" ? { color: color.val } : {}),
     ...(typeof highlight.val === "string" ? { highlight: highlight.val as NonNullable<TextRun["highlight"]> } : {}),
-    ...(properties.strike !== undefined ? { strike: true } : {}),
+    ...parseOnOffRunProperty(properties.strike, "strike"),
     ...(properties.dstrike !== undefined ? { doubleStrike: true } : {}),
     ...(properties.smallCaps !== undefined ? { smallCaps: true } : {}),
     ...(properties.caps !== undefined ? { allCaps: true } : {}),
