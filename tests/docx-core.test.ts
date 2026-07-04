@@ -5171,6 +5171,39 @@ describe("DOCX writer", () => {
     expect(styles).toContain('<w:rPr><w:szCs w:val="28"/><w:lang w:val="en-US" w:eastAsia="zh-CN" w:bidi="ar-SA"/><w:position w:val="4"/><w:kern w:val="28"/></w:rPr>');
   });
 
+  it("writes style run boolean effect properties", async () => {
+    const document = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "HiddenEffectText",
+          name: "Hidden Effect Text",
+          run: {
+            shadow: true,
+            outline: true,
+            emboss: true,
+            imprint: true,
+            rtl: true,
+            complexScript: true,
+            specVanish: true,
+            hidden: true,
+            webHidden: true,
+            snapToGrid: true,
+            noProof: true,
+            officeMath: true,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Hidden", styleId: "HiddenEffectText" }] }] }],
+    };
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const styles = await zip.file("word/styles.xml")!.async("string");
+
+    expect(styles).toContain('<w:rPr><w:shadow/><w:outline/><w:emboss/><w:imprint/><w:rtl/><w:cs/><w:specVanish/><w:vanish/><w:webHidden/><w:snapToGrid/><w:noProof/><w:oMath/></w:rPr>');
+  });
+
   it("writes table style properties", async () => {
     const document = {
       version: "1.0" as const,
@@ -10161,6 +10194,38 @@ describe("DOCX reader", () => {
         }],
       },
       sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Term", styleId: "EmphasisText" }] }] }],
+    };
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips style run boolean effect properties", async () => {
+    const source = {
+      version: "1.0" as const,
+      styles: {
+        character: [{
+          id: "HiddenEffectText",
+          name: "Hidden Effect Text",
+          run: {
+            shadow: true,
+            outline: true,
+            emboss: true,
+            imprint: true,
+            rtl: true,
+            complexScript: true,
+            specVanish: true,
+            hidden: true,
+            webHidden: true,
+            snapToGrid: true,
+            noProof: true,
+            officeMath: true,
+          },
+        }],
+      },
+      sections: [{ blocks: [{ type: "paragraph" as const, runs: [{ text: "Hidden", styleId: "HiddenEffectText" }] }] }],
     };
 
     const docx = await buildDocx(source);
