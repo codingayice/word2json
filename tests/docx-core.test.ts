@@ -955,6 +955,44 @@ describe("DOCX writer", () => {
     expect(xml).toContain('<m:borderBox><m:borderBoxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/></m:borderBoxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:borderBox>');
   });
 
+  it("writes border box control properties", async () => {
+    const document = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "borderBox" as const,
+                  hideTop: true,
+                  hideBottom: true,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x+y" }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const buffer = await buildDocx(document);
+    const zip = await JSZip.loadAsync(buffer);
+    const xml = await zip.file("word/document.xml")!.async("string");
+
+    expect(xml).toContain('<m:borderBox><m:borderBoxPr><m:hideTop m:val="1"/><m:hideBot m:val="1"/><m:ctrlPr><w:rPr><w:b/><w:i/><w:u w:val="single"/><w:rFonts w:ascii="Cambria Math" w:hAnsi="Cambria Math"/><w:sz w:val="32"/><w:color w:val="8064A2"/><w:highlight w:val="darkYellow"/></w:rPr></m:ctrlPr></m:borderBoxPr><m:e><m:r><m:t>x+y</m:t></m:r></m:e></m:borderBox>');
+  });
+
   it("writes phantom office math runs", async () => {
     const document = createDocumentJson([
       {
@@ -4324,6 +4362,43 @@ describe("DOCX reader", () => {
                       denominator: [{ type: "text" as const, text: "b" }],
                     },
                   ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const docx = await buildDocx(source);
+    const parsed = await parseDocx(docx);
+
+    expect(parsed).toEqual(source);
+  });
+
+  it("round-trips border box control properties", async () => {
+    const source = createDocumentJson([
+      {
+        type: "paragraph",
+        runs: [
+          {
+            text: "",
+            math: {
+              nodes: [
+                {
+                  type: "borderBox" as const,
+                  hideTop: true,
+                  hideBottom: true,
+                  controlProperties: {
+                    bold: true,
+                    italic: true,
+                    fontFamily: "Cambria Math",
+                    fontSize: 16,
+                    color: "8064A2",
+                    underline: true,
+                    highlight: "darkYellow",
+                  },
+                  content: [{ type: "text" as const, text: "x+y" }],
                 },
               ],
             },
